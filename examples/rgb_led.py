@@ -1,4 +1,4 @@
-# Common cathode LED connected to GND and red = 2, green = 1, blue - 0
+# Common anode LED connected to GND and red = 2, green = 1, blue - 0
 from time import sleep
 from pico import RGBLED
 
