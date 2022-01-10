@@ -1,4 +1,5 @@
 from machine import Pin, PWM, Timer
+from time import sleep
 
 class OutputDevice:
     
@@ -128,11 +129,54 @@ class PWMLED(PWMOutputDevice):
 PWMLED.is_list = PWMLED.is_active
 
 class DigitalInputDevice:
-    def __init__(self, pin, pull_up=False, active_state=None, bounce_time=0.2):
-        self._pin = Pin(pin, mode=Pin.IN)
-        self._pin.pull = Pin.PULL_UP if pull_up else Pin.PULL_DOWN
+    def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
+        self._pin = Pin(
+            pin,
+            mode=Pin.IN,
+            pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN)
+        #self._pin.pull(Pin.PULL_UP if pull_up else Pin.PULL_DOWN)
+        self._bounce_time = bounce_time
+        
+        if active_state is None:
+            self._active_state = False if pull_up else True
+        else:
+            self._active_state = active_state
+        
+        self._value = self._state_to_value(self._pin.value())
+        
+        # setup interupt
         self._pin.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
         
+    def _state_to_value(self, state):
+        return int(bool(state) == self._active_state)
+        
     def _pin_change(self, p):
-        pass
+        # turn off the interupt
+        p.irq(handler=None)
+        
+        # set the value
+        self._value = self._state_to_value(self._pin.value())
+        
+        if self._bounce_time is not None:
+        
+            # debounce
+            sleep(self._bounce_time)
+            
+            # get the value after the debounce
+            new_value = self._state_to_value(self._pin.value())
+            
+            # has the state changed after the debounce
+            if self._value != new_value:
+                self._value = new_value
+    
+        # re-enable the interupt
+        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)  
+        
+    @property
+    def value(self):
+        return self._value
+        
+class Button(DigitalInputDevice):
+    def __init__(self, pin, pull_up=True, bounce_time=0.2):
+        super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
         
