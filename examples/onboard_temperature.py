@@ -2,7 +2,7 @@
 # Choose View -> Plotter in Thonny to see a graph of the results
 
 from time import sleep
-from pico import TempSensor, Pot
+from pico import TempSensor
 
 picoTemp = TempSensor()
 
