@@ -1,6 +1,139 @@
 from machine import Pin, PWM, ADC, Timer
 from time import sleep, sleep_ms
 from random import randint
+from picozero import OutputDevice
+
+class RGBLED(DigitalOutputDevice):
+    def __init__(self, red=None, green=None, blue=None, active_high=True,
+                 initial_value=(0, 0, 0), pwm=True):
+        super().__init__(active_high, initial_value)
+        self._leds = ()
+        #if not all(p is not None for p in [red, green, blue]):
+        #    raise GPIOPinMissing('red, green, and blue pins must be provided')
+        LEDClass = PWMLED if pwm else LED
+        self._leds = tuple(
+            LEDClass(pin, active_high=active_high)
+            for pin in (red, green, blue))
+        self.value = initial_value
+        
+    def close(self):
+        if getattr(self, '_leds', None):
+            self._stop_blink()
+            for led in self._leds:
+                led.close()
+        self._leds = ()
+        super().close()
+
+    @property
+    def closed(self):
+        return len(self._leds) == 0
+
+    @property
+    def value(self):
+        """
+        Represents the color of the LED as an RGB 3-tuple of ``(red, green,
+        blue)`` where each value is between 0 and 1 if *pwm* was :data:`True`
+        when the class was constructed (and only 0 or 1 if not).
+        For example, red would be ``(1, 0, 0)`` and yellow would be ``(1, 1,
+        0)``, while orange would be ``(1, 0.5, 0)``.
+        """
+        return tuple(led.value for led in self._leds)
+
+    @value.setter
+    def value(self, value):
+        for component in value:
+            if not 0 <= component <= 1:
+                raise OutputDeviceBadValue(
+                    'each RGB color component must be between 0 and 1')
+            if isinstance(self._leds[0], LED):
+                if component not in (0, 1):
+                    raise OutputDeviceBadValue(
+                        'each RGB color component must be 0 or 1 with non-PWM '
+                        'RGBLEDs')
+        for led, v in zip(self._leds, value):
+            led.value = v
+
+    @property
+    def is_active(self):
+        """
+        Returns :data:`True` if the LED is currently active (not black) and
+        :data:`False` otherwise.
+        """
+        return self.value != (0, 0, 0)
+
+    is_lit = is_active
+
+    @property
+    def color(self):
+        """
+        Represents the color of the LED as a tuple.
+        """
+        return self.value
+
+    @color.setter
+    def color(self, value):
+        self.value = value
+
+    @property
+    def red(self):
+        """
+        Represents the red element of the LED.
+        """
+        return self.value[0]
+
+    @red.setter
+    def red(self, value):
+        r, g, b = self.value
+        self.value = value, g, b
+
+    @property
+    def green(self):
+        """
+        Represents the green element of the LED.
+        """
+        return self.value[1]
+
+    @green.setter
+    def green(self, value):
+        r, g, b = self.value
+        self.value = r, value, b
+
+    @property
+    def blue(self):
+        """
+        Represents the blue element of the LED.
+        """
+        return self.value[2]
+
+    @blue.setter
+    def blue(self, value):
+        r, g, b = self.value
+        self.value = r, g, value
+
+    def on(self):
+        """
+        Turn the LED on. This equivalent to setting the LED color to white
+        ``(1, 1, 1)``.
+        """
+        self.value = (1, 1, 1)
+
+    def off(self):
+        """
+        Turn the LED off. This is equivalent to setting the LED color to black
+        ``(0, 0, 0)``.
+        """
+        self.value = (0, 0, 0)
+
+    def toggle(self):
+        """
+        Toggle the state of the device. If the device is currently off
+        (:attr:`value` is ``(0, 0, 0)``), this changes it to "fully" on
+        (:attr:`value` is ``(1, 1, 1)``).  If the device has a specific color,
+        this method inverts the color.
+        """
+        r, g, b = self.value
+        self.value = (1 - r, 1 - g, 1 - b)
+        
 
 onboardLEDPin = 25
 tempSensorADCPin = 4
@@ -195,113 +328,6 @@ class Speaker(PWM):
     def volume(self, value):
         self._volume = value
         self.duty_u16(value / 100 * self.VOLUMEMAX)
-
-class RGBLED():
-    """
-    TODO Add random colour selection from sensible range
-    TODO Add cycle method which cycles through colour wheel of interesting colours
-    TODO Add support for common cathode RGB LEDs
-    """
-    
-    redLED = None
-    greenLED = None
-    blueLED = None
-    blinkTimer = None
-    
-    def __init__(self, red_pin=2, green_pin=1, blue_pin=0):
-        self.redLED = LED(red_pin)
-        self.greenLED = LED(green_pin)
-        self.blueLED = LED(blue_pin)
-        
-    def off(self):
-        self.redLED.off()
-        self.greenLED.off()
-        self.blueLED.off()
-        
-    @property
-    def red(self):
-        return self.redLED.brightness
-    
-    @red.setter
-    def red(self, value):
-        self.redLED.brightness = value
-        if self.redLED.brightness > 0:
-            self.redLED.on()
-        else:
-            self.redLED.off()
-            
-    @property
-    def green(self):
-        return self.greenLED.brightness
-    
-    @green.setter
-    def green(self, value):
-        self.greenLED.brightness = value
-        if self.greenLED.brightness > 0:
-            self.greenLED.on()
-        else:
-            self.greenLED.off()
-            
-    @property
-    def blue(self):
-        return self.blueLED.brightness
-    
-    @blue.setter
-    def blue(self, value):
-        self.blueLED.brightness = value
-        if self.blueLED.brightness > 0:
-            self.blueLED.on()
-        else:
-            self.blueLED.off()
-            
-    @property
-    def color(self):
-        return (self.redLED.brightness, self.greenLED.brightness, self.blueLED.brightess)
-    
-    @blue.setter
-    def color(self, value):
-        self.redLED.brightness = value[0]
-        self.greenLED.brightness = value[1]
-        self.blueLED.brightness = value[2]
-        
-        if self.redLED.brightness > 0:
-            self.redLED.on()
-        else:
-            self.redLED.off()
-            
-        if self.greenLED.brightness > 0:
-            self.greenLED.on()
-        else:
-            self.greenLED.off()
-            
-        if self.blueLED.brightness > 0:
-            self.blueLED.on()
-        else:
-            self.blueLED.off()
-
-    def tick(self, timer):
-        self.redLED.toggle()
-        self.greenLED.toggle()
-        self.blueLED.toggle()
-        
-    def blink(self, delay=1):
-        
-        if self.blinkTimer is not None:
-            self.blinkTimer.deinit()
-        else:
-            self.blinkTimer = Timer()
-            
-        self.blinkTimer.init(freq=1/delay, mode=Timer.PERIODIC, callback=self.tick)
-                        
-    def blink_stop(self):
-        if self.blinkTimer is not None:
-            self.blinkTimer.deinit()
-        self.off()
-        
-    def random(self):
-        self.red = randint(0, 100)
-        self.green = randint(0, 100)
-        self.blue = randint(0, 100)
         
 ADCMAX = 65535
 VOLTAGECONVERSION = 3.3 / ADCMAX
