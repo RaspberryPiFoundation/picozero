@@ -1,5 +1,5 @@
 from machine import Pin, PWM, Timer
-from time import sleep
+from time import sleep, ticks_ms, ticks_diff
 
 class OutputDevice:
     
@@ -134,7 +134,6 @@ class DigitalInputDevice:
             pin,
             mode=Pin.IN,
             pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN)
-        #self._pin.pull(Pin.PULL_UP if pull_up else Pin.PULL_DOWN)
         self._bounce_time = bounce_time
         
         if active_state is None:
@@ -151,32 +150,43 @@ class DigitalInputDevice:
         return int(bool(state) == self._active_state)
         
     def _pin_change(self, p):
-        # turn off the interupt
-        p.irq(handler=None)
+        # has the value actually changed? Or is the interupt triggering for "fun"
+        if self.value != self._state_to_value(p.value()):
         
-        # set the value
-        self._value = self._state_to_value(self._pin.value())
-        
-        if self._bounce_time is not None:
-        
-            # debounce
-            sleep(self._bounce_time)
+            # turn off the interupt
+            p.irq(handler=None)
             
-            # get the value after the debounce
-            new_value = self._state_to_value(self._pin.value())
+            # set the value
+            self._value = self._state_to_value(self._pin.value())
             
-            # has the state changed after the debounce
-            if self._value != new_value:
-                self._value = new_value
-    
-        # re-enable the interupt
-        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)  
+            if self._bounce_time is not None:
+            
+                # wait for stability up or down
+                last_state = p.value()
+                stop = ticks_ms() + self._bounce_time
+                while ticks_ms() < stop:
+                    # keep checking, change reset the stop if the value change
+                    if p.value() != last_state:
+                        stop = ticks_ms() + self._bounce_time
+                        last_state = p.value()
+                        
+                # set the value - it might have changed
+                if self._value != self._state_to_value(last_state):
+                    self._value = self._state_to_value(last_state)
+            
+            # re-enable the interupt
+            p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)  
         
     @property
     def value(self):
         return self._value
+    
+    def __del__(self):
+        # remove the interupt
+        self._pin.irq(handler=None)
+        
         
 class Button(DigitalInputDevice):
-    def __init__(self, pin, pull_up=True, bounce_time=0.2):
+    def __init__(self, pin, pull_up=True, bounce_time=0.02):
         super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
         
