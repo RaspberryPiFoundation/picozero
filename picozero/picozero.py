@@ -150,32 +150,26 @@ class DigitalInputDevice:
         return int(bool(state) == self._active_state)
         
     def _pin_change(self, p):
-        # has the value actually changed? Or is the interupt triggering for "fun"
-        if self.value != self._state_to_value(p.value()):
+        # turn off the interupt
+        p.irq(handler=None)
         
-            # turn off the interupt
-            p.irq(handler=None)
-            
+        if self._bounce_time is not None:
+            # wait for stability
+            last_state = p.value()
+            stop = ticks_ms() + self._bounce_time
+            while ticks_ms() < stop:
+                # keep checking, change reset the stop if the value change
+                if p.value() != last_state:
+                    stop = ticks_ms() + self._bounce_time
+                    last_state = p.value()
+        
+        # has the value actually changed? 
+        if self.value != self._state_to_value(p.value()):    
             # set the value
             self._value = self._state_to_value(self._pin.value())
             
-            if self._bounce_time is not None:
-            
-                # wait for stability up or down
-                last_state = p.value()
-                stop = ticks_ms() + self._bounce_time
-                while ticks_ms() < stop:
-                    # keep checking, change reset the stop if the value change
-                    if p.value() != last_state:
-                        stop = ticks_ms() + self._bounce_time
-                        last_state = p.value()
-                        
-                # set the value - it might have changed
-                if self._value != self._state_to_value(last_state):
-                    self._value = self._state_to_value(last_state)
-            
-            # re-enable the interupt
-            p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)  
+        # re-enable the interupt
+        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)  
         
     @property
     def value(self):
