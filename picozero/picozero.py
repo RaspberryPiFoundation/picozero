@@ -55,6 +55,9 @@ class OutputDevice:
         if self._timer is not None:
             self._timer.deinit()
             self._timer = None
+            
+    def __del__(self):
+        self._stop_blink()
 
 class DigitalOutputDevice(OutputDevice):
     """
@@ -143,6 +146,9 @@ class DigitalInputDevice:
         
         self._value = self._state_to_value(self._pin.value())
         
+        self._when_activated = None
+        self._when_deactivated = None
+        
         # setup interupt
         self._pin.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
         
@@ -153,27 +159,50 @@ class DigitalInputDevice:
         # turn off the interupt
         p.irq(handler=None)
         
+        last_state = p.value()
+        
         if self._bounce_time is not None:
             # wait for stability
-            last_state = p.value()
             stop = ticks_ms() + self._bounce_time
             while ticks_ms() < stop:
-                # keep checking, change reset the stop if the value change
+                # keep checking, reset the stop if the value changes
                 if p.value() != last_state:
                     stop = ticks_ms() + self._bounce_time
                     last_state = p.value()
         
-        # has the value actually changed? 
-        if self.value != self._state_to_value(p.value()):    
+        # re-enable the interupt
+        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
+        
+        # did the value actually changed? 
+        if self.value != self._state_to_value(last_state):    
             # set the value
             self._value = self._state_to_value(self._pin.value())
             
-        # re-enable the interupt
-        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)  
-        
+            # manage call backs
+            if self._value and self._when_activated is not None:
+                self._when_activated()
+            elif not self._value and self._when_deactivated is not None:
+                self._when_deactivated()
+                    
     @property
     def value(self):
         return self._value
+    
+    @property
+    def when_activated(self):
+        return self._when_activated
+    
+    @when_activated.setter
+    def when_activated(self, value):
+        self._when_activated = value
+        
+    @property
+    def when_deactivated(self):
+        return self._when_deactivated
+    
+    @when_activated.setter
+    def when_deactivated(self, value):
+        self._when_deactivated = value
     
     def __del__(self):
         # remove the interupt
@@ -184,3 +213,6 @@ class Button(DigitalInputDevice):
     def __init__(self, pin, pull_up=True, bounce_time=0.02):
         super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
         
+Button.when_pressed = Button.when_activated
+Button.when_released = Button.when_deactivated
+
