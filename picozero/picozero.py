@@ -1,5 +1,5 @@
 from machine import Pin, PWM, Timer
-from time import sleep, ticks_ms, ticks_diff
+from time import ticks_ms, ticks_diff
 
 class OutputDevice:
     
@@ -39,17 +39,21 @@ class OutputDevice:
 
     def toggle(self):
         if self.is_active:
-            self.value = 0
+            self.off()
         else:
-            self.value = 1
+            self.on()
             
     def blink(self, time=1):
+        print("this blink")
         self._stop_blink()
         self._timer = Timer()
         self._timer.init(period=int(time * 1000), mode=Timer.PERIODIC, callback=self._blink_callback)
         
     def _blink_callback(self, timer_obj):
-        self.toggle()
+        if self.is_active:
+            self.value = 0
+        else:
+            self.value = 1
 
     def _stop_blink(self):
         if self._timer is not None:
@@ -95,10 +99,10 @@ class DigitalOutputDevice(OutputDevice):
     def _write(self, value):
         self._pin.value(self._value_to_state(value))
         
-class LED(DigitalOutputDevice):
+class DigitalLED(DigitalOutputDevice):
     pass
 
-LED.is_lit = LED.is_active
+DigitalLED.is_lit = DigitalLED.is_active
 
 class Buzzer(DigitalOutputDevice):
     pass
@@ -125,11 +129,41 @@ class PWMOutputDevice(OutputDevice):
     @property
     def is_active(self):
         return self.value != 0
-
+    
 class PWMLED(PWMOutputDevice):
-    pass
-
-PWMLED.is_list = PWMLED.is_active
+    def __init__(self, pin, active_high=True, initial_value=False):
+        self._brightness = 1
+        super().__init__(pin=pin,
+            active_high=active_high,
+            initial_value=initial_value)
+        
+    @property
+    def brightness(self):
+        return self._brightness
+    
+    @brightness.setter
+    def brightness(self, value):
+        self._brightness = value
+        self.value = 1 if self._brightness > 0 else 0
+                
+    def _write(self, value):
+        super()._write(self._brightness * value)
+    
+    def _read(self):
+        return 1 if super()._read() > 0 else 0
+    
+# factory for returning an LED
+def LED(pin, use_pwm=True, active_high=True, initial_value=False):
+    if use_pwm:
+        return PWMLED(
+            pin=pin,
+            active_high=active_high,
+            initial_value=initial_value)
+    else:
+        return DigitalLED(
+            pin=pin,
+            active_high=active_high,
+            initial_value=initial_value)
 
 class DigitalInputDevice:
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
