@@ -44,7 +44,6 @@ class OutputDevice:
             self.on()
             
     def blink(self, time=1):
-        print("this blink")
         self._stop_blink()
         self._timer = Timer()
         self._timer.init(period=int(time * 1000), mode=Timer.PERIODIC, callback=self._blink_callback)
