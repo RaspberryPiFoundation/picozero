@@ -130,7 +130,7 @@ class PWMOutputDevice(OutputDevice):
                 )
         else:
             PWMOutputDevice._channels_used[channel] = pin_num
-    
+        
     def _state_to_value(self, state):
         return (state if self.active_high else 1 - state) / 65025
 
@@ -148,9 +148,9 @@ class PWMOutputDevice(OutputDevice):
         return self.value != 0
     
     def __del__(self):
-        PWMOutputDevice._channels_used.remove(
+        del PWMOutputDevice._channels_used[
             PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
-            )
+            ]
     
 class PWMLED(PWMOutputDevice):
     def __init__(self, pin, active_high=True, initial_value=False):
