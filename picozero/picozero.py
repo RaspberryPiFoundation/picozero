@@ -1,5 +1,5 @@
 from machine import Pin, PWM, Timer
-from time import ticks_ms, ticks_diff
+from time import ticks_ms
 
 class PWMChannelAlreadyInUse(Exception):
     pass
