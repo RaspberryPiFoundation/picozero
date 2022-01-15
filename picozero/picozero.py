@@ -1,6 +1,9 @@
 from machine import Pin, PWM, Timer
 from time import ticks_ms, ticks_diff
 
+class PWMChannelAlreadyInUse(Exception):
+    pass
+
 class OutputDevice:
     
     def __init__(self, active_high=True, initial_value=False):
@@ -109,9 +112,24 @@ class Buzzer(DigitalOutputDevice):
 Buzzer.beep = Buzzer.blink
 
 class PWMOutputDevice(OutputDevice):
+    
+    PIN_TO_PWM_CHANNEL = ["0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B","7A","7B","0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B"]
+    _channels_used = {}
+    
     def __init__(self, pin, freq=100, active_high=True, initial_value=False):
+        self._check_pwm_channel(pin)
+        self._pin_num = pin
         self._pwm = PWM(Pin(pin))
         super().__init__(active_high, initial_value)
+        
+    def _check_pwm_channel(self, pin_num):
+        channel = PWMOutputDevice.PIN_TO_PWM_CHANNEL[pin_num]
+        if channel in PWMOutputDevice._channels_used.keys():
+            raise PWMChannelAlreadyInUse(
+                f"PWM channel {channel} is already in use by pin {PWMOutputDevice._channels_used[channel]}"
+                )
+        else:
+            PWMOutputDevice._channels_used[channel] = pin_num
     
     def _state_to_value(self, state):
         return (state if self.active_high else 1 - state) / 65025
@@ -128,6 +146,11 @@ class PWMOutputDevice(OutputDevice):
     @property
     def is_active(self):
         return self.value != 0
+    
+    def __del__(self):
+        PWMOutputDevice._channels_used.remove(
+            PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
+            )
     
 class PWMLED(PWMOutputDevice):
     def __init__(self, pin, active_high=True, initial_value=False):
@@ -238,7 +261,6 @@ class DigitalInputDevice:
         self._when_deactivated = value
     
     def __del__(self):
-        # remove the interupt
         self._pin.irq(handler=None)
         
         
