@@ -1,5 +1,5 @@
 from machine import Pin, PWM, Timer, ADC
-from time import ticks_ms
+from time import ticks_ms, sleep
 
 class PWMChannelAlreadyInUse(Exception):
     pass
@@ -444,3 +444,35 @@ class TemperatureSensor(AnalogInputDevice):
 onboard_temp_sensor = TemperatureSensor(4, True, 0.5, onboard_temp_conversion)
 TempSensor = TemperatureSensor
 Thermistor = TemperatureSensor
+
+class TonalBuzzer(PWMOutputDevice):
+    
+    def __init__(self, pin, freq=440, volume=1, active_high=True, initial_value=False):    
+        super().__init__(pin, freq, active_high, initial_value)
+        self._volume = volume
+        # turn it off at start
+        self.stop()
+        
+    def play(self, freq=440, duration=1, volume=None):
+        self._pwm.duty_u16(int((volume or self.volume) * 1023))
+        self._pwm.freq(freq)
+        sleep(duration)
+        self._pwm.duty_u16(0)       
+        
+    def stop(self):
+        self._pwm.duty_u16(0)
+        
+    @property
+    def volume(self):
+        return self._volume
+    
+    @volume.setter
+    def volume(self, value):
+        self._volume = value
+        self._pwm.duty_u16(int(value / 100 * 1023))
+                
+    def __del__(self):
+        self.stop()
+        super().__del__()
+        
+Speaker = TonalBuzzer
