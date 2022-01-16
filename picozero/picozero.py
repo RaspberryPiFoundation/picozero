@@ -368,7 +368,7 @@ class RGBLED(OutputDevice):
             self._last = self.value 
             self.value = (0, 0, 0)
 
-            class AnalogInputDevice():
+class AnalogInputDevice():
     def __init__(self, pin, active_high=True, threshold=0.5):
         self._adc = ADC(pin)
         self.active_high = active_high
