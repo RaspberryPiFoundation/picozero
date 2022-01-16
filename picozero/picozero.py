@@ -271,3 +271,99 @@ class Button(DigitalInputDevice):
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated
 
+class RGBLED(OutputDevice):
+    def __init__(self, red=None, green=None, blue=None, active_high=True,
+                 initial_value=(0, 0, 0), pwm=True):
+        self._leds = ()
+        self._last = initial_value
+        LEDClass = PWMLED if pwm else DigitalLED
+        self._leds = tuple(
+            LEDClass(pin, active_high=active_high)
+            for pin in (red, green, blue))
+        self.off()
+        super().__init__(active_high, initial_value)
+        
+    def __del__(self):
+        if getattr(self, '_leds', None):
+            self._stop_blink()
+            for led in self._leds:
+                led.__del__()
+        self._leds = ()
+        super().__del__()
+
+    
+    def _write(self, value):
+        for led, v in zip(self._leds, value):
+            led.value = v
+        
+    @property
+    def value(self):
+        return tuple(led.value for led in self._leds)
+
+    @value.setter
+    def value(self, value):
+        self._write(value)
+
+    @property
+    def is_active(self):
+        return self.value != (0, 0, 0)
+
+    is_lit = is_active
+
+    def _to_255(self, value):
+        return round(value * 255)
+    
+    def _from_255(self, value):
+        return 0 if value == 0 else value / 255
+    
+    @property
+    def color(self):
+        return tuple(self._to_255(v) for v in self.value)
+
+    @color.setter
+    def color(self, value):
+        self.value = tuple(self._from_255(v) for v in value)
+
+    @property
+    def red(self):
+        return self._to_255(self.value[0])
+
+    @red.setter
+    def red(self, value):
+        r, g, b = self.value
+        self.value = self._from_255(value), g, b
+
+    @property
+    def green(self):
+        return self._to_255(self.value[1])
+
+    @green.setter
+    def green(self, value):
+        r, g, b = self.value
+        self.value = r, self._from_255(value), b
+
+    @property
+    def blue(self):
+        return self._to_255(self.value[2])
+
+    @blue.setter
+    def blue(self, value):
+        r, g, b = self.value
+        self.value = r, g, self._from_255(value)
+
+    def on(self):
+        self.value = (1, 1, 1)
+
+    def off(self):
+        self.value = (0, 0, 0)
+
+    def invert(self):
+        r, g, b = self.value
+        self.value = (1 - r, 1 - g, 1 - b)
+        
+    def toggle(self):
+        if self.value == (0, 0, 0):
+            self.value = self._last or (1, 1, 1)
+        else:
+            self._last = self.value 
+            self.value = (0, 0, 0)
