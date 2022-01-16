@@ -1,4 +1,4 @@
-from machine import Pin, PWM, Timer
+from machine import Pin, PWM, Timer, ADC
 from time import ticks_ms
 
 class PWMChannelAlreadyInUse(Exception):
@@ -367,3 +367,80 @@ class RGBLED(OutputDevice):
         else:
             self._last = self.value 
             self.value = (0, 0, 0)
+
+            class AnalogInputDevice():
+    def __init__(self, pin, active_high=True, threshold=0.5):
+        self._adc = ADC(pin)
+        self.active_high = active_high
+        self.threshold = float(threshold)
+    
+    @property
+    def active_high(self):
+        return self._active_state
+
+    @active_high.setter
+    def active_high(self, value):
+        self._active_state = True if value else False
+        self._inactive_state = False if value else True
+        
+    @property
+    def value(self):
+        return self._read()
+
+    @value.setter
+    def value(self, value):
+        self._write(value)
+        
+    def _state_to_value(self, state):
+        return (state if self.active_high else 1 - state) / 65535
+
+    def _value_to_state(self, value):
+        return int(65535 * (value if self.active_high else 1 - value))
+    
+    def _read(self):
+        return self._state_to_value(self._adc.read_u16())
+        
+    @property
+    def threshold(self):
+        return self._threshold
+
+    @threshold.setter
+    def threshold(self, value):
+        self._threshold = float(value)
+
+    @property
+    def is_active(self):
+        return self.value > self.threshold
+
+    @property
+    def voltage(self):
+        return self.value * 3.3
+    
+    @property
+    def percent(self):
+        return int(self.value * 100)
+    
+class Potentiometer(AnalogInputDevice):
+    pass
+
+Pot = Potentiometer
+
+def onboard_temp_conversion(voltage):
+    # Formula for calculating temp from voltage for the onboard temperature sensor
+    return 27 - (voltage - 0.706)/0.001721
+
+class TemperatureSensor(AnalogInputDevice):
+    def __init__(self, pin, active_high=True, threshold=0.5, conversion=None):
+         self._conversion = conversion
+         super().__init__(pin, active_high, threshold)
+        
+    @property
+    def temp(self):
+        if self._conversion is not None:
+            return self._conversion(self.voltage)
+        else:
+            return None
+       
+onboard_temp_sensor = TemperatureSensor(4, True, 0.5, onboard_temp_conversion)
+TempSensor = TemperatureSensor
+Thermistor = TemperatureSensor
