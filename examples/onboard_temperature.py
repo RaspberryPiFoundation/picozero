@@ -2,10 +2,8 @@
 # Choose View -> Plotter in Thonny to see a graph of the results
 
 from time import sleep
-from pico import TempSensor
-
-picoTemp = TempSensor()
+from picozero import onboard_temp_sensor
 
 while True:
-    print(f"Temperature: {picoTemp.temp} degrees C")
+    print(onboard_temp_sensor.temp)
     sleep(0.1)
