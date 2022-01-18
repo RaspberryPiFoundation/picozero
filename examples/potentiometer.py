@@ -6,8 +6,6 @@ from pico import Pot
 pot = Pot(0)
 
 while True:
-    print(f"Reading: {pot.value}")
-    print(f"Voltage: {pot.voltage}")
-    print(f"Percent: {pot.percent}")
+    print(pot.value, pot.voltage, pot.percent)
     sleep(0.1)
     
