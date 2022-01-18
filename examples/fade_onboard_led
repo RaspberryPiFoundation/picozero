@@ -1,15 +1,12 @@
-# Example fading the onboard LED using PWM
-
+from picozero import LED
 from time import sleep
-from pico import LED
 
-led = LED()
+led = LED(25)
 
 while True:
-    for b in range(101):
-        led.brightness = b
-        sleep(0.01)
+    for b in range(0, 100, 1):
+        led.brightness = b/100
+        sleep(0.02)
     for b in range(100, 0, -1):
-        led.brightness = b
-        sleep(0.01)
-    
+        led.brightness = b/100
+        sleep(0.02)
