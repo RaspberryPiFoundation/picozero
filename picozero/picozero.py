@@ -116,9 +116,10 @@ class PWMOutputDevice(OutputDevice):
     PIN_TO_PWM_CHANNEL = ["0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B","7A","7B","0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B"]
     _channels_used = {}
     
-    def __init__(self, pin, freq=100, active_high=True, initial_value=False):
+    def __init__(self, pin, freq=100, duty_factor=65025, active_high=True, initial_value=False):
         self._check_pwm_channel(pin)
         self._pin_num = pin
+        self._duty_factor = duty_factor
         self._pwm = PWM(Pin(pin))
         super().__init__(active_high, initial_value)
         
@@ -132,10 +133,10 @@ class PWMOutputDevice(OutputDevice):
             PWMOutputDevice._channels_used[channel] = pin_num
         
     def _state_to_value(self, state):
-        return (state if self.active_high else 1 - state) / 65025
+        return (state if self.active_high else 1 - state) / self._duty_factor
 
     def _value_to_state(self, value):
-        return int(65025 * (value if self.active_high else 1 - value))
+        return int(self._duty_factor * (value if self.active_high else 1 - value))
     
     def _read(self):
         return self._state_to_value(self._pwm.duty_u16())
@@ -445,34 +446,46 @@ onboard_temp_sensor = TemperatureSensor(4, True, 0.5, onboard_temp_conversion)
 TempSensor = TemperatureSensor
 Thermistor = TemperatureSensor
 
-class TonalBuzzer(PWMOutputDevice):
+class PWMBuzzer(PWMOutputDevice):
     
-    def __init__(self, pin, freq=440, volume=1, active_high=True, initial_value=False):    
-        super().__init__(pin, freq, active_high, initial_value)
-        self._volume = volume
-        # turn it off at start
-        self.stop()
+    def __init__(self, pin, freq=440, active_high=True, initial_value=False):    
+        super().__init__(
+            pin, 
+            freq=freq, 
+            duty_factor=1023, 
+            active_high=active_high, 
+            initial_value=initial_value)
         
-    def play(self, freq=440, duration=1, volume=None):
-        self._pwm.duty_u16(int((volume or self.volume) * 1023))
+    def play(self, freq=440, duration=1, volume=1):
+
         self._pwm.freq(freq)
-        sleep(duration)
-        self._pwm.duty_u16(0)       
+
+        if volume is not None:
+            self.value = volume
+
+        if duration is not None:
+            sleep(duration)
+
+        self.value = 0
         
+    def on(self, freq=None):
+        if freq is not None:
+            self._pwm.freq(freq)
+
+        self.value = 1
+
     def stop(self):
-        self._pwm.duty_u16(0)
-        
-    @property
-    def volume(self):
-        return self._volume
-    
-    @volume.setter
-    def volume(self, value):
-        self._volume = value
-        self._pwm.duty_u16(int(value / 100 * 1023))
+        self.value = 0
                 
     def __del__(self):
         self.stop()
         super().__del__()
-        
-Speaker = TonalBuzzer
+
+PWMBuzzer.volume = PWMBuzzer.value
+PWMBuzzer.beep = PWMBuzzer.blink
+
+def Speaker(pin, use_tones=True, active_high=True, initial_value=False):
+    if use_tones:
+        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value)
+    else:
+        return Buzzer(pin, active_high=active_high, initial_value=initial_value)
