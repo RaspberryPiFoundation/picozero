@@ -1,32 +1,28 @@
 # Common anode LED connected to GND and red = 2, green = 1, blue - 0
-from time import sleep
 from picozero import RGBLED
+from time import sleep
 
-rgb = RGBLED(2, 1, 0)
+rgb = RGBLED(red=2, green=1, blue=0)
 
-print("Red")
-rgb.color = (1, 0, 0)
+rgb.red = 255  # full red
+sleep(1)
+rgb.red = 128  # half red
+sleep(1)
 
-sleep(2)
+rgb.on() # white
 
-print("Green")
-rgb.color = (0, 1, 0)
+rgb.color = (0, 255, 0)  # full green
+sleep(1)
+rgb.color = (255, 0, 255)  # magenta
+sleep(1)
+rgb.color = (255, 255, 0)  # yellow
+sleep(1)
+rgb.color = (0, 255, 255)  # cyan
+sleep(1)
+rgb.color = (255, 255, 255)  # white
+sleep(1)
 
-sleep(2)
-
-print("Blue")
-rgb.color = (0, 0, 1)
-
-sleep(2)
-
-print("Pink")
-rgb.color = (1, 0, 0.5)
-
-sleep(2)
-
-print("Blink")
-rgb.blink()
-
-
-
-
+rgb.color = (0, 0, 0)  # off
+sleep(1)
+    
+rgb.off()
