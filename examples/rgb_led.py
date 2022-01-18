@@ -1,4 +1,4 @@
-# Common anode LED connected to GND and red = 2, green = 1, blue - 0
+# Common anode LED connected to GND and red = 2, green = 1, blue = 0
 from picozero import RGBLED
 from time import sleep
 
@@ -24,5 +24,10 @@ sleep(1)
 
 rgb.color = (0, 0, 0)  # off
 sleep(1)
+
+# slowly increase intensity of blue
+for n in range(255):
+    rgb.blue = n
+    sleep(0.01)
     
 rgb.off()
