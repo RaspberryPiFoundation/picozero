@@ -22,6 +22,9 @@ class OutputDevice:
         
     @property
     def value(self):
+        """
+        Sets or returns a value representing the state of the device. 1 is on, 0 is off.
+        """
         return self._read()
 
     @value.setter
@@ -29,24 +32,42 @@ class OutputDevice:
         self._write(value)
         
     def on(self):
+        """
+        Turns the device on.
+        """
         self._stop_blink()
         self.value = 1
 
     def off(self):
+        """
+        Turns the device off.
+        """
         self._stop_blink()
         self.value = 0
             
     @property
     def is_active(self):
+        """
+        Returns :data:`True` is the device is on.
+        """
         return bool(self.value)
 
     def toggle(self):
+        """
+        If the device is off, turn it on. If it is on, turn it off.
+        """
         if self.is_active:
             self.off()
         else:
             self.on()
             
     def blink(self, time=1):
+        """
+        Make the device turn on and off repeatedly.
+        
+        :param float time:
+            The length of time in seconds between on and off. Defaults to 1.
+        """
         self._stop_blink()
         self._timer = Timer()
         self._timer.init(period=int(time * 1000), mode=Timer.PERIODIC, callback=self._blink_callback)
@@ -66,25 +87,6 @@ class OutputDevice:
         self._stop_blink()
 
 class DigitalOutputDevice(OutputDevice):
-    """
-    Represents a generic output device.
-
-    :type pin: int
-    :param pin:
-        The pin that the device is connected to.
-
-    :param bool active_high:
-        If :data:`True` (the default), the :meth:`on` method will set the GPIO
-        to HIGH. If :data:`False`, the :meth:`on` method will set the GPIO to
-        LOW (the :meth:`off` method always does the opposite).
-
-    :type initial_value: bool
-    :param initial_value:
-        If :data:`False` (the default), the device will be off initially.  If
-        :data:`None`, the device will be left in whatever state the pin is
-        found in when configured for output (warning: this can be on).  If
-        :data:`True`, the device will be switched on initially.
-    """
     def __init__(self, pin, active_high=True, initial_value=False):
         self._pin = Pin(pin, Pin.OUT)
         super().__init__(active_high, initial_value)
@@ -100,8 +102,24 @@ class DigitalOutputDevice(OutputDevice):
 
     def _write(self, value):
         self._pin.value(self._value_to_state(value))
+
         
 class DigitalLED(DigitalOutputDevice):
+    """
+    Represents a simple LED which can be switched on and off.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the LED will be off initially.  If
+        :data:`True`, the LED will be switched on initially.
+    """
     pass
 
 DigitalLED.is_lit = DigitalLED.is_active
@@ -177,6 +195,36 @@ class PWMLED(PWMOutputDevice):
     
 # factory for returning an LED
 def LED(pin, use_pwm=True, active_high=True, initial_value=False):
+    """
+    Returns an instance of :class:`DigitalLED` or :class:`PWMLED` depending on
+    the value of `use_pwm` parameter. 
+
+    ::
+
+        from picozero import LED
+
+        my_pwm_led = LED(1)
+
+        my_digital_led = LED(2, use_pwm=False)
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param int pin:
+        If `use_pwm` is :data:`True` (the default), a :class:`PWMLED` will be
+        returned. If `use_pwm` is :data:`False`, a :class:`DigitalLED` will be
+        returned. A :class:`PWMLED` can control the brightness of the LED but
+        uses 1 PWM channel.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the device will be off initially.  If
+        :data:`True`, the device will be switched on initially.
+    """
     if use_pwm:
         return PWMLED(
             pin=pin,
