@@ -244,6 +244,9 @@ class DigitalInputDevice:
     @property
     def value(self):
         return self._value
+    @property
+    def is_active(self):
+        return bool(self.value)
     
     @property
     def when_activated(self):
@@ -268,7 +271,8 @@ class DigitalInputDevice:
 class Button(DigitalInputDevice):
     def __init__(self, pin, pull_up=True, bounce_time=0.02):
         super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
-        
+
+Button.is_pressed = Button.is_active
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated
 
