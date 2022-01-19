@@ -1,0 +1,37 @@
+*.py[cdo]
+pythonhosted/
+.pytest_cache/
+
+# Editor detritus
+*.vim
+*.swp
+tags
+.vscode
+.idea
+
+# Packaging detritus
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+coverage
+.coverage
+.tox
+.cache
+
+# Generated documentation
+docs/_build
+docs/_static
+docs/_templates
