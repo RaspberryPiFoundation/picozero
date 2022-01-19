@@ -281,7 +281,6 @@ class RGBLED(OutputDevice):
         self._leds = tuple(
             LEDClass(pin, active_high=active_high)
             for pin in (red, green, blue))
-        self.off()
         super().__init__(active_high, initial_value)
         
     def __del__(self):
@@ -292,7 +291,6 @@ class RGBLED(OutputDevice):
         self._leds = ()
         super().__del__()
 
-    
     def _write(self, value):
         for led, v in zip(self._leds, value):
             led.value = v
