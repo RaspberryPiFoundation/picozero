@@ -345,11 +345,11 @@ class RGBLED(OutputDevice):
 
     def _write(self, value):
         for led, v in zip(self._leds, value):
-            led.value = v
+            led.brightness = v
         
     @property
     def value(self):
-        return tuple(led.value for led in self._leds)
+        return tuple(led.brightness for led in self._leds)
 
     @value.setter
     def value(self, value):
