@@ -10,485 +10,20 @@
    version="1.1"
    x="0px"
    y="0px"
-   width="2500px"
-   height="1500px"
-   viewBox="0 0 2500 1500"
-   style="enable-background:new 0 0 2500 1500;"
+   width="134.54292"
+   height="400"
+   viewBox="0 0 134.54292 399.99999"
    xml:space="preserve"
    id="svg21562"
    sodipodi:docname="pico-led.svg"
-   inkscape:version="1.0.2 (e86c870879, 2021-01-15)"><metadata
-   id="metadata21568"><rdf:RDF><cc:Work
-       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
-   id="defs21566">
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-</defs><sodipodi:namedview
-   pagecolor="#ffffff"
-   bordercolor="#666666"
-   borderopacity="1"
-   objecttolerance="10"
-   gridtolerance="10"
-   guidetolerance="10"
-   inkscape:pageopacity="0"
-   inkscape:pageshadow="2"
-   inkscape:window-width="1848"
-   inkscape:window-height="1009"
-   id="namedview21564"
-   showgrid="false"
-   inkscape:zoom="0.534"
-   inkscape:cx="1250"
-   inkscape:cy="677.63764"
-   inkscape:window-x="0"
-   inkscape:window-y="0"
-   inkscape:window-maximized="1"
-   inkscape:current-layer="svg21562" />
-<style
-   type="text/css"
-   id="style17668">
-	.st0{fill:none;}
-	.st1{fill:#004E29;}
-	.st2{fill:#006837;}
-	.st3{fill:#33865F;}
-	.st4{fill:#9A916C;}
-	.st5{fill:#FCEE21;}
-	.st6{fill:#30312E;}
-	.st7{fill:#363A44;}
-	.st8{fill:#DBDDDA;}
-	.st9{fill:#2A2D2E;}
-	.st10{fill:#ECF6FD;}
-	.st11{fill:#CCCCCC;}
-	.st12{fill:#FFFFFF;}
-	.st13{fill:#33CC33;}
-	.st14{fill:#958863;}
-	.st15{fill:#F2F2F2;}
-	.st16{fill:#3D3F38;}
-	.st17{fill:#7AC943;}
-	.st18{fill:#D83A94;}
-	.st19{fill:#439ED6;}
-	.st20{fill:#613DA5;}
-	.st21{fill:#9D89CE;}
-	.st22{fill:#E83131;}
-	.st23{fill:#F6ADAD;}
-	.st24{fill:#427F21;}
-	.st25{fill:#EA8326;}
-</style>
-<g
-   id="PCB_1_">
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
+   inkscape:export-filename="/home/tracy/picozero/picozero/docs/images/pico-led.png"
+   inkscape:export-xdpi="36.285748"
+   inkscape:export-ydpi="36.285748"><g
+   id="g35014"
+   transform="scale(0.37669685)"><g
+     id="PCB_1_"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g17672">
 			<path
@@ -864,7 +399,8 @@
 			</g>
 		</g>
 	</g><g
-   id="Copper_1_">
+     id="Copper_1_"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g17961">
 			<g
@@ -1176,7 +712,8 @@
    id="path18059" />
 		</g>
 	</g><g
-   id="Mounting_Holes_2_">
+     id="Mounting_Holes_2_"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g18070">
 			<g
@@ -1230,7 +767,8 @@
 			</g>
 		</g>
 	</g><g
-   id="Pico_2040_1_">
+     id="Pico_2040_1_"
+     transform="translate(-1071.359,-45.2242)">
 		<rect
    x="1190.021"
    y="613.46301"
@@ -1239,7 +777,8 @@
    height="119.842"
    id="rect18097" />
 	</g><g
-   id="USB_1_">
+     id="USB_1_"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g18102">
 			<path
@@ -1272,7 +811,8 @@
    id="path18114" />
 		</g>
 	</g><g
-   id="Components_Large">
+     id="Components_Large"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g18121">
 			<path
@@ -1476,7 +1016,8 @@
    id="circle18201" />
 		</g>
 	</g><g
-   id="Components_Small">
+     id="Components_Small"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g18208">
 			
@@ -2258,7 +1799,8 @@
    id="rect18462" />
 		</g>
 	</g><g
-   id="Silkscreen">
+     id="Silkscreen"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g18471">
 			<g
@@ -2557,7 +2099,8 @@
    id="path18617" />
 		</g>
 	</g><g
-   id="Chip_print">
+     id="Chip_print"
+     transform="translate(-1071.359,-45.2242)">
 		<g
    id="g18626">
 			<g
@@ -2568,9 +2111,9 @@
    id="path18622" />
 			</g>
 		</g>
-	</g>
-<g
-   id="g18652">
+	</g><g
+     id="g18652"
+     transform="translate(-1071.359,-45.2242)">
 		
 			<rect
    x="1083.924"
@@ -2581,7 +2124,8 @@
    height="29.764"
    id="rect18650" />
 	</g><g
-   id="g18672">
+     id="g18672"
+     transform="translate(-1071.359,-45.2242)">
 		<path
    class="st12"
    d="m 1144.795,56.022 v 8.086 h -1.84 V 53.76 h 17.062 v 2.262 z"
@@ -2619,7 +2163,8 @@
    d="m 1151.264,173.051 c -1.742,0 -3.412,-0.226 -5.01,-0.677 -1.598,-0.451 -3.072,-1.143 -4.424,-2.072 -1.352,-0.931 -2.312,-1.904 -2.883,-2.923 l 1.324,-0.452 c 0.922,1.188 2.354,2.144 4.295,2.865 1.941,0.721 4.096,1.09 6.463,1.105 h 0.375 c 1.641,0 3.166,-0.17 4.576,-0.509 1.41,-0.34 2.674,-0.812 3.791,-1.418 1.117,-0.606 1.988,-1.287 2.613,-2.044 l 1.324,0.452 c -0.57,1.019 -1.523,1.989 -2.859,2.911 -1.336,0.922 -2.809,1.613 -4.418,2.072 -1.609,0.459 -3.331,0.69 -5.167,0.69 z"
    id="path18670" />
 	</g><g
-   id="g20658">
+     id="g20658"
+     transform="translate(-1071.359,-45.2242)">
 		<rect
    x="1150.4561"
    y="181.28799"
@@ -2627,6 +2172,481 @@
    width="3"
    height="126.432"
    id="rect20656" />
-	</g>
+	</g></g><metadata
+   id="metadata21568"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+   id="defs21566">
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</defs><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="1848"
+   inkscape:window-height="1009"
+   id="namedview21564"
+   showgrid="false"
+   inkscape:zoom="0.77128681"
+   inkscape:cx="178.5825"
+   inkscape:cy="427.20814"
+   inkscape:window-x="0"
+   inkscape:window-y="0"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="svg21562"
+   fit-margin-top="0"
+   fit-margin-left="0"
+   fit-margin-right="0"
+   fit-margin-bottom="0" />
+<style
+   type="text/css"
+   id="style17668">
+	.st0{fill:none;}
+	.st1{fill:#004E29;}
+	.st2{fill:#006837;}
+	.st3{fill:#33865F;}
+	.st4{fill:#9A916C;}
+	.st5{fill:#FCEE21;}
+	.st6{fill:#30312E;}
+	.st7{fill:#363A44;}
+	.st8{fill:#DBDDDA;}
+	.st9{fill:#2A2D2E;}
+	.st10{fill:#ECF6FD;}
+	.st11{fill:#CCCCCC;}
+	.st12{fill:#FFFFFF;}
+	.st13{fill:#33CC33;}
+	.st14{fill:#958863;}
+	.st15{fill:#F2F2F2;}
+	.st16{fill:#3D3F38;}
+	.st17{fill:#7AC943;}
+	.st18{fill:#D83A94;}
+	.st19{fill:#439ED6;}
+	.st20{fill:#613DA5;}
+	.st21{fill:#9D89CE;}
+	.st22{fill:#E83131;}
+	.st23{fill:#F6ADAD;}
+	.st24{fill:#427F21;}
+	.st25{fill:#EA8326;}
+</style>
+
+
 
 </svg>
