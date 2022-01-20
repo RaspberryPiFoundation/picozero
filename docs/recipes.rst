@@ -3,6 +3,11 @@ Recipes
 
 The recipes provide examples of how you can use picozero.
 
+Importing Pico Zero
+-------------------
+
+.. image:: images/pico_led.*
+
 LED
 ------
 
