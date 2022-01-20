@@ -515,8 +515,7 @@ class PWMBuzzer(PWMOutputDevice):
 
         if duration is not None:
             sleep(duration)
-
-        self.value = 0
+            self.value = 0
         
     def on(self, freq=None):
         if freq is not None:
