@@ -7,6 +7,8 @@ Importing Pico Zero
 -------------------
 
 .. image:: images/pico_led.*
+    :alt: A diagram of the Raspberry Pi Pico with a GP25 label attached to the onboard LED
+
 
 LED
 ------
