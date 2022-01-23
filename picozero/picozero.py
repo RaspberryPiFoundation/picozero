@@ -236,6 +236,8 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
             active_high=active_high,
             initial_value=initial_value)
 
+pico_led = LED(25)
+
 class DigitalInputDevice:
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
         self._pin = Pin(
@@ -476,7 +478,7 @@ class Potentiometer(AnalogInputDevice):
 
 Pot = Potentiometer
 
-def onboard_temp_conversion(voltage):
+def pico_temp_conversion(voltage):
     # Formula for calculating temp from voltage for the onboard temperature sensor
     return 27 - (voltage - 0.706)/0.001721
 
@@ -492,7 +494,7 @@ class TemperatureSensor(AnalogInputDevice):
         else:
             return None
        
-onboard_temp_sensor = TemperatureSensor(4, True, 0.5, onboard_temp_conversion)
+pico_temp_sensor = TemperatureSensor(4, True, 0.5, pico_temp_conversion)
 TempSensor = TemperatureSensor
 Thermistor = TemperatureSensor
 
