@@ -82,6 +82,7 @@ Create a pulse effect:
 
 Button
 ------
+
 You can connect buttons and switches to a Raspberry Pi Pico and detect whether they are pressed. 
 
 Check if a :class:`Button` is pressed:
@@ -105,3 +106,15 @@ Run a function every time a :class:`Button` is pressed:
 Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is released:
 
 .. literalinclude:: examples/button_led.py
+
+RGBLED
+------
+
+Setting colours with an :class:`RGBLED`:
+
+.. literalinclude:: examples/rgb_led.py
+
+Using :meth:`~picozero.RGBLED.toggle` and :meth:`~picozero.RGBLED.invert`:
+
+.. literalinclude:: examples/rgb_toggle_invert.py
+

@@ -1,4 +1,3 @@
-# Common anode LED connected to GND and red = 2, green = 1, blue = 0
 from picozero import RGBLED
 from time import sleep
 

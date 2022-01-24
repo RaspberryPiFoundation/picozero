@@ -3,7 +3,7 @@ from time import sleep
 
 rgb = RGBLED(red=2, green=1, blue=0)
 
-rgb.color = (255, 165, 0) # yellow
+rgb.color = (255, 165, 0) # orange
 sleep(1)
 
 for _ in range(6):
