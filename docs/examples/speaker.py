@@ -9,11 +9,11 @@ sleep(1)
 
 def tada():
     c_note = 523
-    speaker.play(c_note, 0.1)
+    speaker.play(freq=c_note, duration=0.1)
     sleep(0.1)
     speaker.play(c_note, 0.4)
     for i in range(100, 0, -1):
-        speaker.play(c_note, 0.01, i/100)
+        speaker.play(freq=c_note, duration=0.01, volume=i/100)
 
 tada()
 sleep(1)

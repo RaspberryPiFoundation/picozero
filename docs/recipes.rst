@@ -118,3 +118,28 @@ Using :meth:`~picozero.RGBLED.toggle` and :meth:`~picozero.RGBLED.invert`:
 
 .. literalinclude:: examples/rgb_toggle_invert.py
 
+Potentiometer
+---------------
+
+Print the value, voltage and percent reported by a potentiometer:
+
+.. literalinclude:: examples/potentiometer.py
+
+.. note::
+
+    In the Thonny Python editor, choose View->Plotter to plot the output of :meth:`print`. 
+
+
+Buzzer
+------
+
+Control an active buzzer that plays a note when powered:
+
+.. literalinclude:: examples/buzzer.py
+
+Speaker
+--------
+
+Control a passive buzzer or speaker that can play different tones or frequencies:
+
+.. literalinclude:: examples/speaker.py
