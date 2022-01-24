@@ -1,8 +1,7 @@
-from picozero import Button, LED
+from picozero import Button, pico_led
 from time import sleep
 
 button = Button(17)
-pico_led = LED(25) # pin 25 is the onboard led on the Pico
 
 def led_on_off():
     pico_led.on()
