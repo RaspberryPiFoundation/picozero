@@ -143,3 +143,10 @@ Speaker
 Control a passive buzzer or speaker that can play different tones or frequencies:
 
 .. literalinclude:: examples/speaker.py
+
+Internal Temperature Sensor
+-----------------------
+
+Check the internal temperature of the Raspberry Pi Pico in degrees Celcius:
+
+.. literalinclude:: examples/pico_temperature.py
