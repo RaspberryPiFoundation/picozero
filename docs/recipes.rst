@@ -51,6 +51,9 @@ You can use :obj:`pico_led` in the same way as external LEDs created using :clas
 LED
 ------
  
+.. image:: images/pico_led_14_bb.svg
+    :alt: A diagram of the Raspberry Pi Pico with yellow LED connected to GP14 and GND.
+
 You can control external LEDs with a Raspberry Pi Pico.
 
 Flash
