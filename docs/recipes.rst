@@ -19,7 +19,7 @@ Now you can use :obj:`~picozero.pico_led` and :class:`~picozero.LED` in your scr
     pico_led.on() # Turn on the LED on the Raspberry Pi Pico
     led = LED(14) # Control an LED connected to pin GP14 
     led.on()
-
+ 
 Alternatively, the whole Pico Zero library can be imported::
 
     import picozero
