@@ -297,6 +297,10 @@ class DigitalInputDevice:
     @property
     def is_active(self):
         return bool(self.value)
+
+    @property
+    def is_inactive(self):
+        return not bool(self.value)
     
     @property
     def when_activated(self):
@@ -318,13 +322,21 @@ class DigitalInputDevice:
         self._pin.irq(handler=None)
         
         
-class Button(DigitalInputDevice):
+class Switch(DigitalInputDevice):
     def __init__(self, pin, pull_up=True, bounce_time=0.02):
         super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
 
+Switch.is_closed = Switch.is_active
+Switch.is_open = Switch.is_inactive
+Switch.when_closed = Switch.when_activated
+Switch.when_opened = Switch.when_deactivated
+
+class Button(Switch):
+    pass
+
 Button.is_pressed = Button.is_active
 Button.when_pressed = Button.when_activated
-Button.when_released = Button.when_deactivated
+Button.when_released = Button.when_deactivated 
 
 class RGBLED(OutputDevice):
     def __init__(self, red=None, green=None, blue=None, active_high=True,
