@@ -7,16 +7,23 @@ class PWMChannelAlreadyInUse(Exception):
 class Cycle:
     """
     Internal helper class which cycles through values in a list
+
+    Returns None when the number of cycles is reached
     """
-    def __init__(self, values):
+    def __init__(self, values, number_of_cycles=None):
         self._values = values
         self._index = 0
+        self._number_of_cycles = number_of_cycles
         
     def next(self):
         value = self._values[self._index]
         self._index += 1
         if self._index == len(self._values):
-            self._index = 0            
+            self._index = 0
+            if self._number_of_cycles is not None:
+                self._number_of_cycles -= 1
+                if self._number_of_cycles == 0:
+                    return None
         return value
 
 class AsyncValueChange:
@@ -33,19 +40,27 @@ class AsyncValueChange:
         The output_device's value will be set for the number of
         seconds.
 
+    :param int n:
+        The number of times to repeat the sequence. If None, the
+        sequence will repeat forever. The default is None.
     """
-    def __init__(self, output_device, sequence):
+    def __init__(self, output_device, sequence, n=None):
         self._output_device = output_device
         
-        self._sequence = Cycle(sequence)
+        self._sequence = Cycle(sequence, n)
         
         self._timer = Timer()
         self._set_value()
 
     def _set_value(self, timer_obj=None):
-        value, seconds = self._sequence.next()
-        self._output_device.value = value
-        self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
+        next_seq = self._sequence.next()
+        if next_seq is not None:
+            value, seconds = next_seq
+            self._output_device.value = value
+            self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
+        else:
+            # the sequence has finished, set the value to 0
+            self._output_device.value = 0
         
     def stop(self):
         self._timer.deinit()
@@ -107,7 +122,7 @@ class OutputDevice:
         else:
             self.on()
             
-    def blink(self, on_time=1, off_time=None):
+    def blink(self, on_time=1, off_time=None, n=None):
         """
         Make the device turn on and off repeatedly.
         
@@ -115,16 +130,21 @@ class OutputDevice:
             The length of time in seconds the device will be on. Defaults to 1.
 
         :param float off_time:
-            The length of time in seconds the device will be off. Defaults to 1.
+            The length of time in seconds the device will be off. If `None`, 
+            it will be the same as ``on_time``. Defaults to `None`.
+
+        :param int n:
+            The number of times to repeat the blink operation. If None is 
+            specified, the device will continue blinking forever. The default
+            is None.
         """
-        if off_time is None:
-            off_time = on_time
+        off_time = on_time if off_time is None else off_time
         
         self._stop_async()
-        self._start_async([(1,on_time), (0,off_time)])
+        self._start_async([(1,on_time), (0,off_time)], n)
         
-    def _start_async(self, sequence):
-        self._async_change = AsyncValueChange(self, sequence)
+    def _start_async(self, sequence, n=None):
+        self._async_change = AsyncValueChange(self, sequence, n)
 
     def _stop_async(self):
         if self._async_change is not None:
@@ -241,40 +261,80 @@ class PWMLED(PWMOutputDevice):
     def _read(self):
         return 1 if super()._read() > 0 else 0
 
-    def pulse(self, fade_in_time=1, fade_out_time=None, fps=25):
+    def blink(self, on_time=1, off_time=None, fade_in_time=0, fade_out_time=None, n=None, fps=25):
         """
-        Make the device pulse on and off repeatedly.
+        Make the device turn on and off repeatedly.
         
+        :param float on_time:
+            The length of time in seconds the device will be on. Defaults to 1.
+
+        :param float off_time:
+            The length of time in seconds the device will be off. If `None`, 
+            it will be the same as ``on_time``. Defaults to `None`.
+
         :param float fade_in_time:
-            The length of time in seconds the device will take to turn on.
-            Defaults to 1.
+            The length of time in seconds to spend fading in. Defaults to 0.
 
         :param float fade_out_time:
-           The length of time in seconds the device will take to turn off.
-           Defaults to 1.
+            The length of time in seconds to spend fading out. If `None`,
+            it will be the same as ``fade_in_time``. Defaults to `None`.
+
+        :param int n:
+            The number of times to repeat the blink operation. If `None`, the 
+            device will continue blinking forever. The default is `None`.
 
         :param int fps:
            The frames per second that will be used to calculate the number of
-           steps between off/on states. Defaults to 25.
+           steps between off/on states when fading. Defaults to 25.
         """
         self._stop_async()
         
-        if fade_out_time is None:
-            fade_out_time = fade_in_time
-        
+        off_time = on_time if off_time is None else off_time
+        fade_out_time = fade_in_time if fade_out_time is None else fade_out_time
+
+        # build the blink sequence
         sequence = []
+
         if fade_in_time > 0:
             sequence += [
                 (i * (1 / fps) / fade_in_time, 1 / fps)
                 for i in range(int(fps * fade_in_time))
                 ]
+            
+        if on_time > 0:
+            sequence.append((1, on_time))
+
         if fade_out_time > 0:
             sequence += [
                 (1 - (i * (1 / fps) / fade_out_time), 1 / fps)
                 for i in range(int(fps * fade_out_time))
                 ]
             
-        self._start_async(sequence)
+        if off_time > 0:
+            sequence.append((0, off_time))
+            
+        self._start_async(sequence, n)
+
+    def pulse(self, fade_in_time=1, fade_out_time=None, n=None, fps=25):
+        """
+        Make the device pulse on and off repeatedly.
+        
+        :param float fade_in_time:
+            The length of time in seconds to spend fading in. Defaults to 0.
+
+        :param float fade_out_time:
+            The length of time in seconds to spend fading out. If `None`,
+            it will be the same as ``fade_in_time``. Defaults to `None`.
+
+        :param int n:
+            The number of times to repeat the blink operation. If `None`, the 
+            device will continue blinking forever. The default is `None`.
+
+        :param int fps:
+           The frames per second that will be used to calculate the number of
+           steps between off/on states when fading. Defaults to 25.
+        """
+        self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, fps=fps)
     
 # factory for returning an LED
 def LED(pin, use_pwm=True, active_high=True, initial_value=False):
@@ -635,3 +695,4 @@ def Speaker(pin, use_tones=True, active_high=True, initial_value=False):
         return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value)
     else:
         return Buzzer(pin, active_high=active_high, initial_value=initial_value)
+
