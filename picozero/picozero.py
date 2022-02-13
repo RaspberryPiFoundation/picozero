@@ -493,6 +493,7 @@ class RGBLED(OutputDevice):
         super().__init__(active_high, initial_value)
         
     def __del__(self):
+        self._stop_async()
         if getattr(self, '_leds', None):
             self._stop_blink()
             for led in self._leds:
@@ -563,6 +564,7 @@ class RGBLED(OutputDevice):
         self.value = (1, 1, 1)
 
     def off(self):
+        self._stop_async()
         self.value = (0, 0, 0)
 
     def invert(self):
@@ -575,6 +577,81 @@ class RGBLED(OutputDevice):
         else:
             self._last = self.value 
             self.value = (0, 0, 0)
+
+    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
+        
+        self._stop_async()
+        if type(on_times) is not tuple:
+            on_times = (on_times, ) * len(colors)
+        if type(fade_times) is not tuple:
+            fade_times = (fade_times, ) * len(colors)
+        # If any value is above zero then treat all as 0-255 values
+        if any(v > 1 for v in sum(colors, ())):
+            colors = tuple(tuple(self._from_255(v) for v in t) for t in colors)
+        
+        # Define a linear interpolation between
+        # off_color and on_color
+        
+        lerp = lambda t, fade_in, color1, color2: tuple(
+            (1 - t) * off + t * on
+            if fade_in else
+            (1 - t) * on + t * off
+            for off, on in zip(color2, color1)
+            )
+              
+        sequence = []
+        
+        for c in range(len(colors)):
+            
+            if fade_times[c] > 0:
+                sequence += [
+                    (lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c]), 1 / fps)
+                    for i in range(int(fps * fade_times[c]))
+                    ]
+            
+            sequence.append((colors[(c + 1) % len(colors)], on_times[c]))
+    
+        self._start_async(sequence, n)
+            
+    def pulse(self, fade_times=1, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
+        """
+        Make the device fade in and out repeatedly.
+        :param float fade_in_time:
+            Number of seconds to spend fading in. Defaults to 1.
+        :param float fade_out_time:
+            Number of seconds to spend fading out. Defaults to 1.
+        :type on_color: ~colorzero.Color or tuple
+        :param on_color:
+            The color to use when the LED is "on". Defaults to white.
+        :type off_color: ~colorzero.Color or tuple
+        :param off_color:
+            The color to use when the LED is "off". Defaults to black.
+        :type n: int or None
+        :param n:
+            Number of times to pulse; :data:`None` (the default) means forever.
+        """
+        on_times = 0
+        self.blink(on_times, fade_times, colors, n, fps)
+        
+    def cycle(self, fade_times=1, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, fps=25):
+        """
+        Make the device fade in and out repeatedly.
+        :param float fade_in_time:
+            Number of seconds to spend fading in. Defaults to 1.
+        :param float fade_out_time:
+            Number of seconds to spend fading out. Defaults to 1.
+        :type on_color: ~colorzero.Color or tuple
+        :param on_color:
+            The color to use when the LED is "on". Defaults to white.
+        :type off_color: ~colorzero.Color or tuple
+        :param off_color:
+            The color to use when the LED is "off". Defaults to black.
+        :type n: int or None
+        :param n:
+            Number of times to pulse; :data:`None` (the default) means forever.
+        """
+        on_times = 0
+        self.blink(on_times, fade_times, colors, n, fps)
 
 class AnalogInputDevice():
     def __init__(self, pin, active_high=True, threshold=0.5):
