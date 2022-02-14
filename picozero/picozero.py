@@ -512,15 +512,15 @@ Thermistor = TemperatureSensor
 
 class PWMBuzzer(PWMOutputDevice):
     
-    def __init__(self, pin, freq=440, active_high=True, initial_value=False):    
+    def __init__(self, pin, freq=440, active_high=True, initial_value=False, duty_factor=1023):    
         super().__init__(
             pin, 
             freq=freq, 
-            duty_factor=1023, 
+            duty_factor=duty_factor, 
             active_high=active_high, 
             initial_value=initial_value)
         
-    def play(self, freq=440, duration=1, volume=1):
+    def play(self, freq=440, duration=1, volume=1, wait=True):
 
         self._pwm.freq(freq)
 
@@ -528,9 +528,15 @@ class PWMBuzzer(PWMOutputDevice):
             self.value = volume
 
         if duration is not None:
-            sleep(duration)
-            self.value = 0
-        
+            if wait:
+                sleep(duration)
+                self.off()
+            else:
+                self._timer.init(period=int(duration * 1000), mode=Timer.ONE_SHOT, callback=self._stop)
+       
+    def _stop(self, timer_obj=None):
+        self.stop()
+                
     def on(self, freq=None):
         if freq is not None:
             self._pwm.freq(freq)
@@ -538,6 +544,7 @@ class PWMBuzzer(PWMOutputDevice):
         self.value = 1
 
     def stop(self):
+        self._timer.deinit()
         self.value = 0
                 
     def __del__(self):
