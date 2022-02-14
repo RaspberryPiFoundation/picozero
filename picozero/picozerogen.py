@@ -27,18 +27,20 @@ class AsyncValueChange:
         self._set_value()
         
     def _set_value(self, timer_obj=None):
-        try:
-            next_seq = next(self._generator)
-            value, seconds = next_seq
-            self._output_device.value = value
-            self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
-        except StopIteration:
-            # the sequence has finished, set the value to 0
-            self.stop()
-            self._output_device.value = 0
+        if self._generator is not None:
+            try:
+                next_seq = next(self._generator)
+                value, seconds = next_seq
+                self._output_device.value = value
+                self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
+            except StopIteration:
+                # the sequence has finished, set the value to 0
+                self.stop()
+                self._output_device.value = 0
         
     def stop(self):
         self._timer.deinit()
+        self._generator = None
 
         
 class OutputDevice:
@@ -580,6 +582,7 @@ class RGBLED(OutputDevice):
         try:
             micropython.schedule(self._blink, (on_times, fade_times, colors, n, fps))
         except:
+            print("Failed to schedule")
             pass # Could raise an exception?
         
     def pulse(self, fade_times=1, colors=((1, 0, 1), (0, 0, 0)), n=None, fps=25):
@@ -741,4 +744,3 @@ def Speaker(pin, use_tones=True, active_high=True, initial_value=False, duty_fac
         return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value, duty_factor=duty_factor)
     else:
         return Buzzer(pin, active_high=active_high, initial_value=initial_value)
-
