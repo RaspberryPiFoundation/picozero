@@ -29,7 +29,6 @@ class AsyncValueChange:
     def _set_value(self, timer_obj=None):
         try:
             next_seq = next(self._generator)
-            print(next_seq)
             value, seconds = next_seq
             self._output_device.value = value
             self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
@@ -40,7 +39,6 @@ class AsyncValueChange:
         
     def stop(self):
         self._timer.deinit()
-        print("Stop")
 
         
 class OutputDevice:
@@ -538,9 +536,7 @@ class RGBLED(OutputDevice):
             self.value = (0, 0, 0)
 
     def _blink(self, args):
-        print("Blink start")
         on_times, fade_times, colors, n, fps = args
-        print(n)
         self._stop_async()
         if type(on_times) is not tuple:
             on_times = (on_times, ) * len(colors)
@@ -579,15 +575,14 @@ class RGBLED(OutputDevice):
         
         self._start_async(generator(on_times, fade_times, colors, n, fps))
 
-    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
+    def blink(self, on_times=1, fade_times=0, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, fps=25):
             
         try:
             micropython.schedule(self._blink, (on_times, fade_times, colors, n, fps))
         except:
-            print("Schedule queue full")
             pass # Could raise an exception?
         
-    def pulse(self, fade_times=1, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
+    def pulse(self, fade_times=1, colors=((1, 0, 1), (0, 0, 0)), n=None, fps=25):
         """
         Make the device fade in and out repeatedly.
         :param float fade_in_time:
@@ -746,3 +741,4 @@ def Speaker(pin, use_tones=True, active_high=True, initial_value=False, duty_fac
         return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value, duty_factor=duty_factor)
     else:
         return Buzzer(pin, active_high=active_high, initial_value=initial_value)
+
