@@ -1,5 +1,6 @@
 from machine import Pin, PWM, Timer, ADC
 from time import ticks_ms, sleep
+import micropython
 
 class PWMChannelAlreadyInUse(Exception):
     pass
@@ -16,26 +17,30 @@ class AsyncValueChange:
         The output_device's value will be set for the number of
         seconds.
     """
-    def __init__(self, output_device, generator):
+    def __init__(self, output_device):
         self._output_device = output_device
-        
-        self._generator = generator
-        
         self._timer = Timer()
-        self._set_value()
 
+    def set_generator(self, generator):
+        self.stop()
+        self._generator = generator
+        self._set_value()
+        
     def _set_value(self, timer_obj=None):
         try:
             next_seq = next(self._generator)
+            print(next_seq)
             value, seconds = next_seq
             self._output_device.value = value
             self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
         except StopIteration:
             # the sequence has finished, set the value to 0
+            self.stop()
             self._output_device.value = 0
         
     def stop(self):
         self._timer.deinit()
+        print("Stop")
 
         
 class OutputDevice:
@@ -43,7 +48,7 @@ class OutputDevice:
     def __init__(self, active_high=True, initial_value=False):
         self.active_high = active_high
         self._write(initial_value)
-        self._async_change = None
+        self._async_change = AsyncValueChange(self)
     
     @property
     def active_high(self):
@@ -115,12 +120,10 @@ class OutputDevice:
         self._start_async([(1,on_time), (0,off_time)], n)
         
     def _start_async(self, generator):
-        self._async_change = AsyncValueChange(self, generator)
+        self._async_change.set_generator(generator)
 
     def _stop_async(self):
-        if self._async_change is not None:
-            self._async_change.stop()
-            self._async_change = None
+        self._async_change.stop()
             
     def __del__(self):
         self._stop_async()
@@ -443,6 +446,7 @@ class RGBLED(OutputDevice):
             LEDClass(pin, active_high=active_high)
             for pin in (red, green, blue))
         super().__init__(active_high, initial_value)
+        self._stop_async()
         
     def __del__(self):
         self._stop_async()
@@ -533,8 +537,10 @@ class RGBLED(OutputDevice):
             self._last = self.value 
             self.value = (0, 0, 0)
 
-    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
-        
+    def _blink(self, args):
+        print("Blink start")
+        on_times, fade_times, colors, n, fps = args
+        print(n)
         self._stop_async()
         if type(on_times) is not tuple:
             on_times = (on_times, ) * len(colors)
@@ -564,12 +570,23 @@ class RGBLED(OutputDevice):
                             t = 1 / fps       
                             yield (v, t)
             
-                    yield ((colors[(c + 1) % len(colors)], on_times[c]))
+                    if on_times[c] > 0:
+                        yield ((colors[(c + 1) % len(colors)], on_times[c]))
             
                 n = n - 1 if n is not None else None
-    
+                
+        self._stop_async()
+        
         self._start_async(generator(on_times, fade_times, colors, n, fps))
+
+    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
             
+        try:
+            micropython.schedule(self._blink, (on_times, fade_times, colors, n, fps))
+        except:
+            print("Schedule queue full")
+            pass # Could raise an exception?
+        
     def pulse(self, fade_times=1, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
         """
         Make the device fade in and out repeatedly.
@@ -689,11 +706,11 @@ Thermistor = TemperatureSensor
 
 class PWMBuzzer(PWMOutputDevice):
     
-    def __init__(self, pin, freq=440, active_high=True, initial_value=False):    
+    def __init__(self, pin, freq=440, active_high=True, initial_value=False, duty_factor=1023):    
         super().__init__(
             pin, 
             freq=freq, 
-            duty_factor=1023, 
+            duty_factor=duty_factor, 
             active_high=active_high, 
             initial_value=initial_value)
         
@@ -724,9 +741,8 @@ class PWMBuzzer(PWMOutputDevice):
 PWMBuzzer.volume = PWMBuzzer.value
 PWMBuzzer.beep = PWMBuzzer.blink
 
-def Speaker(pin, use_tones=True, active_high=True, initial_value=False):
+def Speaker(pin, use_tones=True, active_high=True, initial_value=False, duty_factor=1023):
     if use_tones:
-        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value)
+        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value, duty_factor=duty_factor)
     else:
         return Buzzer(pin, active_high=active_high, initial_value=initial_value)
-
