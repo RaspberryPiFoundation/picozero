@@ -506,6 +506,8 @@ class RGBLED(OutputDevice):
         super().__del__()
 
     def _write(self, value):
+        if type(value) is not tuple:
+            value = (value, ) * 3       
         for led, v in zip(self._leds, value):
             led.brightness = v
         
@@ -606,19 +608,18 @@ class RGBLED(OutputDevice):
                 )
             
             for c in range(len(colors)):
-                
                 if fade_times[c] > 0:
-                    for s in [
-                        (lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c]), 1 / fps)
-                        for i in range(int(fps * fade_times[c]))
-                        ]:
-                        yield s
-                
-                yield ((colors[(c + 1) % len(colors)], on_times[c]))
-    
-        self._start_change(sequence, n)
+                    for i in range(int(fps * fade_times[c])):
+                        v = lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c])
+                        t = 1 / fps       
+                        yield (v, t)
             
-    def pulse(self, fade_times=1, colors=((1, 1, 1), (0, 0, 0)), n=None, wait=False, fps=25):
+                if on_times[c] > 0:
+                    yield (colors[c], on_times[c])
+    
+        self._start_change(blink_generator, n, wait)
+            
+    def pulse(self, fade_times=1, colors=((0, 0, 0), (255, 0, 0), (0, 0, 0), (0, 255, 0), (0, 0, 0), (0, 0, 255)), n=None, wait=False, fps=25):
         """
         Make the device fade in and out repeatedly.
         :param float fade_in_time:
@@ -657,7 +658,6 @@ class RGBLED(OutputDevice):
         """
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
-
 
 class AnalogInputDevice():
     def __init__(self, pin, active_high=True, threshold=0.5):
