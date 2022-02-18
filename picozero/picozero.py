@@ -3,74 +3,74 @@ from time import ticks_ms, sleep
 
 class PWMChannelAlreadyInUse(Exception):
     pass
-
-class Cycle:
-    """
-    Internal helper class which cycles through values in a list
-
-    Returns None when the number of cycles is reached
-    """
-    def __init__(self, values, number_of_cycles=None):
-        self._values = values
-        self._index = 0
-        self._number_of_cycles = number_of_cycles
         
-    def next(self):
-        value = self._values[self._index]
-        self._index += 1
-        if self._index == len(self._values):
-            self._index = 0
-            if self._number_of_cycles is not None:
-                self._number_of_cycles -= 1
-                if self._number_of_cycles == 0:
-                    return None
-        return value
-
-class AsyncValueChange:
+class ValueChange:
     """
     Internal class to control the value of an output device 
-    asynchronously
 
     :param OutputDevice output_device:
         The OutputDevice object you wish to change the value of
 
-    :param sequence:
-        A 2d list of ((value, seconds), *).
+    :param generator:
+        A generator function which yields a 2d list of
+        ((value, seconds), *).
         
         The output_device's value will be set for the number of
         seconds.
 
     :param int n:
         The number of times to repeat the sequence. If None, the
-        sequence will repeat forever. The default is None.
+        sequence will repeat forever. 
+    
+    :param bool wait:
+        If True the ValueChange object will block (wait) until
+        the sequence has completed.
     """
-    def __init__(self, output_device, sequence, n=None):
+    def __init__(self, output_device, generator, n, wait):
         self._output_device = output_device
-        
-        self._sequence = Cycle(sequence, n)
+        self._generator = generator
+        self._n = n
+
+        self._gen = self._generator()
         
         self._timer = Timer()
+        self._running = True
         self._set_value()
-
-    def _set_value(self, timer_obj=None):
-        next_seq = self._sequence.next()
-        if next_seq is not None:
-            value, seconds = next_seq
-            self._output_device.value = value
-            self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
-        else:
-            # the sequence has finished, set the value to 0
-            self._output_device.value = 0
         
+        while wait and self._running:
+            sleep(0.001)
+            
+    def _set_value(self, timer_obj=None):
+        
+        try:
+            next_seq = next(self._gen)
+            value, seconds = next_seq
+            
+            self._output_device._write(value)
+            self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
+            
+        except StopIteration:
+            
+            self._n = self._n - 1 if self._n is not None else None
+            if self._n == 0:
+                # its the end, set the value to 0 and stop running
+                self._output_device.value = 0
+                self._running = False
+            else:
+                # recreate the generator and start again
+                self._gen = self._generator()
+                self._set_value()
+            
     def stop(self):
         self._timer.deinit()
+        
 
 class OutputDevice:
     
     def __init__(self, active_high=True, initial_value=False):
         self.active_high = active_high
         self._write(initial_value)
-        self._async_change = None
+        self._value_changer = None
     
     @property
     def active_high(self):
@@ -90,20 +90,19 @@ class OutputDevice:
 
     @value.setter
     def value(self, value):
+        self._stop_change()
         self._write(value)
         
     def on(self):
         """
         Turns the device on.
         """
-        self._stop_async()
         self.value = 1
 
     def off(self):
         """
         Turns the device off.
         """
-        self._stop_async()
         self.value = 0
             
     @property
@@ -122,7 +121,7 @@ class OutputDevice:
         else:
             self.on()
             
-    def blink(self, on_time=1, off_time=None, n=None):
+    def blink(self, on_time=1, off_time=None, n=None, wait=False):
         """
         Make the device turn on and off repeatedly.
         
@@ -130,8 +129,7 @@ class OutputDevice:
             The length of time in seconds the device will be on. Defaults to 1.
 
         :param float off_time:
-            The length of time in seconds the device will be off. If `None`, 
-            it will be the same as ``on_time``. Defaults to `None`.
+            The length of time in seconds the device will be off. Defaults to 1.
 
         :param int n:
             The number of times to repeat the blink operation. If None is 
@@ -140,19 +138,19 @@ class OutputDevice:
         """
         off_time = on_time if off_time is None else off_time
         
-        self._stop_async()
-        self._start_async([(1,on_time), (0,off_time)], n)
-        
-    def _start_async(self, sequence, n=None):
-        self._async_change = AsyncValueChange(self, sequence, n)
-
-    def _stop_async(self):
-        if self._async_change is not None:
-            self._async_change.stop()
-            self._async_change = None
+        self.off()
+        self._start_change(lambda : iter([(1,on_time), (0,off_time)]), n, wait)
+            
+    def _start_change(self, generator, n, wait):
+        self._value_changer = ValueChange(self, generator, n, wait)
+    
+    def _stop_change(self):
+        if self._value_changer is not None:
+            self._value_changer.stop()
+            self._value_changer = None
             
     def __del__(self):
-        self._stop_async()
+        self._stop_change()
 
 class DigitalOutputDevice(OutputDevice):
     def __init__(self, pin, active_high=True, initial_value=False):
@@ -261,7 +259,7 @@ class PWMLED(PWMOutputDevice):
     def _read(self):
         return 1 if super()._read() > 0 else 0
 
-    def blink(self, on_time=1, off_time=None, fade_in_time=0, fade_out_time=None, n=None, fps=25):
+    def blink(self, on_time=1, off_time=None, fade_in_time=0, fade_out_time=None, n=None, wait=False, fps=25):
         """
         Make the device turn on and off repeatedly.
         
@@ -286,55 +284,62 @@ class PWMLED(PWMOutputDevice):
         :param int fps:
            The frames per second that will be used to calculate the number of
            steps between off/on states when fading. Defaults to 25.
-        """
-        self._stop_async()
+        """    
+        self.off()
         
         off_time = on_time if off_time is None else off_time
         fade_out_time = fade_in_time if fade_out_time is None else fade_out_time
+        
+        def blink_generator():
+            if fade_in_time > 0:
+                for s in [
+                    (i * (1 / fps) / fade_in_time, 1 / fps)
+                    for i in range(int(fps * fade_in_time))
+                    ]:
+                    yield s
+                
+            if on_time > 0:
+                yield (1, on_time)
 
-        # build the blink sequence
-        sequence = []
-
-        if fade_in_time > 0:
-            sequence += [
-                (i * (1 / fps) / fade_in_time, 1 / fps)
-                for i in range(int(fps * fade_in_time))
-                ]
+            if fade_out_time > 0:
+                for s in [
+                    (1 - (i * (1 / fps) / fade_out_time), 1 / fps)
+                    for i in range(int(fps * fade_out_time))
+                    ]:
+                    yield s
+                
+            if off_time > 0:
+                 yield (0, off_time)
             
-        if on_time > 0:
-            sequence.append((1, on_time))
+        self._start_change(blink_generator, n, wait)
 
-        if fade_out_time > 0:
-            sequence += [
-                (1 - (i * (1 / fps) / fade_out_time), 1 / fps)
-                for i in range(int(fps * fade_out_time))
-                ]
-            
-        if off_time > 0:
-            sequence.append((0, off_time))
-            
-        self._start_async(sequence, n)
-
-    def pulse(self, fade_in_time=1, fade_out_time=None, n=None, fps=25):
+    def pulse(self, fade_in_time=1, fade_out_time=None, n=None, wait=False, fps=25):
         """
         Make the device pulse on and off repeatedly.
         
         :param float fade_in_time:
-            The length of time in seconds to spend fading in. Defaults to 0.
+            The length of time in seconds the device will take to turn on.
+            Defaults to 1.
 
         :param float fade_out_time:
-            The length of time in seconds to spend fading out. If `None`,
-            it will be the same as ``fade_in_time``. Defaults to `None`.
-
-        :param int n:
-            The number of times to repeat the blink operation. If `None`, the 
-            device will continue blinking forever. The default is `None`.
-
+           The length of time in seconds the device will take to turn off.
+           Defaults to 1.
+           
         :param int fps:
            The frames per second that will be used to calculate the number of
-           steps between off/on states when fading. Defaults to 25.
+           steps between off/on states. Defaults to 25.
+           
+        :param int n:
+           The number of times to pulse the LED. If None the LED will pulse
+           forever. Defaults to None.
+    
+        :param bool wait:
+           If True the method will block until the LED stops pulsing. If False
+           the method will return and the LED is will pulse in the background.
+           Defaults to False.
+    
         """
-        self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, fps=fps)
+        self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, wait=wait, fps=fps)
     
 # factory for returning an LED
 def LED(pin, use_pwm=True, active_high=True, initial_value=False):
@@ -493,7 +498,6 @@ class RGBLED(OutputDevice):
         super().__init__(active_high, initial_value)
         
     def __del__(self):
-        self._stop_async()
         if getattr(self, '_leds', None):
             self._stop_blink()
             for led in self._leds:
@@ -564,7 +568,6 @@ class RGBLED(OutputDevice):
         self.value = (1, 1, 1)
 
     def off(self):
-        self._stop_async()
         self.value = (0, 0, 0)
 
     def invert(self):
@@ -577,10 +580,11 @@ class RGBLED(OutputDevice):
         else:
             self._last = self.value 
             self.value = (0, 0, 0)
-
-    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
+            
+    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, wait=False, fps=25):
         
-        self._stop_async()
+        self.off()
+        
         if type(on_times) is not tuple:
             on_times = (on_times, ) * len(colors)
         if type(fade_times) is not tuple:
@@ -589,31 +593,32 @@ class RGBLED(OutputDevice):
         if any(v > 1 for v in sum(colors, ())):
             colors = tuple(tuple(self._from_255(v) for v in t) for t in colors)
         
-        # Define a linear interpolation between
-        # off_color and on_color
+        def blink_generator():
         
-        lerp = lambda t, fade_in, color1, color2: tuple(
-            (1 - t) * off + t * on
-            if fade_in else
-            (1 - t) * on + t * off
-            for off, on in zip(color2, color1)
-            )
-              
-        sequence = []
-        
-        for c in range(len(colors)):
+            # Define a linear interpolation between
+            # off_color and on_color
             
-            if fade_times[c] > 0:
-                sequence += [
-                    (lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c]), 1 / fps)
-                    for i in range(int(fps * fade_times[c]))
-                    ]
+            lerp = lambda t, fade_in, color1, color2: tuple(
+                (1 - t) * off + t * on
+                if fade_in else
+                (1 - t) * on + t * off
+                for off, on in zip(color2, color1)
+                )
             
-            sequence.append((colors[(c + 1) % len(colors)], on_times[c]))
+            for c in range(len(colors)):
+                
+                if fade_times[c] > 0:
+                    for s in [
+                        (lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c]), 1 / fps)
+                        for i in range(int(fps * fade_times[c]))
+                        ]:
+                        yield s
+                
+                yield ((colors[(c + 1) % len(colors)], on_times[c]))
     
-        self._start_async(sequence, n)
+        self._start_change(sequence, n)
             
-    def pulse(self, fade_times=1, colors=((1, 1, 1), (0, 0, 0)), n=None, fps=25):
+    def pulse(self, fade_times=1, colors=((1, 1, 1), (0, 0, 0)), n=None, wait=False, fps=25):
         """
         Make the device fade in and out repeatedly.
         :param float fade_in_time:
@@ -631,9 +636,9 @@ class RGBLED(OutputDevice):
             Number of times to pulse; :data:`None` (the default) means forever.
         """
         on_times = 0
-        self.blink(on_times, fade_times, colors, n, fps)
+        self.blink(on_times, fade_times, colors, n, wait, fps)
         
-    def cycle(self, fade_times=1, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, fps=25):
+    def cycle(self, fade_times=1, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
         Make the device fade in and out repeatedly.
         :param float fade_in_time:
@@ -651,7 +656,8 @@ class RGBLED(OutputDevice):
             Number of times to pulse; :data:`None` (the default) means forever.
         """
         on_times = 0
-        self.blink(on_times, fade_times, colors, n, fps)
+        self.blink(on_times, fade_times, colors, n, wait, fps)
+
 
 class AnalogInputDevice():
     def __init__(self, pin, active_high=True, threshold=0.5):
