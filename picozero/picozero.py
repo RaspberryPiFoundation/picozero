@@ -43,11 +43,12 @@ class ValueChange:
     def _set_value(self, timer_obj=None):
         
         try:
-            next_seq = next(self._gen)
-            value, seconds = next_seq
+            if self._timer is not None:
+                next_seq = next(self._gen)
+                value, seconds = next_seq
             
-            self._output_device._write(value)
-            self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
+                self._output_device._write(value)            
+                self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
             
         except StopIteration:
             
@@ -63,8 +64,8 @@ class ValueChange:
             
     def stop(self):
         self._timer.deinit()
+        self._timer = None        
         
-
 class OutputDevice:
     
     def __init__(self, active_high=True, initial_value=False):
@@ -777,4 +778,4 @@ def Speaker(pin, use_tones=True, active_high=True, initial_value=False):
         return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value)
     else:
         return Buzzer(pin, active_high=active_high, initial_value=initial_value)
-
+    
