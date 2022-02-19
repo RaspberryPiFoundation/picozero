@@ -517,6 +517,7 @@ class RGBLED(OutputDevice):
 
     @value.setter
     def value(self, value):
+        self._stop_change()
         self._write(value)
 
     @property
@@ -569,9 +570,6 @@ class RGBLED(OutputDevice):
     def on(self):
         self.value = (1, 1, 1)
 
-    def off(self):
-        self.value = (0, 0, 0)
-
     def invert(self):
         r, g, b = self.value
         self.value = (1 - r, 1 - g, 1 - b)
@@ -583,7 +581,7 @@ class RGBLED(OutputDevice):
             self._last = self.value 
             self.value = (0, 0, 0)
             
-    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, wait=False, fps=25):
+    def blink(self, on_times=1, fade_times=0, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         
         self.off()
         
@@ -617,12 +615,13 @@ class RGBLED(OutputDevice):
                 if on_times[c] > 0:
                     yield (colors[c], on_times[c])
     
+        self.off()
         self._start_change(blink_generator, n, wait)
             
-    def pulse(self, fade_times=1, colors=((0, 0, 0), (255, 0, 0), (0, 0, 0), (0, 255, 0), (0, 0, 0), (0, 0, 255)), n=None, wait=False, fps=25):
+    def pulse(self, fade_times=1, colors=((0, 0, 0), (1, 0, 0), (0, 0, 0), (0, 1, 0), (0, 0, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
         Make the device fade in and out repeatedly.
-        :param float fade_in_time:
+        :param float fade_in_times:
             Number of seconds to spend fading in. Defaults to 1.
         :param float fade_out_time:
             Number of seconds to spend fading out. Defaults to 1.
