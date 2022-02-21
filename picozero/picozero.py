@@ -43,11 +43,12 @@ class ValueChange:
     def _set_value(self, timer_obj=None):
         
         try:
-            next_seq = next(self._gen)
-            value, seconds = next_seq
+            if self._timer is not None:
+                next_seq = next(self._gen)
+                value, seconds = next_seq
             
-            self._output_device._write(value)
-            self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
+                self._output_device._write(value)            
+                self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
             
         except StopIteration:
             
@@ -63,8 +64,8 @@ class ValueChange:
             
     def stop(self):
         self._timer.deinit()
+        self._timer = None        
         
-
 class OutputDevice:
     
     def __init__(self, active_high=True, initial_value=False):
@@ -506,6 +507,8 @@ class RGBLED(OutputDevice):
         super().__del__()
 
     def _write(self, value):
+        if type(value) is not tuple:
+            value = (value, ) * 3       
         for led, v in zip(self._leds, value):
             led.brightness = v
         
@@ -515,6 +518,7 @@ class RGBLED(OutputDevice):
 
     @value.setter
     def value(self, value):
+        self._stop_change()
         self._write(value)
 
     @property
@@ -567,9 +571,6 @@ class RGBLED(OutputDevice):
     def on(self):
         self.value = (1, 1, 1)
 
-    def off(self):
-        self.value = (0, 0, 0)
-
     def invert(self):
         r, g, b = self.value
         self.value = (1 - r, 1 - g, 1 - b)
@@ -581,7 +582,7 @@ class RGBLED(OutputDevice):
             self._last = self.value 
             self.value = (0, 0, 0)
             
-    def blink(self, on_times=1, fade_times=0, colors=((1, 1, 1), (0, 0, 0)), n=None, wait=False, fps=25):
+    def blink(self, on_times=1, fade_times=0, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         
         self.off()
         
@@ -606,22 +607,22 @@ class RGBLED(OutputDevice):
                 )
             
             for c in range(len(colors)):
-                
                 if fade_times[c] > 0:
-                    for s in [
-                        (lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c]), 1 / fps)
-                        for i in range(int(fps * fade_times[c]))
-                        ]:
-                        yield s
-                
-                yield ((colors[(c + 1) % len(colors)], on_times[c]))
-    
-        self._start_change(sequence, n)
+                    for i in range(int(fps * fade_times[c])):
+                        v = lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c])
+                        t = 1 / fps       
+                        yield (v, t)
             
-    def pulse(self, fade_times=1, colors=((1, 1, 1), (0, 0, 0)), n=None, wait=False, fps=25):
+                if on_times[c] > 0:
+                    yield (colors[c], on_times[c])
+    
+        self.off()
+        self._start_change(blink_generator, n, wait)
+            
+    def pulse(self, fade_times=1, colors=((0, 0, 0), (1, 0, 0), (0, 0, 0), (0, 1, 0), (0, 0, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
         Make the device fade in and out repeatedly.
-        :param float fade_in_time:
+        :param float fade_in_times:
             Number of seconds to spend fading in. Defaults to 1.
         :param float fade_out_time:
             Number of seconds to spend fading out. Defaults to 1.
@@ -657,7 +658,6 @@ class RGBLED(OutputDevice):
         """
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
-
 
 class AnalogInputDevice():
     def __init__(self, pin, active_high=True, threshold=0.5):
@@ -778,4 +778,4 @@ def Speaker(pin, use_tones=True, active_high=True, initial_value=False):
         return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value)
     else:
         return Buzzer(pin, active_high=active_high, initial_value=initial_value)
-
+    
