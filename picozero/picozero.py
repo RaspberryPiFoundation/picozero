@@ -43,10 +43,10 @@ class ValueChange:
     def _set_value(self, timer_obj=None):
         
         try:
-            if self._timer is not None:
+            if self._running:
                 next_seq = next(self._gen)
                 value, seconds = next_seq
-            
+        
                 self._output_device._write(value)            
                 self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
             
@@ -63,8 +63,8 @@ class ValueChange:
                 self._set_value()
             
     def stop(self):
+        self._running = False
         self._timer.deinit()
-        self._timer = None        
         
 class OutputDevice:
     
