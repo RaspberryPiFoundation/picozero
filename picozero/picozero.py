@@ -397,11 +397,11 @@ class InputDevice:
         self._active_state = active_state
 
     @property
-    def active_high(self):
+    def active_state(self):
         return self._active_state
 
-    @active_high.setter
-    def active_high(self, value):
+    @active_state.setter
+    def active_state(self, value):
         self._active_state = True if value else False
         self._inactive_state = False if value else True
         
@@ -685,34 +685,17 @@ class RGBLED(OutputDevice):
         self.blink(on_times, fade_times, colors, n, wait, fps)
 
 
-class AnalogInputDevice():
-    def __init__(self, pin, active_high=True, threshold=0.5):
+class AnalogInputDevice(InputDevice):
+    def __init__(self, pin, active_state=True, threshold=0.5):
+        super().__init__(active_state)
         self._adc = ADC(pin)
-        self.active_high = active_high
-        self.threshold = float(threshold)
-    
-    @property
-    def active_high(self):
-        return self._active_state
-
-    @active_high.setter
-    def active_high(self, value):
-        self._active_state = True if value else False
-        self._inactive_state = False if value else True
-        
-    @property
-    def value(self):
-        return self._read()
-
-    @value.setter
-    def value(self, value):
-        self._write(value)
+        self._threshold = float(threshold)
         
     def _state_to_value(self, state):
-        return (state if self.active_high else 1 - state) / 65535
+        return (state if self.active_state else 1 - state) / 65535
 
     def _value_to_state(self, value):
-        return int(65535 * (value if self.active_high else 1 - value))
+        return int(65535 * (value if self.active_state else 1 - value))
     
     def _read(self):
         return self._state_to_value(self._adc.read_u16())
@@ -747,9 +730,9 @@ def pico_temp_conversion(voltage):
     return 27 - (voltage - 0.706)/0.001721
 
 class TemperatureSensor(AnalogInputDevice):
-    def __init__(self, pin, active_high=True, threshold=0.5, conversion=None):
+    def __init__(self, pin, active_state=True, threshold=0.5, conversion=None):
          self._conversion = conversion
-         super().__init__(pin, active_high, threshold)
+         super().__init__(pin, active_state, threshold)
         
     @property
     def temp(self):
