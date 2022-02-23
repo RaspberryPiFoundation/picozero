@@ -149,9 +149,9 @@ class OutputDevice:
         if self._value_changer is not None:
             self._value_changer.stop()
             self._value_changer = None
-            
-    def __del__(self):
-        self._stop_change()
+
+    def close(self):
+        self.value = 0
 
 class DigitalOutputDevice(OutputDevice):
     def __init__(self, pin, active_high=True, initial_value=False):
@@ -169,7 +169,10 @@ class DigitalOutputDevice(OutputDevice):
 
     def _write(self, value):
         self._pin.value(self._value_to_state(value))
-
+                
+    def close(self):
+        super().close()
+        self._pin = None
         
 class DigitalLED(DigitalOutputDevice):
     """
@@ -233,10 +236,12 @@ class PWMOutputDevice(OutputDevice):
     def is_active(self):
         return self.value != 0
     
-    def __del__(self):
+    def close(self):
+        super().close()
         del PWMOutputDevice._channels_used[
             PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
             ]
+        self._pin = None
     
 class PWMLED(PWMOutputDevice):
     def __init__(self, pin, active_high=True, initial_value=False):
@@ -387,8 +392,26 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
 
 pico_led = LED(25)
 
-class DigitalInputDevice:
+class InputDevice:
+    def __init__(self, active_state=None):
+        self._active_state = active_state
+
+    @property
+    def active_high(self):
+        return self._active_state
+
+    @active_high.setter
+    def active_high(self, value):
+        self._active_state = True if value else False
+        self._inactive_state = False if value else True
+        
+    @property
+    def value(self):
+        return self._read()
+
+class DigitalInputDevice(InputDevice):
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
+        super().__init__(active_state)
         self._pin = Pin(
             pin,
             mode=Pin.IN,
@@ -400,7 +423,7 @@ class DigitalInputDevice:
         else:
             self._active_state = active_state
         
-        self._value = self._state_to_value(self._pin.value())
+        self._state = self._pin.value()
         
         self._when_activated = None
         self._when_deactivated = None
@@ -410,7 +433,10 @@ class DigitalInputDevice:
         
     def _state_to_value(self, state):
         return int(bool(state) == self._active_state)
-        
+    
+    def _read(self):
+        return self._state_to_value(self._state)
+
     def _pin_change(self, p):
         # turn off the interupt
         p.irq(handler=None)
@@ -430,19 +456,16 @@ class DigitalInputDevice:
         p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
         
         # did the value actually changed? 
-        if self.value != self._state_to_value(last_state):    
-            # set the value
-            self._value = self._state_to_value(self._pin.value())
+        if self._state != last_state:
+            # set the state
+            self._state = self._pin.value()
             
             # manage call backs
-            if self._value and self._when_activated is not None:
+            if self.value and self._when_activated is not None:
                 self._when_activated()
-            elif not self._value and self._when_deactivated is not None:
+            elif not self.value and self._when_deactivated is not None:
                 self._when_deactivated()
                     
-    @property
-    def value(self):
-        return self._value
     @property
     def is_active(self):
         return bool(self.value)
@@ -467,8 +490,9 @@ class DigitalInputDevice:
     def when_deactivated(self, value):
         self._when_deactivated = value
     
-    def __del__(self):
+    def close(self):
         self._pin.irq(handler=None)
+        self._pin = None
         
         
 class Switch(DigitalInputDevice):
@@ -480,12 +504,14 @@ Switch.is_open = Switch.is_inactive
 Switch.when_closed = Switch.when_activated
 Switch.when_opened = Switch.when_deactivated
 
+
 class Button(Switch):
     pass
 
 Button.is_pressed = Button.is_active
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated 
+
 
 class RGBLED(OutputDevice):
     def __init__(self, red=None, green=None, blue=None, active_high=True,
@@ -616,7 +642,6 @@ class RGBLED(OutputDevice):
                 if on_times[c] > 0:
                     yield (colors[c], on_times[c])
     
-        self.off()
         self._start_change(blink_generator, n, wait)
             
     def pulse(self, fade_times=1, colors=((0, 0, 0), (1, 0, 0), (0, 0, 0), (0, 1, 0), (0, 0, 0), (0, 0, 1)), n=None, wait=False, fps=25):
@@ -658,6 +683,7 @@ class RGBLED(OutputDevice):
         """
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
+
 
 class AnalogInputDevice():
     def __init__(self, pin, active_high=True, threshold=0.5):
@@ -773,9 +799,9 @@ class PWMBuzzer(PWMOutputDevice):
         self._timer.deinit()
         self.value = 0
                 
-    def __del__(self):
+    def close(self):
         self.stop()
-        super().__del__()
+        super().close()
 
 PWMBuzzer.volume = PWMBuzzer.value
 PWMBuzzer.beep = PWMBuzzer.blink
