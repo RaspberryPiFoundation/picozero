@@ -11,7 +11,7 @@ from .picozero import (
     AnalogInputDevice,
     Potentiometer,
     TemperatureSensor,
-    onboard_temp_sensor,
+    pico_temp_sensor,
     TempSensor,
     Thermistor,
     PWMBuzzer,
