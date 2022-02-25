@@ -7,6 +7,7 @@ from .picozero import (
     LED,
     DigitalInputDevice,
     Button,
+    Switch,
     RGBLED,
     AnalogInputDevice,
     Potentiometer,
