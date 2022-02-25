@@ -67,7 +67,9 @@ class ValueChange:
         self._timer.deinit()
         
 class OutputDevice:
-    
+    """
+    Base class for output devices. 
+    """   
     def __init__(self, active_high=True, initial_value=False):
         self.active_high = active_high
         self._write(initial_value)
@@ -75,6 +77,12 @@ class OutputDevice:
     
     @property
     def active_high(self):
+        """
+        Sets or returns the active_high property. If :data:`True`, the 
+        :meth:`on` method will set the Pin to HIGH. If :data:`False`, 
+        the :meth:`on` method will set the Pin toLOW (the :meth:`off` method 
+        always does the opposite).
+        """
         return self._active_state
 
     @active_high.setter
@@ -109,7 +117,7 @@ class OutputDevice:
     @property
     def is_active(self):
         """
-        Returns :data:`True` is the device is on.
+        Returns :data:`True` if the device is on.
         """
         return bool(self.value)
 
@@ -171,6 +179,10 @@ class DigitalOutputDevice(OutputDevice):
         self._pin.value(self._value_to_state(value))
                 
     def close(self):
+        """
+        Closes the device and turns the device off. Once closed, the device
+        can no longer be used.
+        """
         super().close()
         self._pin = None
         
@@ -234,9 +246,16 @@ class PWMOutputDevice(OutputDevice):
         
     @property
     def is_active(self):
+        """
+        Returns :data:`True` if the device is on.
+        """
         return self.value != 0
     
     def close(self):
+        """
+        Closes the device and turns the device off. Once closed, the device
+        can no longer be used.
+        """
         super().close()
         del PWMOutputDevice._channels_used[
             PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
@@ -393,11 +412,21 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
 pico_led = LED(25)
 
 class InputDevice:
+    """
+    Base class for input devices.
+    """
     def __init__(self, active_state=None):
         self._active_state = active_state
 
     @property
     def active_state(self):
+        """
+        Sets or returns the active state of the device. If :data:`None` (the default),
+        the device will return the value that the pin is set to. If
+        :data:`True`, the device will return :data:`True` if the pin is
+        HIGH. If :data:`False`, the device will return :data:`False` if the
+        pin is LOW.
+        """
         return self._active_state
 
     @active_state.setter
@@ -407,10 +436,33 @@ class InputDevice:
         
     @property
     def value(self):
+        """
+        Returns the current value of the device. This is either :data:`True` 
+        or :data:`False` depending on the value of :attr:`active_state`.
+        """
         return self._read()
 
 class DigitalInputDevice(InputDevice):
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
+        """
+        :param int pin:
+            The pin that the device is connected to.
+
+        :param bool pull_up:
+            If :data:`True` (the default), the device will be pulled up to
+            HIGH. If :data:`False`, the device will be pulled down to LOW.
+
+        :param bool active_state:
+            If :data:`True` (the default), the device will return :data:`True`
+            if the pin is HIGH. If :data:`False`, the device will return
+            :data:`False` if the pin is LOW.
+
+        :param float bounce_time:
+            The bounce time for the device. If set, the device will ignore
+            any button presses that happen within the bounce time after a
+            button release. This is useful to prevent accidental button
+            presses from registering as multiple presses.
+        """
         super().__init__(active_state)
         self._pin = Pin(
             pin,
@@ -497,13 +549,27 @@ class DigitalInputDevice(InputDevice):
         
 class Switch(DigitalInputDevice):
     def __init__(self, pin, pull_up=True, bounce_time=0.02):
+        """
+        :param int pin:
+            The pin that the device is connected to.
+
+        :param bool pull_up:
+            If :data:`True` (the default), the device will be pulled up to
+            HIGH. If :data:`False`, the device will be pulled down to LOW.
+
+        :param float bounce_time:
+            The bounce time for the device. If set, the device will ignore
+            any button presses that happen within the bounce time after a
+            button release. This is useful to prevent accidental button
+            presses from registering as multiple presses. Defaults to 0.02 
+            seconds.
+        """
         super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
 
 Switch.is_closed = Switch.is_active
 Switch.is_open = Switch.is_inactive
 Switch.when_closed = Switch.when_activated
 Switch.when_opened = Switch.when_deactivated
-
 
 class Button(Switch):
     pass
