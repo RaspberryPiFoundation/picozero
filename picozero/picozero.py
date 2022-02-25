@@ -443,26 +443,26 @@ class InputDevice:
         return self._read()
 
 class DigitalInputDevice(InputDevice):
+    """
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool pull_up:
+        If :data:`True` (the default), the device will be pulled up to
+        HIGH. If :data:`False`, the device will be pulled down to LOW.
+
+    :param bool active_state:
+        If :data:`True` (the default), the device will return :data:`True`
+        if the pin is HIGH. If :data:`False`, the device will return
+        :data:`False` if the pin is LOW.
+
+    :param float bounce_time:
+        The bounce time for the device. If set, the device will ignore
+        any button presses that happen within the bounce time after a
+        button release. This is useful to prevent accidental button
+        presses from registering as multiple presses.
+    """
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
-        """
-        :param int pin:
-            The pin that the device is connected to.
-
-        :param bool pull_up:
-            If :data:`True` (the default), the device will be pulled up to
-            HIGH. If :data:`False`, the device will be pulled down to LOW.
-
-        :param bool active_state:
-            If :data:`True` (the default), the device will return :data:`True`
-            if the pin is HIGH. If :data:`False`, the device will return
-            :data:`False` if the pin is LOW.
-
-        :param float bounce_time:
-            The bounce time for the device. If set, the device will ignore
-            any button presses that happen within the bounce time after a
-            button release. This is useful to prevent accidental button
-            presses from registering as multiple presses.
-        """
         super().__init__(active_state)
         self._pin = Pin(
             pin,
@@ -520,14 +520,23 @@ class DigitalInputDevice(InputDevice):
                     
     @property
     def is_active(self):
+        """
+        Returns :data:`True` if the device is active.
+        """
         return bool(self.value)
 
     @property
     def is_inactive(self):
+        """
+        Returns :data:`True` if the device is inactive.
+        """
         return not bool(self.value)
     
     @property
     def when_activated(self):
+        """
+        Returns a :samp:`callback` that will be called when the device is activated.
+        """
         return self._when_activated
     
     @when_activated.setter
@@ -536,6 +545,9 @@ class DigitalInputDevice(InputDevice):
         
     @property
     def when_deactivated(self):
+        """
+        Returns a :samp:`callback` that will be called when the device is deactivated.
+        """
         return self._when_deactivated
     
     @when_activated.setter
@@ -543,27 +555,31 @@ class DigitalInputDevice(InputDevice):
         self._when_deactivated = value
     
     def close(self):
+        """
+        Closes the device and releases any resources. Once closed, the device
+        can no longer be used.
+        """
         self._pin.irq(handler=None)
         self._pin = None
         
         
 class Switch(DigitalInputDevice):
-    def __init__(self, pin, pull_up=True, bounce_time=0.02):
-        """
-        :param int pin:
-            The pin that the device is connected to.
+    """
+    :param int pin:
+        The pin that the device is connected to.
 
-        :param bool pull_up:
-            If :data:`True` (the default), the device will be pulled up to
-            HIGH. If :data:`False`, the device will be pulled down to LOW.
+    :param bool pull_up:
+        If :data:`True` (the default), the device will be pulled up to
+        HIGH. If :data:`False`, the device will be pulled down to LOW.
 
-        :param float bounce_time:
-            The bounce time for the device. If set, the device will ignore
-            any button presses that happen within the bounce time after a
-            button release. This is useful to prevent accidental button
-            presses from registering as multiple presses. Defaults to 0.02 
-            seconds.
-        """
+    :param float bounce_time:
+        The bounce time for the device. If set, the device will ignore
+        any button presses that happen within the bounce time after a
+        button release. This is useful to prevent accidental button
+        presses from registering as multiple presses. Defaults to 0.02 
+        seconds.
+    """
+    def __init__(self, pin, pull_up=True, bounce_time=0.02): 
         super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
 
 Switch.is_closed = Switch.is_active
