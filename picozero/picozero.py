@@ -829,51 +829,130 @@ Thermistor = TemperatureSensor
 
 class PWMBuzzer(PWMOutputDevice):
     
-    def __init__(self, pin, freq=440, active_high=True, initial_value=False, duty_factor=1023):    
+    NOTES = {'b0': 31, 'c1': 33, 'c#1': 35, 'd1': 37, 'd#1': 39, 'e1': 41, 'f1': 44, 'f#1': 46, 'g1': 49,'g#1': 52, 'a1': 55,
+             'a#1': 58, 'b1': 62, 'c2': 65, 'c#2': 69, 'd2': 73, 'd#2': 78,
+    'e2': 82, 'f2': 87, 'f#2': 93, 'g2': 98, 'g#2': 104, 'a2': 110, 'a#2': 117, 'b2': 123,
+    'c3': 131, 'c#3': 139, 'd3': 147, 'd#3': 156, 'e3': 165, 'f3': 175, 'f#3': 185, 'g3': 196, 'g#3': 208, 'a3': 220, 'a#3': 233, 'b3': 247,
+    'c4': 262, 'c#4': 277, 'd4': 294, 'd#4': 311, 'e4': 330, 'f4': 349, 'f#4': 370, 'g4': 392, 'g#4': 415, 'a4': 440,'a#4': 466,'b4': 494,
+    'c5': 523, 'c#5': 554, 'd5': 587, 'd#5': 622, 'e5': 659, 'f5': 698, 'f#5': 740, 'g5': 784, 'g#5': 831, 'a5': 880, 'a#5': 932, 'b5': 988,
+    'c6': 1047, 'c#6': 1109, 'd6': 1175, 'd#6': 1245, 'e6': 1319, 'f6': 1397, 'f#6': 1480, 'g6': 1568, 'g#6': 1661, 'a6': 1760, 'a#6': 1865, 'b6': 1976,
+    'c7': 2093, 'c#7': 2217, 'd7': 2349, 'd#7': 2489,
+    'e7': 2637, 'f7': 2794, 'f#7': 2960, 'g7': 3136, 'g#7': 3322, 'a7': 3520, 'a#7': 3729, 'b7': 3951,
+    'c8': 4186, 'c#8': 4435, 'd8': 4699, 'd#8': 4978 }
+    
+    def __init__(self, pin, freq=440, active_high=True, initial_value=0, volume=0.5, bpm=120, duty_factor=1023):
+        self._bpm = bpm
+        self._volume = volume
         super().__init__(
             pin, 
             freq=freq, 
             duty_factor=duty_factor, 
             active_high=active_high, 
-            initial_value=initial_value)
+            initial_value= (freq, volume),
+            )
+    
+    @property
+    def bpm(self):
+        return self._bpm
+
+    @bpm.setter
+    def bpm(self, value):
+        self._bpm = value
         
-    def play(self, freq=440, duration=1, volume=1, wait=True):
+    @property
+    def volume(self):
+        return self._volume
 
-        self._pwm.freq(freq)
+    @volume.setter
+    def volume(self, value):
+        self._volume = value
+        
+    @property
+    def value(self):
+        return tuple(self._pwm.freq(), self.volume)
 
-        if volume is not None:
-            self.value = volume
-
-        if duration is not None:
-            if wait:
-                sleep(duration)
-                self.off()
+    @value.setter
+    def value(self, value):
+        self._stop_change()
+        self._write(value)   
+           
+    def _write(self, value):        
+        if value == 0 or value is None or value == '':           
+            volume = 0
+        else:
+            if type(value) is not tuple:
+                value = (value, self.volume)
+                
+            (freq, volume) = value
+            freq = self._to_freq(freq)
+            
+            if freq is not None and freq is not '' and freq !=0:
+                self._pwm.freq(freq)
             else:
-                self._timer.init(period=int(duration * 1000), mode=Timer.ONE_SHOT, callback=self._stop)
-       
+                volume = 0
+                
+        super()._write(volume)
+                    
+    def pitch(self, freq=440, duration=1, volume=1, wait=True):
+        if duration is None:
+            self.value = (freq, volume)
+        else:
+            self.off()
+            self._start_change(lambda : iter([((freq, volume), duration)]), 1, wait)
+        
+    def _to_freq(self, freq):
+        if freq is not None and freq is not '' and freq != 0: 
+            if type(freq) is str:
+                return int(self.NOTES[freq])
+            elif freq <= 128 and freq > 0: # MIDI
+                midi_factor = 2**(1/12)
+                return int(440 * midi_factor ** (freq - 69))
+            else:
+                return freq
+        else:
+            return None
+                
+    def to_seconds(self, duration):
+        return (duration * 60 / self._bpm) 
+                
+    def play(self, tune=440, duration=4, volume=1, n=1, wait=True, multiplier=0.9):
+        
+        if type(tune) is not list: # use note and duration, no generator
+            duration = self.to_seconds(duration * multiplier)
+            self.pitch(tune, duration, volume, wait)  
+        elif type(tune[0]) is not list: # single note don't use a generator
+            duration = self.to_seconds(tune[1] * multiplier)
+            self.pitch(tune[0], duration, volume, wait) #, volume, multiplier, wait) 
+        else: # tune with multiple notes
+            def tune_generator():
+                for next in tune:
+                    note = next[0]
+                    if len(next) == 2:
+                        duration = self.to_seconds(float(next[1]))
+                    if note == '' or note is None:
+                        yield ((None, 0), duration)            
+                    else:
+                        yield ((note, volume), duration * multiplier)
+                        yield ((None, 0), duration * (1 - multiplier))
+
+            self.off()
+            self._start_change(tune_generator, n, wait)
+         
     def _stop(self, timer_obj=None):
-        self.stop()
+        self.off()
                 
-    def on(self, freq=None):
+    def on(self, freq=440, volume=1):
         if freq is not None:
-            self._pwm.freq(freq)
+            self.value = (freq, volume)
+        
+    def __del__(self):
+        self.off()
+        super().__del__()
 
-        self.value = 1
-
-    def stop(self):
-        self._timer.deinit()
-        self.value = 0
-                
-    def close(self):
-        self.stop()
-        super().close()
-
-PWMBuzzer.volume = PWMBuzzer.value
 PWMBuzzer.beep = PWMBuzzer.blink
 
-def Speaker(pin, use_tones=True, active_high=True, initial_value=False):
+def Speaker(pin, use_tones=True, active_high=True, volume=1, initial_value=False, bpm=120):
     if use_tones:
-        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=initial_value)
+        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=volume, bpm=bpm)
     else:
-        return Buzzer(pin, active_high=active_high, initial_value=initial_value)
-    
+        return Buzzer(pin, active_high=active_high, initial_value=False)
