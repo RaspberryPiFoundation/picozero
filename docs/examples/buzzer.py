@@ -1,4 +1,4 @@
-# Active Buzzer that plays a not when powered
+# Active Buzzer that plays a note when powered
 from time import sleep
 from picozero import Buzzer
 

@@ -1,7 +1,7 @@
 from picozero import Button, pico_led
 from time import sleep
 
-button = Button(17)
+button = Button(18)
 
 def led_on_off():
     pico_led.on()

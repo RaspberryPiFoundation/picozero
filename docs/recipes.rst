@@ -82,7 +82,6 @@ Create a pulse effect:
 
 .. literalinclude:: examples/led_pulse.py
 
-
 Button
 ------
 
@@ -99,7 +98,7 @@ Run a function every time a :class:`Button` is pressed:
 
 .. note::
 
-    Note that the line ``button.when_pressed = led_on_off`` does not run the
+    The line ``button.when_pressed = led_on_off`` does not run the
     function ``led_on_off``, rather it creates a reference to the function to be
     called when the button is pressed. Accidental use of ``button.when_pressed
     = led_on_off()`` would set the ``when_pressed`` action to :data:`None` (the
@@ -113,13 +112,36 @@ Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is
 RGBLED
 ------
 
-Setting colours with an :class:`RGBLED`:
+Set colours with an :class:`RGBLED`:
 
 .. literalinclude:: examples/rgb_led.py
 
-Using :meth:`~picozero.RGBLED.toggle` and :meth:`~picozero.RGBLED.invert`:
+Use :meth:`~picozero.RGBLED.toggle` and :meth:`~picozero.RGBLED.invert`:
 
 .. literalinclude:: examples/rgb_toggle_invert.py
+
+Blink
+~~~~~
+
+Use :meth:`~picozero.RGBLED.blink` blink to change between colours. You can control which colours are used and how long the LED is set to each colour. The colour `(0, 0, 0)` represents off. 
+
+You can control whether :meth:`~picozero.RGBLED.blink` runs a fixed number of times and whether it waits until it has finished or returns immediately so other code can run.
+
+.. literalinclude:: examples/rgb_blink.py
+
+Pulse
+~~~~~
+
+Use :meth:`~picozero.RGBLED.pulse` to gradually change the LED between colours. The default will pulse between red and off, then green and off, then blue and off. 
+
+.. literalinclude:: examples/rgb_pulse.py
+
+Cycle
+~~~~~
+
+The default for :meth:`~picozero.RGBLED.cycle` is to cycle from red to green, then green to blue, then blue to red. 
+
+.. literalinclude:: examples/rgb_cycle.py
 
 Potentiometer
 ---------------
@@ -146,6 +168,20 @@ Speaker
 Control a passive buzzer or speaker that can play different tones or frequencies:
 
 .. literalinclude:: examples/speaker.py
+
+Play a tune
+~~~~~~~~~~~
+
+Play a tune of note names and durations in beats: 
+
+.. literalinclude:: examples/speaker_tune.py
+
+Play individual notes
+~~~~~~~~~~~~~~~~~~~~~
+
+Play individual notes and control the timing or perform another action:
+
+.. literalinclude:: examples/speaker_notes.py
 
 Internal Temperature Sensor
 ---------------------------

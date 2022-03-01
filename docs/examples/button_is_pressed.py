@@ -1,7 +1,7 @@
 from picozero import Button
 from time import sleep
 
-button = Button(17)
+button = Button(18)
 
 while True:
     if button.is_pressed:
