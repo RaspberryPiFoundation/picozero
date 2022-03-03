@@ -35,33 +35,51 @@ class ValueChange:
         
         self._timer = Timer()
         self._running = True
-        self._set_value()
+        self._wait = wait
         
-        while wait and self._running:
-            sleep(0.001)
+        self._set_value()
             
     def _set_value(self, timer_obj=None):
-        
-        try:
-            if self._running:
-                next_seq = next(self._gen)
+        if self._wait:
+            # wait for the exection to end
+            next_seq = self._get_value()
+            while next_seq is not None:
                 value, seconds = next_seq
-        
+                
+                self._output_device._write(value)
+                sleep(seconds)
+                
+                next_seq = self._get_value()
+                
+        else:
+            # run the timer
+            next_seq = self._get_value()
+            if next_seq is not None:
+                value, seconds = next_seq
+                
                 self._output_device._write(value)            
                 self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
+
+        if next_seq is None:
+            # the sequence has finished, set the output to 0
+            self._output_device.value = 0
+            self._running = False
+                
+    def _get_value(self):
+        try:
+            return next(self._gen)
             
         except StopIteration:
             
             self._n = self._n - 1 if self._n is not None else None
             if self._n == 0:
-                # its the end, set the value to 0 and stop running
-                self._output_device.value = 0
-                self._running = False
+                # its the end, return None
+                return None
             else:
                 # recreate the generator and start again
                 self._gen = self._generator()
-                self._set_value()
-            
+                return next(self._gen)
+        
     def stop(self):
         self._running = False
         self._timer.deinit()
