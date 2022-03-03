@@ -840,24 +840,15 @@ class PWMBuzzer(PWMOutputDevice):
     'e7': 2637, 'f7': 2794, 'f#7': 2960, 'g7': 3136, 'g#7': 3322, 'a7': 3520, 'a#7': 3729, 'b7': 3951,
     'c8': 4186, 'c#8': 4435, 'd8': 4699, 'd#8': 4978 }
     
-    def __init__(self, pin, freq=440, active_high=True, initial_value=0, volume=0.5, bpm=120, duty_factor=1023):
-        self._bpm = bpm
+    def __init__(self, pin, freq=440, active_high=True, initial_value=0, volume=1, duty_factor=1023):
         self._volume = volume
         super().__init__(
             pin, 
             freq=freq, 
             duty_factor=duty_factor, 
             active_high=active_high, 
-            initial_value= (freq, volume),
+            initial_value= 0,
             )
-    
-    @property
-    def bpm(self):
-        return self._bpm
-
-    @bpm.setter
-    def bpm(self, value):
-        self._bpm = value
         
     @property
     def volume(self):
@@ -876,7 +867,7 @@ class PWMBuzzer(PWMOutputDevice):
         self._stop_change()
         self._write(value)   
            
-    def _write(self, value):        
+    def _write(self, value):
         if value == 0 or value is None or value == '':           
             volume = 0
         else:
@@ -893,11 +884,11 @@ class PWMBuzzer(PWMOutputDevice):
                 
         super()._write(volume)
                     
-    def pitch(self, freq=440, duration=1, volume=1, wait=True):
+    def _pitch(self, freq=440, duration=1, volume=1, wait=True):
+        self.off()
         if duration is None:
             self.value = (freq, volume)
         else:
-            self.off()
             self._start_change(lambda : iter([((freq, volume), duration)]), 1, wait)
         
     def _to_freq(self, freq):
@@ -912,28 +903,22 @@ class PWMBuzzer(PWMOutputDevice):
         else:
             return None
                 
-    def to_seconds(self, duration):
-        return (duration * 60 / self._bpm) 
-                
-    def play(self, tune=440, duration=4, volume=1, n=1, wait=True, multiplier=0.9):
-        
+    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):        
         if type(tune) is not list: # use note and duration, no generator
-            duration = self.to_seconds(duration * multiplier)
-            self.pitch(tune, duration, volume, wait)  
+            self._pitch(tune, duration, volume, wait)  
         elif type(tune[0]) is not list: # single note don't use a generator
-            duration = self.to_seconds(tune[1] * multiplier)
-            self.pitch(tune[0], duration, volume, wait) #, volume, multiplier, wait) 
+            self._pitch(tune[0], tune[1], volume, wait)
         else: # tune with multiple notes
             def tune_generator():
                 for next in tune:
                     note = next[0]
                     if len(next) == 2:
-                        duration = self.to_seconds(float(next[1]))
+                        duration = float(next[1])
                     if note == '' or note is None:
                         yield ((None, 0), duration)            
-                    else:
-                        yield ((note, volume), duration * multiplier)
-                        yield ((None, 0), duration * (1 - multiplier))
+                    else: # leave a gap between notes
+                        yield ((note, volume), duration * 0.9)
+                        yield ((None, 0), duration * 0.1)
 
             self.off()
             self._start_change(tune_generator, n, wait)
@@ -951,8 +936,8 @@ class PWMBuzzer(PWMOutputDevice):
 
 PWMBuzzer.beep = PWMBuzzer.blink
 
-def Speaker(pin, use_tones=True, active_high=True, volume=1, initial_value=False, bpm=120):
+def Speaker(pin, use_tones=True, active_high=True, volume=1, initial_value=False):
     if use_tones:
-        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=volume, bpm=bpm)
+        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=volume)
     else:
         return Buzzer(pin, active_high=active_high, initial_value=False)
