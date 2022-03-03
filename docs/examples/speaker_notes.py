@@ -1,20 +1,18 @@
 from picozero import Speaker
 from time import sleep
 
-speaker = Speaker(5, bpm=120)
+speaker = Speaker(5)
 
-tetris = [ ['e4', 1], ['b3', 0.5], ['c4', 0.5], ['d4', 1], ['c4', 0.5], ['b3', 0.5],  ['a3', 1], ['a3', 0.5], ['c4', 0.5], ['e4', 1], ['d4', 0.5], ['c4', 0.5],
-           ['b3', 1.5], ['c4', 0.5], ['d4', 1], ['e4', 1], ['c4', 1], ['a3', 1], ['a3', 2]]
+BEAT = 0.4
 
-# Play 'Staccato' half length notes
-note_length = 0.5 # play notes for half a beat
-gap_length = 1 - note_length # leave half a beat between notes
+tetris = [ ['e4', BEAT], ['b3', BEAT / 2], ['c4', BEAT / 2], ['d4', BEAT], ['c4', BEAT / 2], ['b3', BEAT / 2],  
+           ['a3', BEAT], ['a3', BEAT / 2], ['c4', BEAT / 2], ['e4', BEAT ],['d4', BEAT / 2], ['c4', BEAT / 2], 
+           ['b3', BEAT * 1.5], ['c4', BEAT / 2], ['d4', BEAT], ['e4', BEAT], ['c4', BEAT], ['a3', BEAT], ['a3', BEAT * 2]]
 
 try:
     for note in tetris:
-        speaker.play(note, multiplier=note_length)
-        gap = speaker.to_seconds(note[1]) * gap_length # leave a gap between notes
-        sleep(gap)
+        speaker.play(note)
+        sleep(0.1) # leave a gap between notes
        
 finally: # Turn speaker off if interrupted
     speaker.off()
