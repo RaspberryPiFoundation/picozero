@@ -612,8 +612,44 @@ Button.is_pressed = Button.is_active
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated 
 
-
 class RGBLED(OutputDevice):
+    """
+    Extends :class:`OutputDevice` and represents a full color LED component (composed
+    of red, green, and blue LEDs).
+    Connect the common cathode (longest leg) to a ground pin; connect each of
+    the other legs (representing the red, green, and blue anodes) to any GP
+    pins.  You should use three limiting resistors (one per anode).
+    The following code will make the LED yellow::
+
+        from picozero import RGBLED
+        rgb = RGBLED(1, 2, 3)
+        rgb.color = (1, 1, 0)
+
+    0-255 colours are also supported::
+
+        rgb.color = (255, 255, 0)
+
+    :type red: int
+    :param red:
+        The GP pin that controls the red component of the RGB LED. 
+    :type green: int
+    :param green:
+        The GP pin that controls the green component of the RGB LED.
+    :type blue: int
+    :param blue:
+        The GP pin that controls the blue component of the RGB LED.
+    :param bool active_high:
+        Set to :data:`True` (the default) for common cathode RGB LEDs. If you
+        are using a common anode RGB LED, set this to :data:`False`.
+    :type initial_value: ~colorzero.Color or tuple
+    :param initial_value:
+        The initial color for the RGB LED. Defaults to black ``(0, 0, 0)``.
+    :param bool pwm:
+        If :data:`True` (the default), construct :class:`PWMLED` instances for
+        each component of the RGBLED. If :data:`False`, construct 
+        :class:`DigitalLED` instances.
+    :type pin_factory: Factory or None
+    """
     def __init__(self, red=None, green=None, blue=None, active_high=True,
                  initial_value=(0, 0, 0), pwm=True):
         self._leds = ()
@@ -640,6 +676,13 @@ class RGBLED(OutputDevice):
         
     @property
     def value(self):
+        """
+        Represents the color of the LED as an RGB 3-tuple of ``(red, green,
+        blue)`` where each value is between 0 and 1 if *pwm* was :data:`True`
+        when the class was constructed (and only 0 or 1 if not).
+        For example, red would be ``(1, 0, 0)`` and yellow would be ``(1, 1,
+        0)``, while orange would be ``(1, 0.5, 0)``.
+        """
         return tuple(led.brightness for led in self._leds)
 
     @value.setter
@@ -649,6 +692,10 @@ class RGBLED(OutputDevice):
 
     @property
     def is_active(self):
+        """
+        Returns :data:`True` if the LED is currently active (not black) and
+        :data:`False` otherwise.
+        """
         return self.value != (0, 0, 0)
 
     is_lit = is_active
@@ -661,6 +708,13 @@ class RGBLED(OutputDevice):
     
     @property
     def color(self):
+        """
+        Represents the color of the LED as an RGB 3-tuple of ``(red, green,
+        blue)`` where each value is between 0 and 255 if *pwm* was :data:`True`
+        when the class was constructed (and only 0 or 255 if not).
+        For example, red would be ``(255, 0, 0)`` and yellow would be ``(255, 255,
+        0)``, while orange would be ``(255, 127, 0)``.
+        """
         return tuple(self._to_255(v) for v in self.value)
 
     @color.setter
@@ -669,6 +723,10 @@ class RGBLED(OutputDevice):
 
     @property
     def red(self):
+        """
+        Represents the red component of the LED as value between 0 and 255 if *pwm* was :data:`True`
+        when the class was constructed (and only 0 or 255 if not).
+        """
         return self._to_255(self.value[0])
 
     @red.setter
@@ -678,6 +736,10 @@ class RGBLED(OutputDevice):
 
     @property
     def green(self):
+        """
+        Represents the green component of the LED as value between 0 and 255 if *pwm* was :data:`True`
+        when the class was constructed (and only 0 or 255 if not).
+        """
         return self._to_255(self.value[1])
 
     @green.setter
@@ -687,6 +749,10 @@ class RGBLED(OutputDevice):
 
     @property
     def blue(self):
+        """
+        Represents the blue component of the LED as value between 0 and 255 if *pwm* was :data:`True`
+        when the class was constructed (and only 0 or 255 if not).
+        """
         return self._to_255(self.value[2])
 
     @blue.setter
@@ -695,13 +761,27 @@ class RGBLED(OutputDevice):
         self.value = r, g, self._from_255(value)
 
     def on(self):
+        """
+        Turn the LED on. This equivalent to setting the LED color to white
+        ``(1, 1, 1)``.
+        """
         self.value = (1, 1, 1)
 
     def invert(self):
+        """
+        Invert the state of the device. If the device is currently off
+        (:attr:`value` is ``(0, 0, 0)``), this changes it to "fully" on
+        (:attr:`value` is ``(1, 1, 1)``).  If the device has a specific color,
+        this method inverts the color.
+        """
         r, g, b = self.value
         self.value = (1 - r, 1 - g, 1 - b)
         
     def toggle(self):
+        """
+        Toggle the state of the device. If the device has a specific colour then save that colour and turn off. 
+        If the device is off, change it to the last colour or, if none, to fully on (:attr:`value` is ``(1, 1, 1)``).
+        """
         if self.value == (0, 0, 0):
             self.value = self._last or (1, 1, 1)
         else:
@@ -709,7 +789,27 @@ class RGBLED(OutputDevice):
             self.value = (0, 0, 0)
             
     def blink(self, on_times=1, fade_times=0, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, wait=False, fps=25):
-        
+        """
+        Make the device blink between colours repeatedly.
+
+        :param float on_times:
+            Single value or tuple of numbers of seconds to stay on each colour. Defaults to 1 second. 
+        :param float fade_times:
+            Sinlge value or tuple of times to fade between each colour. Must be 0 if
+            *pwm* was :data:`False` when the class was constructed.
+        :type colors: tuple
+            Tuple of colours to blink between, use ``(0, 0, 0)`` for off.
+        :param colors:
+            The colors to blink between. Defaults to red, green, blue.
+        :type n: int or None
+        :param n:
+            Number of times to blink; :data:`None` (the default) means forever.
+        :param bool wait:
+            If :data:`False` (the default), use a Timer to manage blinking
+            continue blinking and return immediately. If :data:`False`, only
+            return when the blink is finished (warning: the default value of
+            *n* will result in this method never returning).
+        """    
         self.off()
         
         if type(on_times) is not tuple:
@@ -746,17 +846,16 @@ class RGBLED(OutputDevice):
             
     def pulse(self, fade_times=1, colors=((0, 0, 0), (1, 0, 0), (0, 0, 0), (0, 1, 0), (0, 0, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
-        Make the device fade in and out repeatedly.
-        :param float fade_in_times:
-            Number of seconds to spend fading in. Defaults to 1.
+        Make the device fade between colours repeatedly.
+
+        :param float fade_times:
+            Single value or tuple of numbers of seconds to spend fading. Defaults to 1.
         :param float fade_out_time:
             Number of seconds to spend fading out. Defaults to 1.
-        :type on_color: ~colorzero.Color or tuple
+        :type colors: tuple
         :param on_color:
-            The color to use when the LED is "on". Defaults to white.
+            Tuple of colours to pulse between in order. Defaults to red, off, green, off, blue, off. 
         :type off_color: ~colorzero.Color or tuple
-        :param off_color:
-            The color to use when the LED is "off". Defaults to black.
         :type n: int or None
         :param n:
             Number of times to pulse; :data:`None` (the default) means forever.
@@ -767,19 +866,17 @@ class RGBLED(OutputDevice):
     def cycle(self, fade_times=1, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
         Make the device fade in and out repeatedly.
-        :param float fade_in_time:
-            Number of seconds to spend fading in. Defaults to 1.
-        :param float fade_out_time:
+
+        :param float fade_times:
+            Single value or tuple of numbers of seconds to spend fading between colours. Defaults to 1.
+        :param float fade_times:
             Number of seconds to spend fading out. Defaults to 1.
-        :type on_color: ~colorzero.Color or tuple
+        :type colors: tuple
         :param on_color:
-            The color to use when the LED is "on". Defaults to white.
-        :type off_color: ~colorzero.Color or tuple
-        :param off_color:
-            The color to use when the LED is "off". Defaults to black.
+            Tuple of colours to cycle between. Defaults to red, green, blue. 
         :type n: int or None
         :param n:
-            Number of times to pulse; :data:`None` (the default) means forever.
+            Number of times to cycle; :data:`None` (the default) means forever.
         """
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
@@ -895,7 +992,7 @@ class PWMBuzzer(PWMOutputDevice):
             (freq, volume) = value
             freq = self._to_freq(freq)
             
-            if freq is not None and freq is not '' and freq !=0:
+            if freq is not None and freq != '' and freq != 0:
                 self._pwm.freq(freq)
             else:
                 volume = 0
@@ -910,7 +1007,7 @@ class PWMBuzzer(PWMOutputDevice):
             self._start_change(lambda : iter([((freq, volume), duration)]), 1, wait)
         
     def _to_freq(self, freq):
-        if freq is not None and freq is not '' and freq != 0: 
+        if freq is not None and freq != '' and freq != 0: 
             if type(freq) is str:
                 return int(self.NOTES[freq])
             elif freq <= 128 and freq > 0: # MIDI
