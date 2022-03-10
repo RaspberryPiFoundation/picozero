@@ -990,7 +990,7 @@ class PWMBuzzer(PWMOutputDevice):
                 value = (value, self.volume)
                 
             (freq, volume) = value
-            freq = self._to_freq(freq)
+            freq = self._to_freq(freq) if freq != 1 else 440
             
             if freq is not None and freq != '' and freq != 0:
                 self._pwm.freq(freq)
