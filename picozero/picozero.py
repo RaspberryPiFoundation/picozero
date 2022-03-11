@@ -286,6 +286,21 @@ class PWMOutputDevice(OutputDevice):
         self._pin = None
     
 class PWMLED(PWMOutputDevice):
+    """
+    Represents an LED driven by a PWM pin whose brightness can be changed.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the LED will be off initially.  If
+        :data:`True`, the LED will be switched on initially.
+    """
     def __init__(self, pin, active_high=True, initial_value=False):
         self._brightness = 1
         super().__init__(pin=pin,
@@ -854,6 +869,9 @@ class InputDevice:
 
 class DigitalInputDevice(InputDevice):
     """
+    Represents a generic input device with digital functionality e.g. buttons 
+    which can be either active or inactive.
+
     :param int pin:
         The pin that the device is connected to.
 
@@ -978,6 +996,8 @@ class DigitalInputDevice(InputDevice):
 
 class Switch(DigitalInputDevice):
     """
+    Represents a toggle switch which is either open or closed.
+
     :param int pin:
         The pin that the device is connected to.
 
@@ -1001,6 +1021,23 @@ Switch.when_closed = Switch.when_activated
 Switch.when_opened = Switch.when_deactivated
 
 class Button(Switch):
+    """
+    Represents a push button which can be either pressed or released.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool pull_up:
+        If :data:`True` (the default), the device will be pulled up to
+        HIGH. If :data:`False`, the device will be pulled down to LOW.
+
+    :param float bounce_time:
+        The bounce time for the device. If set, the device will ignore
+        any button presses that happen within the bounce time after a
+        button release. This is useful to prevent accidental button
+        presses from registering as multiple presses. Defaults to 0.02 
+        seconds.
+    """
     pass
 
 Button.is_pressed = Button.is_active
