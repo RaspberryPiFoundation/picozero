@@ -302,7 +302,7 @@ class PWMLED(PWMOutputDevice):
     def _read(self):
         return 1 if super()._read() > 0 else 0
 
-    def blink(self, on_time=1, off_time=None, fade_in_time=0, fade_out_time=None, n=None, wait=False, fps=25):
+    def blink(self, on_time=1, off_time=None, n=None, wait=False, fade_in_time=0, fade_out_time=None, fps=25):
         """
         Make the device turn on and off repeatedly.
         
@@ -313,16 +313,16 @@ class PWMLED(PWMOutputDevice):
             The length of time in seconds the device will be off. If `None`, 
             it will be the same as ``on_time``. Defaults to `None`.
 
+        :param int n:
+            The number of times to repeat the blink operation. If `None`, the 
+            device will continue blinking forever. The default is `None`.
+
         :param float fade_in_time:
             The length of time in seconds to spend fading in. Defaults to 0.
 
         :param float fade_out_time:
             The length of time in seconds to spend fading out. If `None`,
             it will be the same as ``fade_in_time``. Defaults to `None`.
-
-        :param int n:
-            The number of times to repeat the blink operation. If `None`, the 
-            device will continue blinking forever. The default is `None`.
 
         :param int fps:
            The frames per second that will be used to calculate the number of
