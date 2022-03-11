@@ -84,7 +84,11 @@ class ValueChange:
     def stop(self):
         self._running = False
         self._timer.deinit()
-        
+
+###############################################################################
+# OUTPUT DEVICES
+###############################################################################
+
 class OutputDevice:
     """
     Base class for output devices. 
@@ -384,8 +388,7 @@ class PWMLED(PWMOutputDevice):
     
         """
         self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, wait=wait, fps=fps)
-    
-# factory for returning an LED
+
 def LED(pin, use_pwm=True, active_high=True, initial_value=False):
     """
     Returns an instance of :class:`DigitalLED` or :class:`PWMLED` depending on
@@ -430,193 +433,120 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
 
 pico_led = LED(25)
 
-class InputDevice:
-    """
-    Base class for input devices.
-    """
-    def __init__(self, active_state=None):
-        self._active_state = active_state
-
+class PWMBuzzer(PWMOutputDevice):
+    
+    NOTES = {'b0': 31, 'c1': 33, 'c#1': 35, 'd1': 37, 'd#1': 39, 'e1': 41, 'f1': 44, 'f#1': 46, 'g1': 49,'g#1': 52, 'a1': 55,
+             'a#1': 58, 'b1': 62, 'c2': 65, 'c#2': 69, 'd2': 73, 'd#2': 78,
+    'e2': 82, 'f2': 87, 'f#2': 93, 'g2': 98, 'g#2': 104, 'a2': 110, 'a#2': 117, 'b2': 123,
+    'c3': 131, 'c#3': 139, 'd3': 147, 'd#3': 156, 'e3': 165, 'f3': 175, 'f#3': 185, 'g3': 196, 'g#3': 208, 'a3': 220, 'a#3': 233, 'b3': 247,
+    'c4': 262, 'c#4': 277, 'd4': 294, 'd#4': 311, 'e4': 330, 'f4': 349, 'f#4': 370, 'g4': 392, 'g#4': 415, 'a4': 440,'a#4': 466,'b4': 494,
+    'c5': 523, 'c#5': 554, 'd5': 587, 'd#5': 622, 'e5': 659, 'f5': 698, 'f#5': 740, 'g5': 784, 'g#5': 831, 'a5': 880, 'a#5': 932, 'b5': 988,
+    'c6': 1047, 'c#6': 1109, 'd6': 1175, 'd#6': 1245, 'e6': 1319, 'f6': 1397, 'f#6': 1480, 'g6': 1568, 'g#6': 1661, 'a6': 1760, 'a#6': 1865, 'b6': 1976,
+    'c7': 2093, 'c#7': 2217, 'd7': 2349, 'd#7': 2489,
+    'e7': 2637, 'f7': 2794, 'f#7': 2960, 'g7': 3136, 'g#7': 3322, 'a7': 3520, 'a#7': 3729, 'b7': 3951,
+    'c8': 4186, 'c#8': 4435, 'd8': 4699, 'd#8': 4978 }
+    
+    def __init__(self, pin, freq=440, active_high=True, initial_value=0, volume=1, duty_factor=1023):
+        self._volume = volume
+        super().__init__(
+            pin, 
+            freq=freq, 
+            duty_factor=duty_factor, 
+            active_high=active_high, 
+            initial_value= 0,
+            )
+        
     @property
-    def active_state(self):
-        """
-        Sets or returns the active state of the device. If :data:`None` (the default),
-        the device will return the value that the pin is set to. If
-        :data:`True`, the device will return :data:`True` if the pin is
-        HIGH. If :data:`False`, the device will return :data:`False` if the
-        pin is LOW.
-        """
-        return self._active_state
+    def volume(self):
+        return self._volume
 
-    @active_state.setter
-    def active_state(self, value):
-        self._active_state = True if value else False
-        self._inactive_state = False if value else True
+    @volume.setter
+    def volume(self, value):
+        self._volume = value
         
     @property
     def value(self):
-        """
-        Returns the current value of the device. This is either :data:`True` 
-        or :data:`False` depending on the value of :attr:`active_state`.
-        """
-        return self._read()
+        return tuple(self._pwm.freq(), self.volume)
 
-class DigitalInputDevice(InputDevice):
-    """
-    :param int pin:
-        The pin that the device is connected to.
-
-    :param bool pull_up:
-        If :data:`True` (the default), the device will be pulled up to
-        HIGH. If :data:`False`, the device will be pulled down to LOW.
-
-    :param bool active_state:
-        If :data:`True` (the default), the device will return :data:`True`
-        if the pin is HIGH. If :data:`False`, the device will return
-        :data:`False` if the pin is LOW.
-
-    :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any button presses that happen within the bounce time after a
-        button release. This is useful to prevent accidental button
-        presses from registering as multiple presses.
-    """
-    def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
-        super().__init__(active_state)
-        self._pin = Pin(
-            pin,
-            mode=Pin.IN,
-            pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN)
-        self._bounce_time = bounce_time
-        
-        if active_state is None:
-            self._active_state = False if pull_up else True
+    @value.setter
+    def value(self, value):
+        self._stop_change()
+        self._write(value)   
+           
+    def _write(self, value):
+        if value == 0 or value is None or value == '':           
+            volume = 0
         else:
-            self._active_state = active_state
-        
-        self._state = self._pin.value()
-        
-        self._when_activated = None
-        self._when_deactivated = None
-        
-        # setup interupt
-        self._pin.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
-        
-    def _state_to_value(self, state):
-        return int(bool(state) == self._active_state)
-    
-    def _read(self):
-        return self._state_to_value(self._state)
-
-    def _pin_change(self, p):
-        # turn off the interupt
-        p.irq(handler=None)
-        
-        last_state = p.value()
-        
-        if self._bounce_time is not None:
-            # wait for stability
-            stop = ticks_ms() + (self._bounce_time * 1000)
-            while ticks_ms() < stop:
-                # keep checking, reset the stop if the value changes
-                if p.value() != last_state:
-                    stop = ticks_ms() + self._bounce_time
-                    last_state = p.value()
-        
-        # re-enable the interupt
-        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
-        
-        # did the value actually changed? 
-        if self._state != last_state:
-            # set the state
-            self._state = self._pin.value()
-            
-            def schedule_callback(callback):
-                callback()
-            
-            # manage call backs
-            if self.value and self._when_activated is not None:
-                schedule(schedule_callback, self._when_activated)
+            if type(value) is not tuple:
+                value = (value, self.volume)
                 
-            elif not self.value and self._when_deactivated is not None:
-                schedule(schedule_callback, self._when_deactivated)
+            (freq, volume) = value
+            freq = self._to_freq(freq) if freq != 1 else 440
+            
+            if freq is not None and freq != '' and freq != 0:
+                self._pwm.freq(freq)
+            else:
+                volume = 0
+                
+        super()._write(volume)
                     
-    @property
-    def is_active(self):
-        """
-        Returns :data:`True` if the device is active.
-        """
-        return bool(self.value)
-
-    @property
-    def is_inactive(self):
-        """
-        Returns :data:`True` if the device is inactive.
-        """
-        return not bool(self.value)
-    
-    @property
-    def when_activated(self):
-        """
-        Returns a :samp:`callback` that will be called when the device is activated.
-        """
-        return self._when_activated
-    
-    @when_activated.setter
-    def when_activated(self, value):
-        self._when_activated = value
+    def _pitch(self, freq=440, duration=1, volume=1, wait=True):
+        self.off()
+        if duration is None:
+            self.value = (freq, volume)
+        else:
+            self._start_change(lambda : iter([((freq, volume), duration)]), 1, wait)
         
-    @property
-    def when_deactivated(self):
-        """
-        Returns a :samp:`callback` that will be called when the device is deactivated.
-        """
-        return self._when_deactivated
-    
-    @when_activated.setter
-    def when_deactivated(self, value):
-        self._when_deactivated = value
-    
-    def close(self):
-        """
-        Closes the device and releases any resources. Once closed, the device
-        can no longer be used.
-        """
-        self._pin.irq(handler=None)
-        self._pin = None
+    def _to_freq(self, freq):
+        if freq is not None and freq != '' and freq != 0: 
+            if type(freq) is str:
+                return int(self.NOTES[freq])
+            elif freq <= 128 and freq > 0: # MIDI
+                midi_factor = 2**(1/12)
+                return int(440 * midi_factor ** (freq - 69))
+            else:
+                return freq
+        else:
+            return None
+                
+    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):        
+        if type(tune) is not list: # use note and duration, no generator
+            self._pitch(tune, duration, volume, wait)  
+        elif type(tune[0]) is not list: # single note don't use a generator
+            self._pitch(tune[0], tune[1], volume, wait)
+        else: # tune with multiple notes
+            def tune_generator():
+                for next in tune:
+                    note = next[0]
+                    if len(next) == 2:
+                        duration = float(next[1])
+                    if note == '' or note is None:
+                        yield ((None, 0), duration)            
+                    else: # leave a gap between notes
+                        yield ((note, volume), duration * 0.9)
+                        yield ((None, 0), duration * 0.1)
+
+            self.off()
+            self._start_change(tune_generator, n, wait)
+         
+    def _stop(self, timer_obj=None):
+        self.off()
+                
+    def on(self, freq=440, volume=1):
+        if freq is not None:
+            self.value = (freq, volume)
         
-        
-class Switch(DigitalInputDevice):
-    """
-    :param int pin:
-        The pin that the device is connected to.
+    def __del__(self):
+        self.off()
+        super().__del__()
 
-    :param bool pull_up:
-        If :data:`True` (the default), the device will be pulled up to
-        HIGH. If :data:`False`, the device will be pulled down to LOW.
+PWMBuzzer.beep = PWMBuzzer.blink
 
-    :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any button presses that happen within the bounce time after a
-        button release. This is useful to prevent accidental button
-        presses from registering as multiple presses. Defaults to 0.02 
-        seconds.
-    """
-    def __init__(self, pin, pull_up=True, bounce_time=0.02): 
-        super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
-
-Switch.is_closed = Switch.is_active
-Switch.is_open = Switch.is_inactive
-Switch.when_closed = Switch.when_activated
-Switch.when_opened = Switch.when_deactivated
-
-class Button(Switch):
-    pass
-
-Button.is_pressed = Button.is_active
-Button.is_released = Button.is_inactive
-Button.when_pressed = Button.when_activated
-Button.when_released = Button.when_deactivated 
+def Speaker(pin, use_tones=True, active_high=True, volume=1, initial_value=False):
+    if use_tones:
+        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=volume)
+    else:
+        return Buzzer(pin, active_high=active_high, initial_value=False)
 
 class RGBLED(OutputDevice):
     """
@@ -887,6 +817,196 @@ class RGBLED(OutputDevice):
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
 
+###############################################################################
+# INPUT DEVICES
+###############################################################################
+
+class InputDevice:
+    """
+    Base class for input devices.
+    """
+    def __init__(self, active_state=None):
+        self._active_state = active_state
+
+    @property
+    def active_state(self):
+        """
+        Sets or returns the active state of the device. If :data:`None` (the default),
+        the device will return the value that the pin is set to. If
+        :data:`True`, the device will return :data:`True` if the pin is
+        HIGH. If :data:`False`, the device will return :data:`False` if the
+        pin is LOW.
+        """
+        return self._active_state
+
+    @active_state.setter
+    def active_state(self, value):
+        self._active_state = True if value else False
+        self._inactive_state = False if value else True
+        
+    @property
+    def value(self):
+        """
+        Returns the current value of the device. This is either :data:`True` 
+        or :data:`False` depending on the value of :attr:`active_state`.
+        """
+        return self._read()
+
+class DigitalInputDevice(InputDevice):
+    """
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool pull_up:
+        If :data:`True` (the default), the device will be pulled up to
+        HIGH. If :data:`False`, the device will be pulled down to LOW.
+
+    :param bool active_state:
+        If :data:`True` (the default), the device will return :data:`True`
+        if the pin is HIGH. If :data:`False`, the device will return
+        :data:`False` if the pin is LOW.
+
+    :param float bounce_time:
+        The bounce time for the device. If set, the device will ignore
+        any button presses that happen within the bounce time after a
+        button release. This is useful to prevent accidental button
+        presses from registering as multiple presses.
+    """
+    def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
+        super().__init__(active_state)
+        self._pin = Pin(
+            pin,
+            mode=Pin.IN,
+            pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN)
+        self._bounce_time = bounce_time
+        
+        if active_state is None:
+            self._active_state = False if pull_up else True
+        else:
+            self._active_state = active_state
+        
+        self._state = self._pin.value()
+        
+        self._when_activated = None
+        self._when_deactivated = None
+        
+        # setup interupt
+        self._pin.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
+        
+    def _state_to_value(self, state):
+        return int(bool(state) == self._active_state)
+    
+    def _read(self):
+        return self._state_to_value(self._state)
+
+    def _pin_change(self, p):
+        # turn off the interupt
+        p.irq(handler=None)
+        
+        last_state = p.value()
+        
+        if self._bounce_time is not None:
+            # wait for stability
+            stop = ticks_ms() + (self._bounce_time * 1000)
+            while ticks_ms() < stop:
+                # keep checking, reset the stop if the value changes
+                if p.value() != last_state:
+                    stop = ticks_ms() + self._bounce_time
+                    last_state = p.value()
+        
+        # re-enable the interupt
+        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
+        
+        # did the value actually changed? 
+        if self._state != last_state:
+            # set the state
+            self._state = self._pin.value()
+            
+            def schedule_callback(callback):
+                callback()
+            
+            # manage call backs
+            if self.value and self._when_activated is not None:
+                schedule(schedule_callback, self._when_activated)
+                
+            elif not self.value and self._when_deactivated is not None:
+                schedule(schedule_callback, self._when_deactivated)
+                    
+    @property
+    def is_active(self):
+        """
+        Returns :data:`True` if the device is active.
+        """
+        return bool(self.value)
+
+    @property
+    def is_inactive(self):
+        """
+        Returns :data:`True` if the device is inactive.
+        """
+        return not bool(self.value)
+    
+    @property
+    def when_activated(self):
+        """
+        Returns a :samp:`callback` that will be called when the device is activated.
+        """
+        return self._when_activated
+    
+    @when_activated.setter
+    def when_activated(self, value):
+        self._when_activated = value
+        
+    @property
+    def when_deactivated(self):
+        """
+        Returns a :samp:`callback` that will be called when the device is deactivated.
+        """
+        return self._when_deactivated
+    
+    @when_activated.setter
+    def when_deactivated(self, value):
+        self._when_deactivated = value
+    
+    def close(self):
+        """
+        Closes the device and releases any resources. Once closed, the device
+        can no longer be used.
+        """
+        self._pin.irq(handler=None)
+        self._pin = None
+
+class Switch(DigitalInputDevice):
+    """
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool pull_up:
+        If :data:`True` (the default), the device will be pulled up to
+        HIGH. If :data:`False`, the device will be pulled down to LOW.
+
+    :param float bounce_time:
+        The bounce time for the device. If set, the device will ignore
+        any button presses that happen within the bounce time after a
+        button release. This is useful to prevent accidental button
+        presses from registering as multiple presses. Defaults to 0.02 
+        seconds.
+    """
+    def __init__(self, pin, pull_up=True, bounce_time=0.02): 
+        super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
+
+Switch.is_closed = Switch.is_active
+Switch.is_open = Switch.is_inactive
+Switch.when_closed = Switch.when_activated
+Switch.when_opened = Switch.when_deactivated
+
+class Button(Switch):
+    pass
+
+Button.is_pressed = Button.is_active
+Button.is_released = Button.is_inactive
+Button.when_pressed = Button.when_activated
+Button.when_released = Button.when_deactivated 
 
 class AnalogInputDevice(InputDevice):
     def __init__(self, pin, active_state=True, threshold=0.5):
@@ -948,117 +1068,3 @@ pico_temp_sensor = TemperatureSensor(4, True, 0.5, pico_temp_conversion)
 TempSensor = TemperatureSensor
 Thermistor = TemperatureSensor
 
-class PWMBuzzer(PWMOutputDevice):
-    
-    NOTES = {'b0': 31, 'c1': 33, 'c#1': 35, 'd1': 37, 'd#1': 39, 'e1': 41, 'f1': 44, 'f#1': 46, 'g1': 49,'g#1': 52, 'a1': 55,
-             'a#1': 58, 'b1': 62, 'c2': 65, 'c#2': 69, 'd2': 73, 'd#2': 78,
-    'e2': 82, 'f2': 87, 'f#2': 93, 'g2': 98, 'g#2': 104, 'a2': 110, 'a#2': 117, 'b2': 123,
-    'c3': 131, 'c#3': 139, 'd3': 147, 'd#3': 156, 'e3': 165, 'f3': 175, 'f#3': 185, 'g3': 196, 'g#3': 208, 'a3': 220, 'a#3': 233, 'b3': 247,
-    'c4': 262, 'c#4': 277, 'd4': 294, 'd#4': 311, 'e4': 330, 'f4': 349, 'f#4': 370, 'g4': 392, 'g#4': 415, 'a4': 440,'a#4': 466,'b4': 494,
-    'c5': 523, 'c#5': 554, 'd5': 587, 'd#5': 622, 'e5': 659, 'f5': 698, 'f#5': 740, 'g5': 784, 'g#5': 831, 'a5': 880, 'a#5': 932, 'b5': 988,
-    'c6': 1047, 'c#6': 1109, 'd6': 1175, 'd#6': 1245, 'e6': 1319, 'f6': 1397, 'f#6': 1480, 'g6': 1568, 'g#6': 1661, 'a6': 1760, 'a#6': 1865, 'b6': 1976,
-    'c7': 2093, 'c#7': 2217, 'd7': 2349, 'd#7': 2489,
-    'e7': 2637, 'f7': 2794, 'f#7': 2960, 'g7': 3136, 'g#7': 3322, 'a7': 3520, 'a#7': 3729, 'b7': 3951,
-    'c8': 4186, 'c#8': 4435, 'd8': 4699, 'd#8': 4978 }
-    
-    def __init__(self, pin, freq=440, active_high=True, initial_value=0, volume=1, duty_factor=1023):
-        self._volume = volume
-        super().__init__(
-            pin, 
-            freq=freq, 
-            duty_factor=duty_factor, 
-            active_high=active_high, 
-            initial_value= 0,
-            )
-        
-    @property
-    def volume(self):
-        return self._volume
-
-    @volume.setter
-    def volume(self, value):
-        self._volume = value
-        
-    @property
-    def value(self):
-        return tuple(self._pwm.freq(), self.volume)
-
-    @value.setter
-    def value(self, value):
-        self._stop_change()
-        self._write(value)   
-           
-    def _write(self, value):
-        if value == 0 or value is None or value == '':           
-            volume = 0
-        else:
-            if type(value) is not tuple:
-                value = (value, self.volume)
-                
-            (freq, volume) = value
-            freq = self._to_freq(freq) if freq != 1 else 440
-            
-            if freq is not None and freq != '' and freq != 0:
-                self._pwm.freq(freq)
-            else:
-                volume = 0
-                
-        super()._write(volume)
-                    
-    def _pitch(self, freq=440, duration=1, volume=1, wait=True):
-        self.off()
-        if duration is None:
-            self.value = (freq, volume)
-        else:
-            self._start_change(lambda : iter([((freq, volume), duration)]), 1, wait)
-        
-    def _to_freq(self, freq):
-        if freq is not None and freq != '' and freq != 0: 
-            if type(freq) is str:
-                return int(self.NOTES[freq])
-            elif freq <= 128 and freq > 0: # MIDI
-                midi_factor = 2**(1/12)
-                return int(440 * midi_factor ** (freq - 69))
-            else:
-                return freq
-        else:
-            return None
-                
-    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):        
-        if type(tune) is not list: # use note and duration, no generator
-            self._pitch(tune, duration, volume, wait)  
-        elif type(tune[0]) is not list: # single note don't use a generator
-            self._pitch(tune[0], tune[1], volume, wait)
-        else: # tune with multiple notes
-            def tune_generator():
-                for next in tune:
-                    note = next[0]
-                    if len(next) == 2:
-                        duration = float(next[1])
-                    if note == '' or note is None:
-                        yield ((None, 0), duration)            
-                    else: # leave a gap between notes
-                        yield ((note, volume), duration * 0.9)
-                        yield ((None, 0), duration * 0.1)
-
-            self.off()
-            self._start_change(tune_generator, n, wait)
-         
-    def _stop(self, timer_obj=None):
-        self.off()
-                
-    def on(self, freq=440, volume=1):
-        if freq is not None:
-            self.value = (freq, volume)
-        
-    def __del__(self):
-        self.off()
-        super().__del__()
-
-PWMBuzzer.beep = PWMBuzzer.blink
-
-def Speaker(pin, use_tones=True, active_high=True, volume=1, initial_value=False):
-    if use_tones:
-        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=volume)
-    else:
-        return Buzzer(pin, active_high=active_high, initial_value=False)
