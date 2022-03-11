@@ -614,6 +614,7 @@ class Button(Switch):
     pass
 
 Button.is_pressed = Button.is_active
+Button.is_released = Button.is_inactive
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated 
 
