@@ -1,4 +1,5 @@
 from machine import Pin, PWM, Timer, ADC
+from micropython import schedule
 from time import ticks_ms, sleep
 
 class PWMChannelAlreadyInUse(Exception):
@@ -530,11 +531,15 @@ class DigitalInputDevice(InputDevice):
             # set the state
             self._state = self._pin.value()
             
+            def schedule_callback(callback):
+                callback()
+            
             # manage call backs
             if self.value and self._when_activated is not None:
-                self._when_activated()
+                schedule(schedule_callback, self._when_activated)
+                
             elif not self.value and self._when_deactivated is not None:
-                self._when_deactivated()
+                schedule(schedule_callback, self._when_deactivated)
                     
     @property
     def is_active(self):
