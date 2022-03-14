@@ -790,14 +790,14 @@ class RGBLED(OutputDevice):
                 )
             
             for c in range(len(colors)):
+                if on_times[c] > 0:
+                    yield (colors[c], on_times[c])
+                    
                 if fade_times[c] > 0:
                     for i in range(int(fps * fade_times[c])):
                         v = lerp(i * (1 / fps) / fade_times[c], True, colors[(c + 1) % len(colors)], colors[c])
                         t = 1 / fps       
                         yield (v, t)
-            
-                if on_times[c] > 0:
-                    yield (colors[c], on_times[c])
     
         self._start_change(blink_generator, n, wait)
             
