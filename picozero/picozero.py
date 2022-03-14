@@ -524,25 +524,31 @@ class PWMBuzzer(PWMOutputDevice):
         else:
             return None
                 
-    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):        
+    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):
         if type(tune) is not list: # use note and duration, no generator
             self._pitch(tune, duration, volume, wait)  
-        elif type(tune[0]) is not list: # single note don't use a generator
+        elif type(tune[0]) is not list and len(tune) <= 2: # single note don't use a generator
             self._pitch(tune[0], tune[1], volume, wait)
         else: # tune with multiple notes
             def tune_generator():
+                next_duration = duration
                 for next in tune:
-                    note = next[0]
-                    if len(next) == 2:
-                        duration = float(next[1])
+                    if type(next) is not list:
+                        note = next
+                    else:
+                        note = next[0]
+                    if type(next) is list and len(next) == 2:
+                        if next[1] is not None:
+                            next_duration = float(next[1]) 
                     if note == '' or note is None:
-                        yield ((None, 0), duration)            
+                        yield ((None, 0), next_duration)            
                     else: # leave a gap between notes
-                        yield ((note, volume), duration * 0.9)
-                        yield ((None, 0), duration * 0.1)
+                        yield ((note, volume), next_duration * 0.9)
+                        yield ((None, 0), next_duration* 0.1)
 
             self.off()
             self._start_change(tune_generator, n, wait)
+
          
     def _stop(self, timer_obj=None):
         self.off()
