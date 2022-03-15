@@ -616,15 +616,18 @@ class Speaker(OutputDevice):
         Plays a tune for a given duration. 
 
         :param int tune:
-            The tune can be a single frequency, note, or a list of frequencies or notes.
 
-            Notes should be in the format 'b0'.
+            The tune to play which can be specified as:
+
+                + a single "note", represented as:
+                  + a frequency in Hz e.g. `440`
+                  + a midi note e.g. `60`
+                  + a note name as a string e.g `"E4"`
+                + a list of single notes e.g. `[440, 60, "E4"]`
+                + a list of 2 value tuples of (note, duration) e.g. `[(440,1), (60, 2), ("e4", 3)]`
 
         :param float duration:
             The duration of the note in seconds.
-
-        :param float volume:
-            The volume of the note.
 
         :param int n:
            The number of times to pulse the LED. If None the LED will pulse
@@ -635,29 +638,31 @@ class Speaker(OutputDevice):
            the method will return and the tune will play in the background.
            Defaults to True.
         """
-        # tune isnt a list, so it must be a single frequency or note
-        if type(tune) is not list:
-            # make it into a list
-            tune = [tune]
 
-        # tune is now a list so lets play it using a generator
+        # tune isnt a list, so it must be a single frequency or note
+        if not isinstance(tune, (list, tuple)):
+            tune = [(tune, volume)]
+
         def tune_generator():
             for note in tune:
 
-                # turn the notes in frequencies
-                freq = self._to_freq(note)
-                yield ((freq, volume), duration)
-                
-                # I wasnt sure what this was doing? Maybe allowing you
-                # to specify timings between each note?
-                #if len(next) == 2:
-                #    duration = float(next[1])
-                #if note == '' or note is None:
-                #    yield ((None, 0), duration)
-                #else: # leave a gap between notes
-                #    yield ((note, volume), duration * 0.9)
-                #    yield ((None, 0), duration * 0.1)
+                # note isnt a list or tuple, it must be a single frequency or note
+                if not isinstance(note, (list, tuple)):
+                    # make it into a tuple
+                    note = (note, duration)
 
+                # turn the notes in frequencies
+                freq = self._to_freq(note[0])
+                freq_duration = note[1]
+                
+                # if this is a tune of greater than 1 note, add gaps between notes
+                print(freq, freq_duration)
+                if len(tune) == 1:
+                    yield ((freq, volume), freq_duration)
+                else:
+                    yield ((freq, volume), freq_duration * 0.9)
+                    yield ((freq, 0), freq_duration * 0.1)
+                    
         self._start_change(tune_generator, n, wait)
 
 class RGBLED(OutputDevice):
