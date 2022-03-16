@@ -427,26 +427,7 @@ class PWMLED(PWMOutputDevice):
         If :data:`False` (the default), the LED will be off initially.  If
         :data:`True`, the LED will be switched on initially.
     """
-    def __init__(self, pin, active_high=True, initial_value=False):
-        self._brightness = 1
-        super().__init__(pin=pin,
-            active_high=active_high,
-            initial_value=initial_value)
-        
-    @property
-    def brightness(self):
-        return self._brightness
-    
-    @brightness.setter
-    def brightness(self, value):
-        self._brightness = value
-        self.value = 1 if self._brightness > 0 else 0
-                
-    def _write(self, value):
-        super()._write(self._brightness * value)
-    
-    def _read(self):
-        return 1 if super()._read() > 0 else 0
+PWMLED.brightness = PWMLED.value
 
 def LED(pin, use_pwm=True, active_high=True, initial_value=False):
     """
@@ -508,29 +489,8 @@ class PWMBuzzer(PWMOutputDevice):
         If :data:`False` (the default), the buzzer will be off initially.  If
         :data:`True`, the buzzer will be switched on initially.
     """
-    def __init__(self, pin, freq=100, duty_factor=1023, active_high=True, initial_value=False):
-        self._volume = 1
-        super().__init__(pin=pin,
-            duty_factor=duty_factor,
-            active_high=active_high,
-            initial_value=initial_value)
-
-    @property
-    def volume(self):
-        return self._volume
-
-    @volume.setter
-    def volume(self, value):
-        self._volume = value
-        self.value = 1 if self._volume > 0 else 0
-    
-    def _write(self, value):
-        super()._write(self._volume * value)
-    
-    def _read(self):
-        return 1 if super()._read() > 0 else 0
-
-PWMBuzzer.beep = Buzzer.blink
+PWMBuzzer.volume = PWMBuzzer.value
+PWMBuzzer.beep = PWMBuzzer.blink
 
 class Speaker(OutputDevice):
     NOTES = {
