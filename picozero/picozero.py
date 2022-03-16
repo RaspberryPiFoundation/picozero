@@ -312,55 +312,6 @@ class PWMOutputDevice(OutputDevice):
         Sets the frequency of the device.
         """
         self._pwm.freq(freq)
-    
-    def close(self):
-        """
-        Closes the device and turns the device off. Once closed, the device
-        can no longer be used.
-        """
-        super().close()
-        del PWMOutputDevice._channels_used[
-            PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
-            ]
-        self._pin.deinit()
-        self._pin = None
-    
-class PWMLED(PWMOutputDevice):
-    """
-    Represents an LED driven by a PWM pin whose brightness can be changed.
-
-    :param int pin:
-        The pin that the device is connected to.
-
-    :param bool active_high:
-        If :data:`True` (the default), the :meth:`on` method will set the Pin
-        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
-        LOW (the :meth:`off` method always does the opposite).
-
-    :param bool initial_value:
-        If :data:`False` (the default), the LED will be off initially.  If
-        :data:`True`, the LED will be switched on initially.
-    """
-    def __init__(self, pin, active_high=True, initial_value=False):
-        self._brightness = 1
-        super().__init__(pin=pin,
-            active_high=active_high,
-            initial_value=initial_value)
-        
-    @property
-    def brightness(self):
-        return self._brightness
-    
-    @brightness.setter
-    def brightness(self, value):
-        self._brightness = value
-        self.value = 1 if self._brightness > 0 else 0
-                
-    def _write(self, value):
-        super()._write(self._brightness * value)
-    
-    def _read(self):
-        return 1 if super()._read() > 0 else 0
 
     def blink(self, on_time=1, off_time=None, n=None, wait=False, fade_in_time=0, fade_out_time=None, fps=25):
         """
@@ -447,6 +398,55 @@ class PWMLED(PWMOutputDevice):
            Defaults to False.
         """
         self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, wait=wait, fps=fps)
+
+    def close(self):
+        """
+        Closes the device and turns the device off. Once closed, the device
+        can no longer be used.
+        """
+        super().close()
+        del PWMOutputDevice._channels_used[
+            PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
+            ]
+        self._pin.deinit()
+        self._pin = None
+    
+class PWMLED(PWMOutputDevice):
+    """
+    Represents an LED driven by a PWM pin whose brightness can be changed.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the LED will be off initially.  If
+        :data:`True`, the LED will be switched on initially.
+    """
+    def __init__(self, pin, active_high=True, initial_value=False):
+        self._brightness = 1
+        super().__init__(pin=pin,
+            active_high=active_high,
+            initial_value=initial_value)
+        
+    @property
+    def brightness(self):
+        return self._brightness
+    
+    @brightness.setter
+    def brightness(self, value):
+        self._brightness = value
+        self.value = 1 if self._brightness > 0 else 0
+                
+    def _write(self, value):
+        super()._write(self._brightness * value)
+    
+    def _read(self):
+        return 1 if super()._read() > 0 else 0
 
 def LED(pin, use_pwm=True, active_high=True, initial_value=False):
     """
