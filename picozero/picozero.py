@@ -263,7 +263,7 @@ class PWMOutputDevice(OutputDevice):
     PIN_TO_PWM_CHANNEL = ["0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B","7A","7B","0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B"]
     _channels_used = {}
     
-    def __init__(self, pin, freq=100, duty_factor=65025, active_high=True, initial_value=False):
+    def __init__(self, pin, freq=100, duty_factor=65536, active_high=True, initial_value=False):
         self._check_pwm_channel(pin)
         self._pin_num = pin
         self._duty_factor = duty_factor
