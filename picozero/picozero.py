@@ -652,7 +652,7 @@ class Speaker(OutputDevice):
         """
         self._pwm_buzzer.blink(on_time, off_time, n, wait, fade_in_time, fade_out_time, fps)
 
-    def play(self, tune=440, volume=1, duration=1, n=1, wait=True):
+    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):
         """
         Plays a tune for a given duration. 
 
@@ -687,7 +687,7 @@ class Speaker(OutputDevice):
 
         # tune isnt a list, so it must be a single frequency or note
         if not isinstance(tune, (list, tuple)):
-            tune = [(tune, volume)]
+            tune = [(tune, duration)]
 
         def tune_generator():
             for note in tune:
