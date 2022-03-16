@@ -168,6 +168,11 @@ class OutputDevice:
             The number of times to repeat the blink operation. If None is 
             specified, the device will continue blinking forever. The default
             is None.
+
+        :param bool wait:
+           If True the method will block until the device stops turning on and off. 
+           If False the method will return and the device will turn on and off in
+           the background. Defaults to False.        
         """
         off_time = on_time if off_time is None else off_time
         
@@ -183,6 +188,9 @@ class OutputDevice:
             self._value_changer = None
 
     def close(self):
+        """
+        Turns the device off.
+        """
         self.value = 0
 
 class DigitalOutputDevice(OutputDevice):
@@ -369,6 +377,11 @@ class PWMLED(PWMOutputDevice):
             The number of times to repeat the blink operation. If `None`, the 
             device will continue blinking forever. The default is `None`.
 
+        :param bool wait:
+           If True the method will block until the LED stops blinking. If False
+           the method will return and the LED is will blink in the background.
+           Defaults to False.
+
         :param float fade_in_time:
             The length of time in seconds to spend fading in. Defaults to 0.
 
@@ -379,7 +392,7 @@ class PWMLED(PWMOutputDevice):
         :param int fps:
            The frames per second that will be used to calculate the number of
            steps between off/on states when fading. Defaults to 25.
-        """    
+        """
         self.off()
         
         off_time = on_time if off_time is None else off_time
@@ -432,7 +445,6 @@ class PWMLED(PWMOutputDevice):
            If True the method will block until the LED stops pulsing. If False
            the method will return and the LED is will pulse in the background.
            Defaults to False.
-    
         """
         self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, wait=wait, fps=fps)
 
@@ -517,6 +529,8 @@ class PWMBuzzer(PWMOutputDevice):
     
     def _read(self):
         return 1 if super()._read() > 0 else 0
+
+PWMBuzzer.beep = Buzzer.blink
 
 class Speaker(OutputDevice):
     NOTES = {
@@ -607,7 +621,34 @@ class Speaker(OutputDevice):
 
     def beep(self, on_time=1, off_time=None, n=None, wait=False, fade_in_time=0, fade_out_time=None, fps=25):
         """
-        Beeps the speaker.
+        Make the buzzer turn on and off repeatedly.
+        
+        :param float on_time:
+            The length of time in seconds the device will be on. Defaults to 1.
+
+        :param float off_time:
+            The length of time in seconds the device will be off. If `None`, 
+            it will be the same as ``on_time``. Defaults to `None`.
+
+        :param int n:
+            The number of times to repeat the beep operation. If `None`, the 
+            device will continue blinking forever. The default is `None`.
+
+        :param bool wait:
+           If True the method will block until the buzzer stops beeping. If False
+           the method will return and the buzzer will beep in the background.
+           Defaults to False.
+
+        :param float fade_in_time:
+            The length of time in seconds to spend fading in. Defaults to 0.
+
+        :param float fade_out_time:
+            The length of time in seconds to spend fading out. If `None`,
+            it will be the same as ``fade_in_time``. Defaults to `None`.
+
+        :param int fps:
+           The frames per second that will be used to calculate the number of
+           steps between off/on states when fading. Defaults to 25.
         """
         self._pwm_buzzer.blink(on_time, off_time, n, wait, fade_in_time, fade_out_time, fps)
 
@@ -626,12 +667,17 @@ class Speaker(OutputDevice):
                 + a list of single notes e.g. `[440, 60, "E4"]`
                 + a list of 2 value tuples of (note, duration) e.g. `[(440,1), (60, 2), ("e4", 3)]`
 
+            Defaults to `440`.
+        
+        :param int volume:
+            The volume of the tune. 1 is max volume. 0 is mute. Defaults to 1.
+
         :param float duration:
-            The duration of the note in seconds.
+            The duration of each note in seconds. Defaults to 1.
 
         :param int n:
-           The number of times to pulse the LED. If None the LED will pulse
-           forever. Defaults to None.
+           The number of times to play the tune. If None the tune will play
+           forever. Defaults to 1.
     
         :param bool wait:
            If True the method will block until the tune has finished. If False
@@ -700,7 +746,7 @@ class RGBLED(OutputDevice):
         If :data:`True` (the default), construct :class:`PWMLED` instances for
         each component of the RGBLED. If :data:`False`, construct 
         :class:`DigitalLED` instances.
-    :type pin_factory: Factory or None
+    
     """
     def __init__(self, red=None, green=None, blue=None, active_high=True,
                  initial_value=(0, 0, 0), pwm=True):
