@@ -656,7 +656,6 @@ class Speaker(OutputDevice):
                 freq_duration = note[1]
                 
                 # if this is a tune of greater than 1 note, add gaps between notes
-                print(freq, freq_duration)
                 if len(tune) == 1:
                     yield ((freq, volume), freq_duration)
                 else:
