@@ -82,6 +82,9 @@ class ValueChange:
                 return next(self._gen)
         
     def stop(self):
+        """
+        Stops the ValueChange object running.
+        """
         self._running = False
         self._timer.deinit()
 
@@ -259,6 +262,28 @@ class Buzzer(DigitalOutputDevice):
 Buzzer.beep = Buzzer.blink
 
 class PWMOutputDevice(OutputDevice):
+    """
+    Represents a device driven by a PWM pin.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param int freq:
+        The frequency of the PWM signal in Hertz. Defaults to 100.
+
+    :param int duty_factor:
+        The duty factor of the PWM signal. This is a value between 0 and 65535.
+        Defaults to 65535.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the LED will be off initially.  If
+        :data:`True`, the LED will be switched on initially.
+    """
     
     PIN_TO_PWM_CHANNEL = ["0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B","7A","7B","0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B"]
     _channels_used = {}
@@ -418,6 +443,13 @@ class PWMLED(PWMOutputDevice):
     :param int pin:
         The pin that the device is connected to.
 
+    :param int freq:
+        The frequency of the PWM signal in Hertz. Defaults to 100.
+
+    :param int duty_factor:
+        The duty factor of the PWM signal. This is a value between 0 and 65535.
+        Defaults to 65535.
+
     :param bool active_high:
         If :data:`True` (the default), the :meth:`on` method will set the Pin
         to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
@@ -478,7 +510,14 @@ class PWMBuzzer(PWMOutputDevice):
     Represents a passive buzzer driven by a PWM pin whose volume can be changed.
 
     :param int pin:
-        The pin that the device is connected to.
+        The pin that the buzzer is connected to.
+
+    :param int freq:
+        The frequency of the PWM signal in Hertz. Defaults to 440.
+
+    :param int duty_factor:
+        The duty factor of the PWM signal. This is a value between 0 and 65535.
+        Defaults to 1023.
 
     :param bool active_high:
         If :data:`True` (the default), the :meth:`on` method will set the Pin
@@ -486,13 +525,38 @@ class PWMBuzzer(PWMOutputDevice):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the buzzer will be off initially.  If
-        :data:`True`, the buzzer will be switched on initially.
-    """
+        If :data:`False` (the default), the Buzzer will be off initially.  If
+        :data:`True`, the Buzzer will be switched on initially.
+    """    
+    def __init__(self, pin, freq=440, duty_factor=1023, active_high=True, initial_value=False):
+        super().__init__(pin, freq, duty_factor, active_high, initial_value)
+
 PWMBuzzer.volume = PWMBuzzer.value
 PWMBuzzer.beep = PWMBuzzer.blink
 
 class Speaker(OutputDevice):
+    """
+    Represents a speaker driven by a PWM pin.
+
+    :param int pin:
+        The pin that the speaker is connected to.
+
+    :param int initial_freq:
+        The initial frequency of the PWM signal in Hertz. Defaults to 440.
+    
+    :param int initial_volume:
+        The initial volume of the PWM signal. This is a value between 0 and
+        1. Defaults to 0.
+
+    :param int duty_factor:
+        The duty factor of the PWM signal. This is a value between 0 and 65535.
+        Defaults to 1023.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+    """    
     NOTES = {
         'b0': 31, 'c1': 33, 'c#1': 35, 'd1': 37, 'd#1': 39, 'e1': 41, 'f1': 44, 'f#1': 46, 'g1': 49,'g#1': 52, 'a1': 55,
         'a#1': 58, 'b1': 62, 'c2': 65, 'c#2': 69, 'd2': 73, 'd#2': 78,
