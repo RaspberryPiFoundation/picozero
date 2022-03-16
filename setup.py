@@ -6,7 +6,7 @@ __desc__ = 'A beginner-friendly library for using common electronics components 
 __version__ = '0.0.1'
 __author__ = "Raspberry Pi Foundation"
 __author_email__ = 'learning@raspberrypi.org'
-__license__ = 'XXX TBC'
+__license__ = 'MIT'
 __url__ = 'https://github.com/raspberrypilearning/picozero'
 __keywords__ = [
     'raspberry',
@@ -30,7 +30,10 @@ button = Button(2)
 
 button.when_pressed = led.on
 button.when_released = led.off
-```"""
+```
+
+Not yet for general release.
+"""
 
 setup(
     name=__project__,

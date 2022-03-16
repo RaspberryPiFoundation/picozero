@@ -24,6 +24,14 @@ PWMLED
     :inherited-members:
     :members:
 
+RGBLED
+----------
+
+.. autoclass:: RGBLED
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
 Button
 ------
 

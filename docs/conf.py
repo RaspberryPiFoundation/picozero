@@ -32,6 +32,7 @@ class Mock:
             return Mock()
 
 sys.modules['machine'] = Mock()
+sys.modules['micropython'] = Mock()
 
 # add the ticks_ms function to time (as it is in micropython)
 import time

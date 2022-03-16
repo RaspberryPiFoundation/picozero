@@ -1,22 +1,13 @@
-from time import sleep
 from picozero import Speaker
+from time import sleep
 
-speaker = Speaker(10)
-
-speaker.play()
-
-sleep(1)
+speaker = Speaker(5)
 
 def tada():
     c_note = 523
-    speaker.play(freq=c_note, duration=0.1)
+    speaker.play(c_note, 0.1)
     sleep(0.1)
-    speaker.play(c_note, 0.4)
-    for i in range(100, 0, -1):
-        speaker.play(freq=c_note, duration=0.01, volume=i/100)
-
-tada()
-sleep(1)
+    speaker.play(c_note, 0.9)
 
 def chirp():
     global speaker
@@ -25,6 +16,11 @@ def chirp():
           speaker.play(i, 0.01)
         sleep(0.2)
 
-chirp()
 
-speaker.off()
+try: 
+    tada()
+    sleep(1)
+    chirp()
+    
+finally: # Turn the speaker off if interrupted
+    speaker.off()
