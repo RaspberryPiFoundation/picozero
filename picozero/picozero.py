@@ -62,8 +62,8 @@ class ValueChange:
                 self._timer.init(period=int(seconds * 1000), mode=Timer.ONE_SHOT, callback=self._set_value)
 
         if next_seq is None:
-            # the sequence has finished, set the output to 0
-            self._output_device.value = 0
+            # the sequence has finished, turn the device off
+            self._output_device.off()
             self._running = False
                 
     def _get_value(self):
@@ -95,7 +95,8 @@ class OutputDevice:
     """   
     def __init__(self, active_high=True, initial_value=False):
         self.active_high = active_high
-        self._write(initial_value)
+        if initial_value is not None:
+            self._write(initial_value)
         self._value_changer = None
     
     @property
@@ -167,6 +168,11 @@ class OutputDevice:
             The number of times to repeat the blink operation. If None is 
             specified, the device will continue blinking forever. The default
             is None.
+
+        :param bool wait:
+           If True the method will block until the device stops turning on and off. 
+           If False the method will return and the device will turn on and off in
+           the background. Defaults to False.        
         """
         off_time = on_time if off_time is None else off_time
         
@@ -182,6 +188,9 @@ class OutputDevice:
             self._value_changer = None
 
     def close(self):
+        """
+        Turns the device off.
+        """
         self.value = 0
 
 class DigitalOutputDevice(OutputDevice):
@@ -230,6 +239,21 @@ class DigitalLED(DigitalOutputDevice):
 DigitalLED.is_lit = DigitalLED.is_active
 
 class Buzzer(DigitalOutputDevice):
+    """
+    Represents an active or passive buzzer which can be turned on or off.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the Buzzer will be off initially.  If
+        :data:`True`, the Buzzer will be switched on initially.
+    """
     pass
 
 Buzzer.beep = Buzzer.blink
@@ -239,11 +263,12 @@ class PWMOutputDevice(OutputDevice):
     PIN_TO_PWM_CHANNEL = ["0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B","7A","7B","0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B"]
     _channels_used = {}
     
-    def __init__(self, pin, freq=100, duty_factor=65025, active_high=True, initial_value=False):
+    def __init__(self, pin, freq=100, duty_factor=65535, active_high=True, initial_value=False):
         self._check_pwm_channel(pin)
         self._pin_num = pin
         self._duty_factor = duty_factor
         self._pwm = PWM(Pin(pin))
+        self._pwm.freq(freq)
         super().__init__(active_high, initial_value)
         
     def _check_pwm_channel(self, pin_num):
@@ -273,54 +298,20 @@ class PWMOutputDevice(OutputDevice):
         Returns :data:`True` if the device is on.
         """
         return self.value != 0
-    
-    def close(self):
-        """
-        Closes the device and turns the device off. Once closed, the device
-        can no longer be used.
-        """
-        super().close()
-        del PWMOutputDevice._channels_used[
-            PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
-            ]
-        self._pin = None
-    
-class PWMLED(PWMOutputDevice):
-    """
-    Represents an LED driven by a PWM pin whose brightness can be changed.
 
-    :param int pin:
-        The pin that the device is connected to.
-
-    :param bool active_high:
-        If :data:`True` (the default), the :meth:`on` method will set the Pin
-        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
-        LOW (the :meth:`off` method always does the opposite).
-
-    :param bool initial_value:
-        If :data:`False` (the default), the LED will be off initially.  If
-        :data:`True`, the LED will be switched on initially.
-    """
-    def __init__(self, pin, active_high=True, initial_value=False):
-        self._brightness = 1
-        super().__init__(pin=pin,
-            active_high=active_high,
-            initial_value=initial_value)
-        
     @property
-    def brightness(self):
-        return self._brightness
+    def freq(self):
+        """
+        Returns the current frequency of the device.
+        """
+        return self._pwm.freq()
     
-    @brightness.setter
-    def brightness(self, value):
-        self._brightness = value
-        self.value = 1 if self._brightness > 0 else 0
-                
-    def _write(self, value):
-        super()._write(self._brightness * value)
-    
-    def _read(self):
-        return 1 if super()._read() > 0 else 0
+    @freq.setter
+    def freq(self, freq):
+        """
+        Sets the frequency of the device.
+        """
+        self._pwm.freq(freq)
 
     def blink(self, on_time=1, off_time=None, n=None, wait=False, fade_in_time=0, fade_out_time=None, fps=25):
         """
@@ -337,6 +328,11 @@ class PWMLED(PWMOutputDevice):
             The number of times to repeat the blink operation. If `None`, the 
             device will continue blinking forever. The default is `None`.
 
+        :param bool wait:
+           If True the method will block until the LED stops blinking. If False
+           the method will return and the LED is will blink in the background.
+           Defaults to False.
+
         :param float fade_in_time:
             The length of time in seconds to spend fading in. Defaults to 0.
 
@@ -347,7 +343,7 @@ class PWMLED(PWMOutputDevice):
         :param int fps:
            The frames per second that will be used to calculate the number of
            steps between off/on states when fading. Defaults to 25.
-        """    
+        """
         self.off()
         
         off_time = on_time if off_time is None else off_time
@@ -400,9 +396,57 @@ class PWMLED(PWMOutputDevice):
            If True the method will block until the LED stops pulsing. If False
            the method will return and the LED is will pulse in the background.
            Defaults to False.
-    
         """
         self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, wait=wait, fps=fps)
+
+    def close(self):
+        """
+        Closes the device and turns the device off. Once closed, the device
+        can no longer be used.
+        """
+        super().close()
+        del PWMOutputDevice._channels_used[
+            PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
+            ]
+        self._pin.deinit()
+        self._pin = None
+    
+class PWMLED(PWMOutputDevice):
+    """
+    Represents an LED driven by a PWM pin whose brightness can be changed.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the LED will be off initially.  If
+        :data:`True`, the LED will be switched on initially.
+    """
+    def __init__(self, pin, active_high=True, initial_value=False):
+        self._brightness = 1
+        super().__init__(pin=pin,
+            active_high=active_high,
+            initial_value=initial_value)
+        
+    @property
+    def brightness(self):
+        return self._brightness
+    
+    @brightness.setter
+    def brightness(self, value):
+        self._brightness = value
+        self.value = 1 if self._brightness > 0 else 0
+                
+    def _write(self, value):
+        super()._write(self._brightness * value)
+    
+    def _read(self):
+        return 1 if super()._read() > 0 else 0
 
 def LED(pin, use_pwm=True, active_high=True, initial_value=False):
     """
@@ -449,28 +493,28 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
 pico_led = LED(25)
 
 class PWMBuzzer(PWMOutputDevice):
-    
-    NOTES = {'b0': 31, 'c1': 33, 'c#1': 35, 'd1': 37, 'd#1': 39, 'e1': 41, 'f1': 44, 'f#1': 46, 'g1': 49,'g#1': 52, 'a1': 55,
-             'a#1': 58, 'b1': 62, 'c2': 65, 'c#2': 69, 'd2': 73, 'd#2': 78,
-    'e2': 82, 'f2': 87, 'f#2': 93, 'g2': 98, 'g#2': 104, 'a2': 110, 'a#2': 117, 'b2': 123,
-    'c3': 131, 'c#3': 139, 'd3': 147, 'd#3': 156, 'e3': 165, 'f3': 175, 'f#3': 185, 'g3': 196, 'g#3': 208, 'a3': 220, 'a#3': 233, 'b3': 247,
-    'c4': 262, 'c#4': 277, 'd4': 294, 'd#4': 311, 'e4': 330, 'f4': 349, 'f#4': 370, 'g4': 392, 'g#4': 415, 'a4': 440,'a#4': 466,'b4': 494,
-    'c5': 523, 'c#5': 554, 'd5': 587, 'd#5': 622, 'e5': 659, 'f5': 698, 'f#5': 740, 'g5': 784, 'g#5': 831, 'a5': 880, 'a#5': 932, 'b5': 988,
-    'c6': 1047, 'c#6': 1109, 'd6': 1175, 'd#6': 1245, 'e6': 1319, 'f6': 1397, 'f#6': 1480, 'g6': 1568, 'g#6': 1661, 'a6': 1760, 'a#6': 1865, 'b6': 1976,
-    'c7': 2093, 'c#7': 2217, 'd7': 2349, 'd#7': 2489,
-    'e7': 2637, 'f7': 2794, 'f#7': 2960, 'g7': 3136, 'g#7': 3322, 'a7': 3520, 'a#7': 3729, 'b7': 3951,
-    'c8': 4186, 'c#8': 4435, 'd8': 4699, 'd#8': 4978 }
-    
-    def __init__(self, pin, freq=440, active_high=True, initial_value=0, volume=1, duty_factor=1023):
-        self._volume = volume
-        super().__init__(
-            pin, 
-            freq=freq, 
-            duty_factor=duty_factor, 
-            active_high=active_high, 
-            initial_value= 0,
-            )
-        
+    """
+    Represents a passive buzzer driven by a PWM pin whose volume can be changed.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the buzzer will be off initially.  If
+        :data:`True`, the buzzer will be switched on initially.
+    """
+    def __init__(self, pin, freq=100, duty_factor=1023, active_high=True, initial_value=False):
+        self._volume = 1
+        super().__init__(pin=pin,
+            duty_factor=duty_factor,
+            active_high=active_high,
+            initial_value=initial_value)
+
     @property
     def volume(self):
         return self._volume
@@ -478,40 +522,91 @@ class PWMBuzzer(PWMOutputDevice):
     @volume.setter
     def volume(self, value):
         self._volume = value
+        self.value = 1 if self._volume > 0 else 0
+    
+    def _write(self, value):
+        super()._write(self._volume * value)
+    
+    def _read(self):
+        return 1 if super()._read() > 0 else 0
+
+PWMBuzzer.beep = Buzzer.blink
+
+class Speaker(OutputDevice):
+    NOTES = {
+        'b0': 31, 'c1': 33, 'c#1': 35, 'd1': 37, 'd#1': 39, 'e1': 41, 'f1': 44, 'f#1': 46, 'g1': 49,'g#1': 52, 'a1': 55,
+        'a#1': 58, 'b1': 62, 'c2': 65, 'c#2': 69, 'd2': 73, 'd#2': 78,
+        'e2': 82, 'f2': 87, 'f#2': 93, 'g2': 98, 'g#2': 104, 'a2': 110, 'a#2': 117, 'b2': 123,
+        'c3': 131, 'c#3': 139, 'd3': 147, 'd#3': 156, 'e3': 165, 'f3': 175, 'f#3': 185, 'g3': 196, 'g#3': 208, 'a3': 220, 'a#3': 233, 'b3': 247,
+        'c4': 262, 'c#4': 277, 'd4': 294, 'd#4': 311, 'e4': 330, 'f4': 349, 'f#4': 370, 'g4': 392, 'g#4': 415, 'a4': 440,'a#4': 466,'b4': 494,
+        'c5': 523, 'c#5': 554, 'd5': 587, 'd#5': 622, 'e5': 659, 'f5': 698, 'f#5': 740, 'g5': 784, 'g#5': 831, 'a5': 880, 'a#5': 932, 'b5': 988,
+        'c6': 1047, 'c#6': 1109, 'd6': 1175, 'd#6': 1245, 'e6': 1319, 'f6': 1397, 'f#6': 1480, 'g6': 1568, 'g#6': 1661, 'a6': 1760, 'a#6': 1865, 'b6': 1976,
+        'c7': 2093, 'c#7': 2217, 'd7': 2349, 'd#7': 2489,
+        'e7': 2637, 'f7': 2794, 'f#7': 2960, 'g7': 3136, 'g#7': 3322, 'a7': 3520, 'a#7': 3729, 'b7': 3951,
+        'c8': 4186, 'c#8': 4435, 'd8': 4699, 'd#8': 4978 
+        }
+    
+    def __init__(self, pin, initial_freq=440, initial_volume=0, duty_factor=1023, active_high=True):
         
+        self._pwm_buzzer = PWMBuzzer(
+            pin,
+            freq=initial_freq,
+            duty_factor=duty_factor,
+            active_high=active_high,
+            initial_value=None,
+            )
+        
+        super().__init__(active_high, None)
+        self.volume = initial_volume
+        
+    def on(self, volume=1):
+        self.volume = volume
+        
+    def off(self):
+        self.volume = 0
+
     @property
     def value(self):
-        return tuple(self._pwm.freq(), self.volume)
+        """
+        Sets or returns the value of the speaker. value is a tuple of (freq, volume).
+        """
+        return tuple(self.freq, self.volume)
 
     @value.setter
     def value(self, value):
         self._stop_change()
-        self._write(value)   
-           
-    def _write(self, value):
-        if value == 0 or value is None or value == '':           
-            volume = 0
-        else:
-            if type(value) is not tuple:
-                value = (value, self.volume)
-                
-            (freq, volume) = value
-            freq = self._to_freq(freq) if freq != 1 else 440
-            
-            if freq is not None and freq != '' and freq != 0:
-                self._pwm.freq(freq)
-            else:
-                volume = 0
-                
-        super()._write(volume)
-                    
-    def _pitch(self, freq=440, duration=1, volume=1, wait=True):
-        self.off()
-        if duration is None:
-            self.value = (freq, volume)
-        else:
-            self._start_change(lambda : iter([((freq, volume), duration)]), 1, wait)
+        self._write(value)
+
+    @property
+    def volume(self):
+        """
+        Sets or returns the volume of the speaker. 1 for max volume. 0 for off.
+        """
+        return self._volume
+
+    @volume.setter
+    def volume(self, value):
+        self._volume = value
+        self.value = (self.freq, self._volume)
         
+    @property
+    def freq(self):
+        """
+        Sets or returns the current frequency of the speaker.
+        """
+        return self._pwm_buzzer.freq
+    
+    @freq.setter
+    def freq(self, freq):
+        self._pwm_buzzer.freq(freq)
+
+    def _write(self, value):
+        # set the frequency
+        self._pwm_buzzer.freq = value[0]
+        
+        # write the volume value
+        self._pwm_buzzer.volume = value[1]
+
     def _to_freq(self, freq):
         if freq is not None and freq != '' and freq != 0: 
             if type(freq) is str:
@@ -523,51 +618,97 @@ class PWMBuzzer(PWMOutputDevice):
                 return freq
         else:
             return None
-                
-    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):
-        if type(tune) is not list: # use note and duration, no generator
-            self._pitch(tune, duration, volume, wait)  
-        elif type(tune[0]) is not list and len(tune) <= 2: # single note don't use a generator
-            self._pitch(tune[0], tune[1], volume, wait)
-        else: # tune with multiple notes
-            def tune_generator():
-                next_duration = duration
-                for next in tune:
-                    if type(next) is not list:
-                        note = next
-                    else:
-                        note = next[0]
-                    if type(next) is list and len(next) == 2:
-                        if next[1] is not None:
-                            next_duration = float(next[1]) 
-                    if note == '' or note is None:
-                        yield ((None, 0), next_duration)            
-                    else: # leave a gap between notes
-                        yield ((note, volume), next_duration * 0.9)
-                        yield ((None, 0), next_duration* 0.1)
 
-            self.off()
-            self._start_change(tune_generator, n, wait)
-
-         
-    def _stop(self, timer_obj=None):
-        self.off()
-                
-    def on(self, freq=440, volume=1):
-        if freq is not None:
-            self.value = (freq, volume)
+    def beep(self, on_time=1, off_time=None, n=None, wait=False, fade_in_time=0, fade_out_time=None, fps=25):
+        """
+        Make the buzzer turn on and off repeatedly.
         
-    def __del__(self):
-        self.off()
-        super().__del__()
+        :param float on_time:
+            The length of time in seconds the device will be on. Defaults to 1.
 
-PWMBuzzer.beep = PWMBuzzer.blink
+        :param float off_time:
+            The length of time in seconds the device will be off. If `None`, 
+            it will be the same as ``on_time``. Defaults to `None`.
 
-def Speaker(pin, use_tones=True, active_high=True, volume=1, initial_value=False):
-    if use_tones:
-        return PWMBuzzer(pin, freq=440, active_high=active_high, initial_value=volume)
-    else:
-        return Buzzer(pin, active_high=active_high, initial_value=False)
+        :param int n:
+            The number of times to repeat the beep operation. If `None`, the 
+            device will continue blinking forever. The default is `None`.
+
+        :param bool wait:
+           If True the method will block until the buzzer stops beeping. If False
+           the method will return and the buzzer will beep in the background.
+           Defaults to False.
+
+        :param float fade_in_time:
+            The length of time in seconds to spend fading in. Defaults to 0.
+
+        :param float fade_out_time:
+            The length of time in seconds to spend fading out. If `None`,
+            it will be the same as ``fade_in_time``. Defaults to `None`.
+
+        :param int fps:
+           The frames per second that will be used to calculate the number of
+           steps between off/on states when fading. Defaults to 25.
+        """
+        self._pwm_buzzer.blink(on_time, off_time, n, wait, fade_in_time, fade_out_time, fps)
+
+    def play(self, tune=440, duration=1, volume=1, n=1, wait=True):
+        """
+        Plays a tune for a given duration. 
+
+        :param int tune:
+
+            The tune to play which can be specified as:
+
+                + a single "note", represented as:
+                  + a frequency in Hz e.g. `440`
+                  + a midi note e.g. `60`
+                  + a note name as a string e.g `"E4"`
+                + a list of single notes e.g. `[440, 60, "E4"]`
+                + a list of 2 value tuples of (note, duration) e.g. `[(440,1), (60, 2), ("e4", 3)]`
+
+            Defaults to `440`.
+        
+        :param int volume:
+            The volume of the tune. 1 is max volume. 0 is mute. Defaults to 1.
+
+        :param float duration:
+            The duration of each note in seconds. Defaults to 1.
+
+        :param int n:
+           The number of times to play the tune. If None the tune will play
+           forever. Defaults to 1.
+    
+        :param bool wait:
+           If True the method will block until the tune has finished. If False
+           the method will return and the tune will play in the background.
+           Defaults to True.
+        """
+
+        # tune isnt a list, so it must be a single frequency or note
+        if not isinstance(tune, (list, tuple)):
+            tune = [(tune, duration)]
+
+        def tune_generator():
+            for note in tune:
+
+                # note isnt a list or tuple, it must be a single frequency or note
+                if not isinstance(note, (list, tuple)):
+                    # make it into a tuple
+                    note = (note, duration)
+
+                # turn the notes in frequencies
+                freq = self._to_freq(note[0])
+                freq_duration = note[1]
+                
+                # if this is a tune of greater than 1 note, add gaps between notes
+                if len(tune) == 1:
+                    yield ((freq, volume), freq_duration)
+                else:
+                    yield ((freq, volume), freq_duration * 0.9)
+                    yield ((freq, 0), freq_duration * 0.1)
+                    
+        self._start_change(tune_generator, n, wait)
 
 class RGBLED(OutputDevice):
     """
@@ -605,7 +746,7 @@ class RGBLED(OutputDevice):
         If :data:`True` (the default), construct :class:`PWMLED` instances for
         each component of the RGBLED. If :data:`False`, construct 
         :class:`DigitalLED` instances.
-    :type pin_factory: Factory or None
+    
     """
     def __init__(self, red=None, green=None, blue=None, active_high=True,
                  initial_value=(0, 0, 0), pwm=True):
@@ -1110,4 +1251,5 @@ class TemperatureSensor(AnalogInputDevice):
 pico_temp_sensor = TemperatureSensor(4, True, 0.5, pico_temp_conversion)
 TempSensor = TemperatureSensor
 Thermistor = TemperatureSensor
+
 
