@@ -2,12 +2,12 @@ from setuptools import setup
 
 __project__ = 'picozero'
 __packages__ = ['picozero']
-__desc__ = 'A beginner-friendly library for using common electronics components with the Raspberry Pi Pico.'
+__desc__ = 'A beginner-friendly library for using common electronics components with the Raspberry Pi Pico. Not yet for general release.'
 __version__ = '0.0.1'
 __author__ = "Raspberry Pi Foundation"
 __author_email__ = 'learning@raspberrypi.org'
 __license__ = 'MIT'
-__url__ = 'https://github.com/raspberrypilearning/picozero'
+__url__ = 'https://github.com/RaspberryPiFoundation/picozero'
 __keywords__ = [
     'raspberry',
     'pi',
