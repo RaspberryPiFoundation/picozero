@@ -611,7 +611,7 @@ class Speaker(OutputDevice):
     @volume.setter
     def volume(self, value):
         self._volume = value
-        self.value = (self.freq, self._volume)
+        self.value = (self.freq, self.volume)
         
     @property
     def freq(self):
@@ -622,14 +622,16 @@ class Speaker(OutputDevice):
     
     @freq.setter
     def freq(self, freq):
-        self._pwm_buzzer.freq(freq)
-
+        self.value = (freq, self.volume)
+        
     def _write(self, value):
         # set the frequency
-        self._pwm_buzzer.freq = value[0]
+        if value[0] is not None:
+            self._pwm_buzzer.freq = value[0]
         
         # write the volume value
-        self._pwm_buzzer.volume = value[1]
+        if value[1] is not None:
+            self._pwm_buzzer.volume = value[1]
 
     def _to_freq(self, freq):
         if freq is not None and freq != '' and freq != 0: 
@@ -688,7 +690,7 @@ class Speaker(OutputDevice):
                   + a frequency in Hz e.g. `440`
                   + a midi note e.g. `60`
                   + a note name as a string e.g `"E4"`
-                + a list of single notes e.g. `[440, 60, "E4"]`
+                + a list of note and duration e.g. `[440, 1]` or  `["E4", 2]`
                 + a list of 2 value tuples of (note, duration) e.g. `[(440,1), (60, 2), ("e4", 3)]`
 
             Defaults to `440`.
@@ -712,10 +714,13 @@ class Speaker(OutputDevice):
         # tune isnt a list, so it must be a single frequency or note
         if not isinstance(tune, (list, tuple)):
             tune = [(tune, duration)]
+        # if the first element isnt a list, then it must be list of a single note and duration
+        elif not isinstance(tune[0], (list, tuple)):
+            tune = [tune]
 
         def tune_generator():
             for note in tune:
-
+                
                 # note isnt a list or tuple, it must be a single frequency or note
                 if not isinstance(note, (list, tuple)):
                     # make it into a tuple
@@ -724,12 +729,13 @@ class Speaker(OutputDevice):
                 # turn the notes in frequencies
                 freq = self._to_freq(note[0])
                 freq_duration = note[1]
+                freq_volume = volume if freq is not None else 0
                 
                 # if this is a tune of greater than 1 note, add gaps between notes
                 if len(tune) == 1:
-                    yield ((freq, volume), freq_duration)
+                    yield ((freq, freq_volume), freq_duration)
                 else:
-                    yield ((freq, volume), freq_duration * 0.9)
+                    yield ((freq, freq_volume), freq_duration * 0.9)
                     yield ((freq, 0), freq_duration * 0.1)
                     
         self._start_change(tune_generator, n, wait)
