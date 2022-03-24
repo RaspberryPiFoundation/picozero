@@ -65,9 +65,8 @@ Right click on the file and select the **Upload to /** option and you should see
 Write a program to control the onboard LED
 ===============
 
-The following code will blink the onboard LED at a frequency of once per second.
+The following code will blink the onboard LED at a frequency of once per second.::
 
-.. code-block:: 
     from picozero import pico_led
     from time import sleep
 
