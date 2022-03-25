@@ -3,7 +3,8 @@ Change log
 
 .. currentmodule:: picozero
 
-0.0.0 - yyyy-mm-dd
+0.0.1 - 2022-03-21
 ~~~~~~~~~~~~~~~~~~
 
-+ these things were released
++ Initial alpha release to test installation process
+

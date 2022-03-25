@@ -12,10 +12,3 @@ Table of Contents
    api
    developing
    changelog
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

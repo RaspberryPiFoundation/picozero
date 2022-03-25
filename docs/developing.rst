@@ -1,23 +1,16 @@
 Development
 ===========
 
-Instructions on how to test, build and deploy picozero.
-
-Test
-----
-
-Not sure...  pytest can probably be used but would have to mock `machine`.
+Instructions on how build and deploy picozero.
 
 Build
 -----
 
-1. Strip comments and docstrings from the source code to reduce file size (somehow).
-
-2. Run `setup.py` and create a source distribution.:
+1. Run `setup.py` and create a source distribution.:
 
     python3 setup.py sdist
 
-3. Upload to PyPI:
+2. Upload to PyPI:
 
     twine upload dist/*
 
@@ -36,3 +29,4 @@ To build the documentation, run the following command from the docs directory:
 
 The website will be built in the directory docs/_build/html.
 
+Documentation can be viewed at http://picozero.readthedocs.io/

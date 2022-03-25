@@ -2,8 +2,11 @@
 ..
 .. SPDX short identifier: MIT
 
-Requirements
+Getting Started
 ===============
+
+Requirements
+------------
 
 A Windows, macOS or Linux computer with the `Thonny Python IDE`_ installed.
 
@@ -18,14 +21,14 @@ Once Thonny is installed you will need to ensure that you are using the latest M
 .. _guide: https://learning-admin.raspberrypi.org/en/projects/introduction-to-the-pico/3
 
 Use the MicroPython interpreter
-===============
+-------------------------------
 
 In Thonny, on the bottom right of the screen, there are options for changing the interpreter that you are using. Make sure that **MicroPython (Raspberry Pi Pico)** is selected.
 
 .. image:: images/thonny-switch-interpreter.jpg
 
 Install picozero from PyPi in Thonny
-===============
+------------------------------------
 
 To install picozero within Thonny select **Tools** > **Manage packages...**
 
@@ -40,7 +43,7 @@ Click on install to download the package.
 .. image:: images/thonny-install-package.jpg
 
 Other install options
-===============
+---------------------
 
 You can use the Thonny file manager to transfer a ``picozero.py`` file to Raspberry Pi Pico.
 
@@ -63,7 +66,7 @@ Right click on the file and select the **Upload to /** option and you should see
 .. image:: images/thonny-copy-picozero.jpg
 
 Write a program to control the onboard LED
-===============
+------------------------------------------
 
 The following code will blink the onboard LED at a frequency of once per second.::
 
@@ -77,7 +80,7 @@ The following code will blink the onboard LED at a frequency of once per second.
         sleep(0.5)
 
 Run a program on your computer
-===============
+------------------------------
 
 You can choose to run the program from your computer.
 
@@ -90,7 +93,7 @@ Choose to save the script on **This computer** and provide a filename.
 .. image:: images/save-this-computer.png
 
 Run a program on Raspberry Pi Pico
-===============
+----------------------------------
 
 You can choose to run the program from Raspberry Pi Pico.
 
