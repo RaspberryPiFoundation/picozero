@@ -711,6 +711,8 @@ class Speaker(OutputDevice):
            Defaults to True.
         """
 
+        self.off()
+
         # tune isnt a list, so it must be a single frequency or note
         if not isinstance(tune, (list, tuple)):
             tune = [(tune, duration)]
