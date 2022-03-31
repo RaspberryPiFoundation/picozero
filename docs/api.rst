@@ -32,6 +32,30 @@ RGBLED
     :inherited-members:
     :members:
 
+Buzzer
+------
+
+.. autoclass:: Buzzer
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+PWMBuzzer
+---------
+
+.. autoclass:: PWMBuzzer
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+Speaker
+-------
+
+.. autoclass:: Speaker
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
 Button
 ------
 
@@ -48,19 +72,18 @@ Switch
     :inherited-members:
     :members: 
 
-
-RGBLED
-------
-
-Buzzer
-------
-
-Speaker
--------
-
 Potentiometer
 -------------
+
+.. autoclass:: Potentiometer
+    :show-inheritance:
+    :inherited-members:
+    :members: 
 
 TemperatureSensor
 -----------------
 
+.. autoclass:: TemperatureSensor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
