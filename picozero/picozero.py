@@ -2,8 +2,45 @@ from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
 from time import ticks_ms, sleep
 
+###############################################################################
+# EXCEPTIONS
+###############################################################################
+
 class PWMChannelAlreadyInUse(Exception):
     pass
+
+###############################################################################
+# SUPPORTING CLASSES
+###############################################################################
+
+class PinMixin:
+    """
+    Mixin used by devices that have a single pin number.
+    """
+
+    @property
+    def pin(self):
+        """
+        Returns the pin number used by the device
+        """
+        return self._pin_num
+
+    def __str__(self):
+        return "{} (pin {})".format(self.__class__.__name__, self._pin_num)
+
+class PinsMixin:
+    """
+    Mixin used by devices that use multiple pins
+    """
+
+    @property
+    def pins(self):
+        """
+        Returns a tuple of pins used by the device
+        """
+
+    def __str__(self):
+        return "{} (pins - {})".format(self.__class__.__name__, self._pin_nums)
         
 class ValueChange:
     """
@@ -196,8 +233,31 @@ class OutputDevice:
         """
         self.value = 0
 
-class DigitalOutputDevice(OutputDevice):
+class DigitalOutputDevice(OutputDevice, PinMixin):
+    """
+    Represents a device driven by a digital pin.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param int freq:
+        The frequency of the PWM signal in Hertz. Defaults to 100.
+
+    :param int duty_factor:
+        The duty factor of the PWM signal. This is a value between 0 and 65535.
+        Defaults to 65535.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the LED will be off initially.  If
+        :data:`True`, the LED will be switched on initially.
+    """
     def __init__(self, pin, active_high=True, initial_value=False):
+        self._pin_num = pin
         self._pin = Pin(pin, Pin.OUT)
         super().__init__(active_high, initial_value)
         
@@ -220,7 +280,7 @@ class DigitalOutputDevice(OutputDevice):
         """
         super().close()
         self._pin = None
-        
+
 class DigitalLED(DigitalOutputDevice):
     """
     Represents a simple LED which can be switched on and off.
@@ -261,7 +321,7 @@ class Buzzer(DigitalOutputDevice):
 
 Buzzer.beep = Buzzer.blink
 
-class PWMOutputDevice(OutputDevice):
+class PWMOutputDevice(OutputDevice, PinMixin):
     """
     Represents a device driven by a PWM pin.
 
@@ -534,7 +594,7 @@ class PWMBuzzer(PWMOutputDevice):
 PWMBuzzer.volume = PWMBuzzer.value
 PWMBuzzer.beep = PWMBuzzer.blink
 
-class Speaker(OutputDevice):
+class Speaker(OutputDevice, PinMixin):
     """
     Represents a speaker driven by a PWM pin.
 
@@ -572,6 +632,7 @@ class Speaker(OutputDevice):
     
     def __init__(self, pin, initial_freq=440, initial_volume=0, duty_factor=1023, active_high=True):
         
+        self._pin_num = pin
         self._pwm_buzzer = PWMBuzzer(
             pin,
             freq=initial_freq,
@@ -742,7 +803,7 @@ class Speaker(OutputDevice):
                     
         self._start_change(tune_generator, n, wait)
 
-class RGBLED(OutputDevice):
+class RGBLED(OutputDevice, PinsMixin):
     """
     Extends :class:`OutputDevice` and represents a full color LED component (composed
     of red, green, and blue LEDs).
@@ -782,6 +843,7 @@ class RGBLED(OutputDevice):
     """
     def __init__(self, red=None, green=None, blue=None, active_high=True,
                  initial_value=(0, 0, 0), pwm=True):
+        self._pin_nums = (red, green, blue)
         self._leds = ()
         self._last = initial_value
         LEDClass = PWMLED if pwm else DigitalLED
@@ -1046,7 +1108,7 @@ class InputDevice:
         """
         return self._read()
 
-class DigitalInputDevice(InputDevice):
+class DigitalInputDevice(InputDevice, PinMixin):
     """
     Represents a generic input device with digital functionality e.g. buttons 
     which can be either active or inactive.
@@ -1071,6 +1133,7 @@ class DigitalInputDevice(InputDevice):
     """
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
         super().__init__(active_state)
+        self._pin_num = pin
         self._pin = Pin(
             pin,
             mode=Pin.IN,
@@ -1224,8 +1287,9 @@ Button.is_released = Button.is_inactive
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated 
 
-class AnalogInputDevice(InputDevice):
+class AnalogInputDevice(InputDevice, PinMixin):
     def __init__(self, pin, active_state=True, threshold=0.5):
+        self._pin_num = pin
         super().__init__(active_state)
         self._adc = ADC(pin)
         self._threshold = float(threshold)
@@ -1258,7 +1322,7 @@ class AnalogInputDevice(InputDevice):
     @property
     def percent(self):
         return int(self.value * 100)
-    
+
 class Potentiometer(AnalogInputDevice):
     pass
 
