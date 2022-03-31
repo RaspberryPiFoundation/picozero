@@ -9,6 +9,9 @@ from time import ticks_ms, sleep
 class PWMChannelAlreadyInUse(Exception):
     pass
 
+class EventFailedScheduleQueueFull(Exception):
+    pass
+
 ###############################################################################
 # SUPPORTING CLASSES
 ###############################################################################
@@ -1182,16 +1185,28 @@ class DigitalInputDevice(InputDevice, PinMixin):
             # set the state
             self._state = self._pin.value()
             
-            def schedule_callback(callback):
-                callback()
-            
             # manage call backs
+            callback_to_run = None
             if self.value and self._when_activated is not None:
-                schedule(schedule_callback, self._when_activated)
-                
-            elif not self.value and self._when_deactivated is not None:
-                schedule(schedule_callback, self._when_deactivated)
+                callback_to_run = self._when_activated
                     
+            elif not self.value and self._when_deactivated is not None:
+                callback_to_run = self._when_deactivated
+            
+            if callback_to_run is not None:
+                
+                def schedule_callback(callback):
+                    callback()
+            
+                try:
+                    schedule(schedule_callback, callback_to_run)
+                    
+                except RuntimeError as e:
+                    if str(e) == "schedule queue full":
+                        raise EventFailedScheduleQueueFull(
+                            "{} - {} not run due to the micropython schedule being full".format(
+                                str(self), callback_to_run.__name__))
+
     @property
     def is_active(self):
         """
