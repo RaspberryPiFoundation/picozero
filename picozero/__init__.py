@@ -5,6 +5,7 @@ __author__ = "Raspberry Pi Foundation"
 
 from .picozero import (
     PWMChannelAlreadyInUse,
+    EventFailedScheduleQueueFull,
 
     DigitalOutputDevice,
     DigitalLED,
