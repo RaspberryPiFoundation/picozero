@@ -1,3 +1,8 @@
+__name__ = "picozero"
+__package__ = "picozero"
+__version__ = '0.0.2'
+__author__ = "Raspberry Pi Foundation"
+
 from .picozero import (
     PWMChannelAlreadyInUse,
 
