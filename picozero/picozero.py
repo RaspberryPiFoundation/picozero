@@ -1204,7 +1204,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
                 except RuntimeError as e:
                     if str(e) == "schedule queue full":
                         raise EventFailedScheduleQueueFull(
-                            "{} - {} not run due to the micropython schedule being full".format(
+                            "{} - {} not run due to the micropython schedule queue being full".format(
                                 str(self), callback_to_run.__name__))
 
     @property
