@@ -56,6 +56,21 @@ Speaker
     :inherited-members:
     :members: 
 
+
+DigitalOutputDevice
+-------------------
+.. autoclass:: DigitalOutputDevice
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+PWMOutputDevice
+---------------
+.. autoclass:: PWMOutputDevice
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
 Button
 ------
 
@@ -84,6 +99,14 @@ TemperatureSensor
 -----------------
 
 .. autoclass:: TemperatureSensor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+DigitalInputDevice
+------------------
+
+.. autoclass:: DigitalInputDevice
     :show-inheritance:
     :inherited-members:
     :members: 

@@ -2,8 +2,8 @@ from setuptools import setup
 
 __project__ = 'picozero'
 __packages__ = ['picozero']
-__desc__ = 'A beginner-friendly library for using common electronics components with the Raspberry Pi Pico. Not yet for general release.'
-__version__ = '0.0.2'
+__desc__ = 'A beginner-friendly library for using common electronics components with the Raspberry Pi Pico. '
+__version__ = '0.1.0'
 __author__ = "Raspberry Pi Foundation"
 __author_email__ = 'learning@raspberrypi.org'
 __license__ = 'MIT'
@@ -32,7 +32,7 @@ button.when_pressed = led.on
 button.when_released = led.off
 ```
 
-Not yet for general release.
+Documentation is available at [picozero.readthedocs.io](https://picozero.readthedocs.io/en/latest/).
 """
 
 setup(
