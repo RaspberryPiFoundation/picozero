@@ -37,4 +37,6 @@ To build the documentation, run the following command from the docs directory:
 
 The website will be built in the directory docs/_build/html.
 
-Documentation can be viewed at http://picozero.readthedocs.io/
+Documentation can be viewed at `picozero.readthedocs.io`_.
+
+.. _picozero.readthedocs.io: https://picozero.readthedocs.io

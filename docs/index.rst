@@ -11,4 +11,5 @@ Table of Contents
    recipes
    api
    developing
+   contributing
    changelog
