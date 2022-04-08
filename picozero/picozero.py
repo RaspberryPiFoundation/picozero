@@ -990,7 +990,7 @@ class RGBLED(OutputDevice, PinsMixin):
         :param float on_times:
             Single value or tuple of numbers of seconds to stay on each colour. Defaults to 1 second. 
         :param float fade_times:
-            Sinlge value or tuple of times to fade between each colour. Must be 0 if
+            Single value or tuple of times to fade between each colour. Must be 0 if
             *pwm* was :data:`False` when the class was constructed.
         :type colors: tuple
             Tuple of colours to blink between, use ``(0, 0, 0)`` for off.
@@ -1305,6 +1305,25 @@ Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated 
 
 class AnalogInputDevice(InputDevice, PinMixin):
+    """
+    Represents a generic input device with analogy functionality e.g. 
+    a potentiometer
+
+    :param int pin:
+        The pin that the device is connected to.
+        
+    :param active_state:
+        The active state of the device. If :data:`True` (the default),
+        the :class:`AnalogInputDevice` will assume that the device is
+        active when the pin is high and above the threshold . If 
+        ``active_state`` is ``False``, the device will be active when 
+        the pin is is low and below the threshold. 
+
+    :param float threshold:
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+
+    """
     def __init__(self, pin, active_state=True, threshold=0.5):
         self._pin_num = pin
         super().__init__(active_state)
@@ -1322,6 +1341,10 @@ class AnalogInputDevice(InputDevice, PinMixin):
         
     @property
     def threshold(self):
+        """
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+        """
         return self._threshold
 
     @threshold.setter
@@ -1330,17 +1353,38 @@ class AnalogInputDevice(InputDevice, PinMixin):
 
     @property
     def is_active(self):
+        """
+        Returns :data:`True` if the device is active.
+        """
         return self.value > self.threshold
 
     @property
     def voltage(self):
+        """
+        Returns the voltage of the analog device.
+        """
         return self.value * 3.3
-    
-    @property
-    def percent(self):
-        return int(self.value * 100)
 
 class Potentiometer(AnalogInputDevice):
+    """
+    Represents a Potentiometer which outputs with a variable voltage
+    between 0 and 3.3V.
+
+    :param int pin:
+        The pin that the device is connected to.
+        
+    :param active_state:
+        The active state of the device. If :data:`True` (the default),
+        the :class:`AnalogInputDevice` will assume that the device is
+        active when the pin is high and above the threshold . If 
+        ``active_state`` is ``False``, the device will be active when 
+        the pin is is low and below the threshold. 
+
+    :param float threshold:
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+
+    """
     pass
 
 Pot = Potentiometer
@@ -1350,16 +1394,64 @@ def pico_temp_conversion(voltage):
     return 27 - (voltage - 0.706)/0.001721
 
 class TemperatureSensor(AnalogInputDevice):
+    """
+    Represents a TemperatureSensor which outputs a variable voltage. The voltage 
+    can be converted to a temperature using a `conversion` function passed as a 
+    parameter.
+
+    :param int pin:
+        The pin that the device is connected to.
+        
+    :param active_state:
+        The active state of the device. If :data:`True` (the default),
+        the :class:`AnalogInputDevice` will assume that the device is
+        active when the pin is high and above the threshold . If 
+        ``active_state`` is ``False``, the device will be active when 
+        the pin is is low and below the threshold. 
+
+    :param float threshold:
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+
+    :param float conversion:
+        A function that takes a voltage and returns a temperature. 
+
+        e.g. The internal temperature sensor has a voltage range of 0.706V to 0.716V 
+        and would use the follow conversion function::
+        
+            def temp_conversion(voltage):
+                return 27 - (voltage - 0.706)/0.001721
+
+            temp_sensor = TemperatureSensor(pin, conversion=temp_conversion)
+
+        If :data:`None` (the default), the ``temp`` property will return :data:`None`.
+
+    """
     def __init__(self, pin, active_state=True, threshold=0.5, conversion=None):
          self._conversion = conversion
          super().__init__(pin, active_state, threshold)
         
     @property
     def temp(self):
+        """
+        Returns the temperature of the device. If the conversion function is not
+        set, this will return :data:`None`.
+        """
         if self._conversion is not None:
             return self._conversion(self.voltage)
         else:
             return None
+
+    @property
+    def conversion(self):
+        """
+        Set or returns the conversion function for the device.
+        """
+        return self._conversion
+
+    @conversion.setter
+    def conversion(self, value):
+        self._conversion = value
        
 pico_temp_sensor = TemperatureSensor(4, True, 0.5, pico_temp_conversion)
 TempSensor = TemperatureSensor

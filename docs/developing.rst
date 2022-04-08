@@ -20,7 +20,7 @@ Build
 
 5. Push all change to ``master`` branch
 
-6. Create a release in github and upload picozero-*.tar.gz to the release.
+6. Create a release in github and upload ``picozero-#-#-#.tar.gz`` to the release.
 
 Documentation
 -------------
