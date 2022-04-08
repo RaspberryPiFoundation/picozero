@@ -3,6 +3,13 @@ Change log
 
 .. currentmodule:: picozero
 
+0.1.0 - 2022-04-08
+~~~~~~~~~~~~~~~~~~
+
++ Beta release
++ Documentation updates
++ Minor bug fixes and refactoring
+
 0.0.2 - 2022-03-31
 ~~~~~~~~~~~~~~~~~~
 
