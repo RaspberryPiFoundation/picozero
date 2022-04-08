@@ -205,7 +205,8 @@ class OutputDevice:
             The length of time in seconds the device will be on. Defaults to 1.
 
         :param float off_time:
-            The length of time in seconds the device will be off. Defaults to 1.
+            The length of time in seconds the device will be off. If `None`, 
+            it will be the same as ``on_time``. Defaults to `None`.
 
         :param int n:
             The number of times to repeat the blink operation. If None is 
