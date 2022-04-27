@@ -364,7 +364,7 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         channel = PWMOutputDevice.PIN_TO_PWM_CHANNEL[pin_num]
         if channel in PWMOutputDevice._channels_used.keys():
             raise PWMChannelAlreadyInUse(
-                f"PWM channel {channel} is already in use by pin {PWMOutputDevice._channels_used[channel]}. Use a different pin"
+                "PWM channel {channel} is already in use by pin {PWMOutputDevice._channels_used[channel]}. Use a different pin"
                 )
         else:
             PWMOutputDevice._channels_used[channel] = pin_num
