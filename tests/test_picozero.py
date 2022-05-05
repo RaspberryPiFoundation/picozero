@@ -73,3 +73,6 @@ def test_digital_LED():
     assert d.is_lit == False
     
     
+def test_LED_factory():
+    d = LED(1)
+    assert isinstance(d, PWMLED)
