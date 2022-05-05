@@ -2,8 +2,48 @@ from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
 from time import ticks_ms, sleep
 
+###############################################################################
+# EXCEPTIONS
+###############################################################################
+
 class PWMChannelAlreadyInUse(Exception):
     pass
+
+class EventFailedScheduleQueueFull(Exception):
+    pass
+
+###############################################################################
+# SUPPORTING CLASSES
+###############################################################################
+
+class PinMixin:
+    """
+    Mixin used by devices that have a single pin number.
+    """
+
+    @property
+    def pin(self):
+        """
+        Returns the pin number used by the device
+        """
+        return self._pin_num
+
+    def __str__(self):
+        return "{} (pin {})".format(self.__class__.__name__, self._pin_num)
+
+class PinsMixin:
+    """
+    Mixin used by devices that use multiple pins
+    """
+
+    @property
+    def pins(self):
+        """
+        Returns a tuple of pins used by the device
+        """
+
+    def __str__(self):
+        return "{} (pins - {})".format(self.__class__.__name__, self._pin_nums)
         
 class ValueChange:
     """
@@ -165,7 +205,8 @@ class OutputDevice:
             The length of time in seconds the device will be on. Defaults to 1.
 
         :param float off_time:
-            The length of time in seconds the device will be off. Defaults to 1.
+            The length of time in seconds the device will be off. If `None`, 
+            it will be the same as ``on_time``. Defaults to `None`.
 
         :param int n:
             The number of times to repeat the blink operation. If None is 
@@ -196,8 +237,31 @@ class OutputDevice:
         """
         self.value = 0
 
-class DigitalOutputDevice(OutputDevice):
+class DigitalOutputDevice(OutputDevice, PinMixin):
+    """
+    Represents a device driven by a digital pin.
+
+    :param int pin:
+        The pin that the device is connected to.
+
+    :param int freq:
+        The frequency of the PWM signal in Hertz. Defaults to 100.
+
+    :param int duty_factor:
+        The duty factor of the PWM signal. This is a value between 0 and 65535.
+        Defaults to 65535.
+
+    :param bool active_high:
+        If :data:`True` (the default), the :meth:`on` method will set the Pin
+        to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
+        LOW (the :meth:`off` method always does the opposite).
+
+    :param bool initial_value:
+        If :data:`False` (the default), the LED will be off initially.  If
+        :data:`True`, the LED will be switched on initially.
+    """
     def __init__(self, pin, active_high=True, initial_value=False):
+        self._pin_num = pin
         self._pin = Pin(pin, Pin.OUT)
         super().__init__(active_high, initial_value)
         
@@ -220,7 +284,7 @@ class DigitalOutputDevice(OutputDevice):
         """
         super().close()
         self._pin = None
-        
+
 class DigitalLED(DigitalOutputDevice):
     """
     Represents a simple LED which can be switched on and off.
@@ -261,7 +325,7 @@ class Buzzer(DigitalOutputDevice):
 
 Buzzer.beep = Buzzer.blink
 
-class PWMOutputDevice(OutputDevice):
+class PWMOutputDevice(OutputDevice, PinMixin):
     """
     Represents a device driven by a PWM pin.
 
@@ -534,7 +598,7 @@ class PWMBuzzer(PWMOutputDevice):
 PWMBuzzer.volume = PWMBuzzer.value
 PWMBuzzer.beep = PWMBuzzer.blink
 
-class Speaker(OutputDevice):
+class Speaker(OutputDevice, PinMixin):
     """
     Represents a speaker driven by a PWM pin.
 
@@ -572,6 +636,7 @@ class Speaker(OutputDevice):
     
     def __init__(self, pin, initial_freq=440, initial_volume=0, duty_factor=1023, active_high=True):
         
+        self._pin_num = pin
         self._pwm_buzzer = PWMBuzzer(
             pin,
             freq=initial_freq,
@@ -711,6 +776,8 @@ class Speaker(OutputDevice):
            Defaults to True.
         """
 
+        self.off()
+
         # tune isnt a list, so it must be a single frequency or note
         if not isinstance(tune, (list, tuple)):
             tune = [(tune, duration)]
@@ -740,7 +807,7 @@ class Speaker(OutputDevice):
                     
         self._start_change(tune_generator, n, wait)
 
-class RGBLED(OutputDevice):
+class RGBLED(OutputDevice, PinsMixin):
     """
     Extends :class:`OutputDevice` and represents a full color LED component (composed
     of red, green, and blue LEDs).
@@ -780,6 +847,7 @@ class RGBLED(OutputDevice):
     """
     def __init__(self, red=None, green=None, blue=None, active_high=True,
                  initial_value=(0, 0, 0), pwm=True):
+        self._pin_nums = (red, green, blue)
         self._leds = ()
         self._last = initial_value
         LEDClass = PWMLED if pwm else DigitalLED
@@ -923,7 +991,7 @@ class RGBLED(OutputDevice):
         :param float on_times:
             Single value or tuple of numbers of seconds to stay on each colour. Defaults to 1 second. 
         :param float fade_times:
-            Sinlge value or tuple of times to fade between each colour. Must be 0 if
+            Single value or tuple of times to fade between each colour. Must be 0 if
             *pwm* was :data:`False` when the class was constructed.
         :type colors: tuple
             Tuple of colours to blink between, use ``(0, 0, 0)`` for off.
@@ -1044,7 +1112,7 @@ class InputDevice:
         """
         return self._read()
 
-class DigitalInputDevice(InputDevice):
+class DigitalInputDevice(InputDevice, PinMixin):
     """
     Represents a generic input device with digital functionality e.g. buttons 
     which can be either active or inactive.
@@ -1069,6 +1137,7 @@ class DigitalInputDevice(InputDevice):
     """
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
         super().__init__(active_state)
+        self._pin_num = pin
         self._pin = Pin(
             pin,
             mode=Pin.IN,
@@ -1117,16 +1186,30 @@ class DigitalInputDevice(InputDevice):
             # set the state
             self._state = self._pin.value()
             
-            def schedule_callback(callback):
-                callback()
-            
             # manage call backs
+            callback_to_run = None
             if self.value and self._when_activated is not None:
-                schedule(schedule_callback, self._when_activated)
-                
-            elif not self.value and self._when_deactivated is not None:
-                schedule(schedule_callback, self._when_deactivated)
+                callback_to_run = self._when_activated
                     
+            elif not self.value and self._when_deactivated is not None:
+                callback_to_run = self._when_deactivated
+            
+            if callback_to_run is not None:
+                
+                def schedule_callback(callback):
+                    callback()
+            
+                try:
+                    schedule(schedule_callback, callback_to_run)
+                    
+                except RuntimeError as e:
+                    if str(e) == "schedule queue full":
+                        raise EventFailedScheduleQueueFull(
+                            "{} - {} not run due to the micropython schedule being full".format(
+                                str(self), callback_to_run.__name__))
+                    else:
+                        raise e
+
     @property
     def is_active(self):
         """
@@ -1222,8 +1305,28 @@ Button.is_released = Button.is_inactive
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated 
 
-class AnalogInputDevice(InputDevice):
+class AnalogInputDevice(InputDevice, PinMixin):
+    """
+    Represents a generic input device with analogy functionality e.g. 
+    a potentiometer
+
+    :param int pin:
+        The pin that the device is connected to.
+        
+    :param active_state:
+        The active state of the device. If :data:`True` (the default),
+        the :class:`AnalogInputDevice` will assume that the device is
+        active when the pin is high and above the threshold . If 
+        ``active_state`` is ``False``, the device will be active when 
+        the pin is is low and below the threshold. 
+
+    :param float threshold:
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+
+    """
     def __init__(self, pin, active_state=True, threshold=0.5):
+        self._pin_num = pin
         super().__init__(active_state)
         self._adc = ADC(pin)
         self._threshold = float(threshold)
@@ -1239,6 +1342,10 @@ class AnalogInputDevice(InputDevice):
         
     @property
     def threshold(self):
+        """
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+        """
         return self._threshold
 
     @threshold.setter
@@ -1247,17 +1354,38 @@ class AnalogInputDevice(InputDevice):
 
     @property
     def is_active(self):
+        """
+        Returns :data:`True` if the device is active.
+        """
         return self.value > self.threshold
 
     @property
     def voltage(self):
+        """
+        Returns the voltage of the analog device.
+        """
         return self.value * 3.3
-    
-    @property
-    def percent(self):
-        return int(self.value * 100)
-    
+
 class Potentiometer(AnalogInputDevice):
+    """
+    Represents a Potentiometer which outputs with a variable voltage
+    between 0 and 3.3V.
+
+    :param int pin:
+        The pin that the device is connected to.
+        
+    :param active_state:
+        The active state of the device. If :data:`True` (the default),
+        the :class:`AnalogInputDevice` will assume that the device is
+        active when the pin is high and above the threshold . If 
+        ``active_state`` is ``False``, the device will be active when 
+        the pin is is low and below the threshold. 
+
+    :param float threshold:
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+
+    """
     pass
 
 Pot = Potentiometer
@@ -1267,16 +1395,64 @@ def pico_temp_conversion(voltage):
     return 27 - (voltage - 0.706)/0.001721
 
 class TemperatureSensor(AnalogInputDevice):
+    """
+    Represents a TemperatureSensor which outputs a variable voltage. The voltage 
+    can be converted to a temperature using a `conversion` function passed as a 
+    parameter.
+
+    :param int pin:
+        The pin that the device is connected to.
+        
+    :param active_state:
+        The active state of the device. If :data:`True` (the default),
+        the :class:`AnalogInputDevice` will assume that the device is
+        active when the pin is high and above the threshold . If 
+        ``active_state`` is ``False``, the device will be active when 
+        the pin is is low and below the threshold. 
+
+    :param float threshold:
+        The threshold that the device must be above or below to be
+        considered active. The default is 0.5.
+
+    :param float conversion:
+        A function that takes a voltage and returns a temperature. 
+
+        e.g. The internal temperature sensor has a voltage range of 0.706V to 0.716V 
+        and would use the follow conversion function::
+        
+            def temp_conversion(voltage):
+                return 27 - (voltage - 0.706)/0.001721
+
+            temp_sensor = TemperatureSensor(pin, conversion=temp_conversion)
+
+        If :data:`None` (the default), the ``temp`` property will return :data:`None`.
+
+    """
     def __init__(self, pin, active_state=True, threshold=0.5, conversion=None):
          self._conversion = conversion
          super().__init__(pin, active_state, threshold)
         
     @property
     def temp(self):
+        """
+        Returns the temperature of the device. If the conversion function is not
+        set, this will return :data:`None`.
+        """
         if self._conversion is not None:
             return self._conversion(self.voltage)
         else:
             return None
+
+    @property
+    def conversion(self):
+        """
+        Set or returns the conversion function for the device.
+        """
+        return self._conversion
+
+    @conversion.setter
+    def conversion(self, value):
+        self._conversion = value
        
 pico_temp_sensor = TemperatureSensor(4, True, 0.5, pico_temp_conversion)
 TempSensor = TemperatureSensor
