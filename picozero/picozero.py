@@ -370,7 +370,7 @@ class PWMOutputDevice(OutputDevice, PinMixin):
             PWMOutputDevice._channels_used[channel] = pin_num
         
     def _state_to_value(self, state):
-        return (state if self.active_high else 1 - state) / self._duty_factor
+        return (state if self.active_high else self._duty_factor - state) / self._duty_factor
 
     def _value_to_state(self, value):
         return int(self._duty_factor * (value if self.active_high else 1 - value))
