@@ -497,8 +497,8 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         del PWMOutputDevice._channels_used[
             PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
             ]
-        self._pin.deinit()
-        self._pin = None
+        self._pwm.deinit()
+        self._pwm = None
     
 class PWMLED(PWMOutputDevice):
     """
@@ -806,6 +806,9 @@ class Speaker(OutputDevice, PinMixin):
                     yield ((freq, 0), freq_duration * 0.1)
                     
         self._start_change(tune_generator, n, wait)
+
+    def close(self):
+        self._pwm_buzzer.close()
 
 class RGBLED(OutputDevice, PinsMixin):
     """
@@ -1365,6 +1368,9 @@ class AnalogInputDevice(InputDevice, PinMixin):
         Returns the voltage of the analog device.
         """
         return self.value * 3.3
+
+    def close(self):
+        self._adc = None
 
 class Potentiometer(AnalogInputDevice):
     """
