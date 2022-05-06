@@ -807,6 +807,9 @@ class Speaker(OutputDevice, PinMixin):
                     
         self._start_change(tune_generator, n, wait)
 
+    def close(self):
+        self._pwm_buzzer.close()
+
 class RGBLED(OutputDevice, PinsMixin):
     """
     Extends :class:`OutputDevice` and represents a full color LED component (composed
