@@ -497,8 +497,8 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         del PWMOutputDevice._channels_used[
             PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
             ]
-        self._pin.deinit()
-        self._pin = None
+        self._pwm.deinit()
+        self._pwm = None
     
 class PWMLED(PWMOutputDevice):
     """
