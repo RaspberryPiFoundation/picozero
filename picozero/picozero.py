@@ -1366,6 +1366,9 @@ class AnalogInputDevice(InputDevice, PinMixin):
         """
         return self.value * 3.3
 
+    def close(self):
+        self._adc = None
+
 class Potentiometer(AnalogInputDevice):
     """
     Represents a Potentiometer which outputs with a variable voltage
