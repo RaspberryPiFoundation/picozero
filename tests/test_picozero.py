@@ -13,6 +13,41 @@ def log_device_values(d, timeout):
             
     return values
 
+class MockPin:
+    def __init__(self, initial_state=0, irq_handler=None):
+        self._state = initial_state
+        self._irq_handler = irq_handler
+        
+    def read(self):
+        return self._state
+    
+    def write(self, state):
+        self._state = state
+        if self._irq_handler is not None:
+            self._irq_handler(self)
+
+    def value(self, state=None):
+        if state is None:
+            return self._state
+        else:
+            self.write(state)
+            
+    def irq(self, handler, args=None):
+        self._irq_handler = handler
+        
+class MockEvent:
+    def __init__(self):
+        self._is_set = False
+    
+    def set(self):
+        self._is_set = True
+        
+    def is_set(self):
+        return self._is_set
+    
+    def reset(self):
+        self._is_set = False
+        
 class Testpicozero(unittest.TestCase):
 
     def test_digital_output_device_default_values(self):
@@ -182,5 +217,70 @@ class Testpicozero(unittest.TestCase):
         d = LED(1, use_pwm=False)
         self.assertIsInstance(d, DigitalLED)
         d.close()
+        
+    def test_digital_input_device_default_values(self):
+        d = DigitalInputDevice(1)
+        
+        pin = MockPin(irq_handler=d._pin_change)
+        d._pin = pin
+        
+        self.assertTrue(d.active_state)
+        self.assertFalse(d.is_active)
+        self.assertEqual(d.value, 0)
+        
+        pin.write(1)
+        
+        self.assertTrue(d.is_active)
+        self.assertEqual(d.value, 1)
+        
+        pin.write(0)
+        
+        self.assertFalse(d.is_active)
+        self.assertEqual(d.value, 0)
+        
+        d.close()
+        
+    def test_digital_input_device_alt_values(self):
+        d = DigitalInputDevice(1, pull_up=False, active_state=False)
+        
+        pin = MockPin(irq_handler=d._pin_change)
+        d._pin = pin
+        
+        self.assertFalse(d.active_state)
+        self.assertTrue(d.is_active)
+        self.assertEqual(d.value, 1)
+        
+        pin.write(1)
+        
+        self.assertFalse(d.is_active)
+        self.assertEqual(d.value, 0)
+        
+        pin.write(0)
+        
+        self.assertTrue(d.is_active)
+        self.assertEqual(d.value, 1)
+        
+        d.close()
+        
+    def test_digital_input_device_activated_deactivated(self):
+        d = DigitalInputDevice(1)
+        
+        pin = MockPin(irq_handler=d._pin_change)
+        d._pin = pin
+        
+        event_activated = MockEvent()
+        event_deactivated = MockEvent()
+        
+        d.when_activated = event_activated.set
+        d.when_deactivated = event_deactivated.set
+        
+        self.assertFalse(event_activated.is_set())
+        pin.write(1)
+        self.assertTrue(event_activated.is_set())
+        
+        self.assertFalse(event_deactivated.is_set())
+        pin.write(0)
+        self.assertTrue(event_deactivated.is_set())
+    
 
 unittest.main()
