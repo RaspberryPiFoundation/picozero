@@ -1335,7 +1335,7 @@ class AnalogInputDevice(InputDevice, PinMixin):
         self._threshold = float(threshold)
         
     def _state_to_value(self, state):
-        return (state if self.active_state else 1 - state) / 65535
+        return (state if self.active_state else 65535 - state) / 65535
 
     def _value_to_state(self, value):
         return int(65535 * (value if self.active_state else 1 - value))
