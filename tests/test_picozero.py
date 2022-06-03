@@ -34,7 +34,20 @@ class MockPin:
             
     def irq(self, handler, args=None):
         self._irq_handler = handler
+
+class MockADC:
+    def __init__(self, initial_state=0):
+        self._state = initial_state
         
+    def read(self):
+        return self._state
+    
+    def write(self, state):
+        self._state = state
+        
+    def read_u16(self):
+        return self._state
+
 class MockEvent:
     def __init__(self):
         self._is_set = False
@@ -281,6 +294,86 @@ class Testpicozero(unittest.TestCase):
         self.assertFalse(event_deactivated.is_set())
         pin.write(0)
         self.assertTrue(event_deactivated.is_set())
+        
+        d.close()
+        
+    def test_adc_input_device_default_values(self):
+        d = AnalogInputDevice(1)
+        
+        adc = MockADC()
+        d._adc = adc
+        
+        self.assertTrue(d.active_state)
+        self.assertFalse(d.is_active)
+        self.assertEqual(d.value, 0)
+        
+        adc.write(65535)
+        self.assertTrue(d.is_active)
+        self.assertEqual(d.value, 1)
+        self.assertEqual(d.voltage, 3.3)
+        
+        adc.write(0)
+        self.assertFalse(d.is_active)
+        self.assertEqual(d.value, 0)
+        self.assertEqual(d.voltage, 0)
+        
+        # mid point
+        adc.write(32767)
+        self.assertAlmostEqual(d.value, 0.5, places=2)
+        self.assertAlmostEqual(d.voltage, 1.65, places=2)
+        
+        d.close()
     
+    def test_adc_input_device_alt_values(self):
+        d = AnalogInputDevice(1, active_state=False, threshold=0.1)
+        
+        adc = MockADC()
+        d._adc = adc
+        
+        self.assertFalse(d.active_state)
+        self.assertTrue(d.is_active)
+        self.assertEqual(d.value, 1)
+        
+        adc.write(65535)
+        self.assertFalse(d.is_active)
+        self.assertEqual(d.value, 0)
+        self.assertEqual(d.voltage, 0)
+        
+        adc.write(0)
+        self.assertTrue(d.is_active)
+        self.assertEqual(d.value, 1)
+        self.assertEqual(d.voltage, 3.3)
+        
+        d.close()
+        
+    def test_adc_input_device_threshold(self):
+        d = AnalogInputDevice(1)
+        
+        adc = MockADC()
+        d._adc = adc
+        
+        self.assertFalse(d.is_active)
+        
+        # mid point
+        adc.write(32767)
+        self.assertFalse(d.is_active)
+        
+        # above threshold
+        adc.write(32768)
+        self.assertTrue(d.is_active)
+        
+        # below threshold
+        adc.write(32766)
+        self.assertFalse(d.is_active)
+        
+        d.threshold = 0.1
+        
+        self.assertTrue(d.is_active)
+        
+        adc.write(6553)
+        self.assertFalse(d.is_active)
+        
+        d.close()
+        
 
 unittest.main()
