@@ -7,8 +7,11 @@ Setup
 -----
 
 1. Install the `picozero <https://pypi.org/project/picozero/>`_ package.
+
 2. Install the `micropython-unittest <https://pypi.org/project/micropython-unittest/>`_ package.
+
 3. Copy the ``test_picozero.py`` to the pico.
+
 4. Run the ``test_picozero.py`` file.
 
 Error messsages
