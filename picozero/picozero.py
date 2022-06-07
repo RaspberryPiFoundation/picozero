@@ -1,3 +1,4 @@
+from ctypes.wintypes import RGB
 from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
 from time import ticks_ms, sleep
@@ -1079,6 +1080,8 @@ class RGBLED(OutputDevice, PinsMixin):
         """
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
+
+RGBLED.colour = RGBLED.color
 
 ###############################################################################
 # INPUT DEVICES
