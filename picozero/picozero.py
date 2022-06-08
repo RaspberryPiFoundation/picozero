@@ -1,4 +1,3 @@
-from ctypes.wintypes import RGB
 from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
 from time import ticks_ms, sleep
