@@ -40,3 +40,16 @@ The website will be built in the directory docs/_build/html.
 Documentation can be viewed at `picozero.readthedocs.io`_.
 
 .. _picozero.readthedocs.io: https://picozero.readthedocs.io
+
+Tests
+-----
+
+The tests are design to be run on a Raspberry Pi Pico.
+
+1. Install the `picozero <https://pypi.org/project/picozero/>`_ package.
+
+2. Install the `micropython-unittest <https://pypi.org/project/micropython-unittest/>`_ package.
+
+3. Copy the ``test_picozero.py`` to the pico.
+
+4. Run the ``test_picozero.py`` file.

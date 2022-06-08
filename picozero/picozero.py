@@ -364,13 +364,16 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         channel = PWMOutputDevice.PIN_TO_PWM_CHANNEL[pin_num]
         if channel in PWMOutputDevice._channels_used.keys():
             raise PWMChannelAlreadyInUse(
-                f"PWM channel {channel} is already in use by pin {PWMOutputDevice._channels_used[channel]}. Use a different pin"
+                "PWM channel {} is already in use by {}. Use a different pin".format(
+                    channel,
+                    str(PWMOutputDevice._channels_used[channel])
+                    )
                 )
         else:
-            PWMOutputDevice._channels_used[channel] = pin_num
+            PWMOutputDevice._channels_used[channel] = self
         
     def _state_to_value(self, state):
-        return (state if self.active_high else 1 - state) / self._duty_factor
+        return (state if self.active_high else self._duty_factor - state) / self._duty_factor
 
     def _value_to_state(self, value):
         return int(self._duty_factor * (value if self.active_high else 1 - value))
@@ -497,8 +500,8 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         del PWMOutputDevice._channels_used[
             PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
             ]
-        self._pin.deinit()
-        self._pin = None
+        self._pwm.deinit()
+        self._pwm = None
     
 class PWMLED(PWMOutputDevice):
     """
@@ -807,6 +810,9 @@ class Speaker(OutputDevice, PinMixin):
                     
         self._start_change(tune_generator, n, wait)
 
+    def close(self):
+        self._pwm_buzzer.close()
+
 class RGBLED(OutputDevice, PinsMixin):
     """
     Extends :class:`OutputDevice` and represents a full color LED component (composed
@@ -1077,6 +1083,8 @@ class RGBLED(OutputDevice, PinsMixin):
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
 
+RGBLED.colour = RGBLED.color
+
 ###############################################################################
 # INPUT DEVICES
 ###############################################################################
@@ -1332,7 +1340,7 @@ class AnalogInputDevice(InputDevice, PinMixin):
         self._threshold = float(threshold)
         
     def _state_to_value(self, state):
-        return (state if self.active_state else 1 - state) / 65535
+        return (state if self.active_state else 65535 - state) / 65535
 
     def _value_to_state(self, value):
         return int(65535 * (value if self.active_state else 1 - value))
@@ -1365,6 +1373,9 @@ class AnalogInputDevice(InputDevice, PinMixin):
         Returns the voltage of the analog device.
         """
         return self.value * 3.3
+
+    def close(self):
+        self._adc = None
 
 class Potentiometer(AnalogInputDevice):
     """
