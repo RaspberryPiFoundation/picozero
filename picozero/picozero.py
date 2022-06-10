@@ -1,6 +1,6 @@
 from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
-from time import ticks_ms, sleep
+from time import ticks_ms, ticks_us, sleep
 
 ###############################################################################
 # EXCEPTIONS
@@ -1470,4 +1470,63 @@ pico_temp_sensor = TemperatureSensor(4, True, 0.5, pico_temp_conversion)
 TempSensor = TemperatureSensor
 Thermistor = TemperatureSensor
 
+class DistanceSensor(PinsMixin):
+    """
+    Represents a HC-SR04 ultrasonic distance sensor.
 
+    :param int echo:
+        The pin which the ECHO pin is connected to.
+
+    :param int trigger:
+        The pin which the TRIG pin is connected to. 
+
+    :param float max_distance:
+        The :attr:`value` attribute reports a normalized value between 0 (too
+        close to measure) and 1 (maximum distance). This parameter specifies
+        the maximum distance expected in meters. This defaults to 1.
+    """
+    def __init__(self, echo, trigger, max_distance=1):
+        self._pin_nums = (echo, trigger)
+        self._max_distance = max_distance
+        self._echo = Pin(echo, mode=Pin.IN, pull=Pin.PULL_DOWN)
+        self._trigger = Pin(trigger, mode=Pin.OUT, value=0)
+        
+    def _read(self):
+        echo_on = None
+        echo_off = None
+        timed_out = False
+        
+        self._trigger.off()
+        sleep(0.000005)
+        self._trigger.on()
+        sleep(0.00001)
+        self._trigger.off()
+
+        # if an echo isnt measured in 100 milliseconds, it should
+        # be considered out of range the maximum length of the
+        # echo is 38 milliseconds but its not known how long the
+        # transmission takes after the trigger
+        stop = ticks_ms() + 100
+        while echo_off is None and not timed_out:
+            if self._echo.value() == 1 and echo_on is None:
+                echo_on = ticks_us()
+            if echo_on is not None and self._echo.value() == 0:
+                echo_off = ticks_us()
+            if ticks_ms() > stop:
+                timed_out = True
+            
+        if echo_off is None or timed_out:
+            return None
+        else:
+            distance = ((echo_off - echo_on) * 0.000343) / 2
+            distance = min(distance, self._max_distance)
+            return distance
+    
+    @property
+    def value(self):
+        distance = self.distance
+        return distance / self._max_distance if distance is not None else None
+    
+    @property
+    def distance(self):
+        return self._read()
