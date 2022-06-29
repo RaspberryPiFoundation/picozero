@@ -571,7 +571,11 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
             active_high=active_high,
             initial_value=initial_value)
 
-pico_led = LED(25)
+try:
+    pico_led = LED("LED", use_pwm=False)
+except TypeError:
+    # older version of micropython before "LED" was supported
+    pico_led = LED(25, use_pwm=False)
 
 class PWMBuzzer(PWMOutputDevice):
     """

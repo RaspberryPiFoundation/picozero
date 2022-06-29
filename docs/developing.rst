@@ -3,10 +3,17 @@ Development
 
 Instructions on how build and deploy picozero.
 
+Pre-requisites
+--------------
+
+To build and deploy picozero, you need to install the dependencies ::
+
+    pip3 install twine sphinx 
+
 Build
 -----
 
-1. Update version numbers in the ``setup.py``, ``picozero/__init__.py``and ``docs/conf.py`` files.
+1. Update version numbers in the ``setup.py``, ``picozero/__init__.py`` and ``docs/conf.py`` files.
 
 2. Add release to ``docs/changelog.rst``
 
