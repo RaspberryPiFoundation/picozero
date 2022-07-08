@@ -450,8 +450,7 @@ class PWMOutputDevice(OutputDevice, PinMixin):
                     ]:
                     yield s
                 
-            if on_time > 0:
-                yield (1, on_time)
+            yield (1, on_time)
 
             if fade_out_time > 0:
                 for s in [
@@ -460,8 +459,7 @@ class PWMOutputDevice(OutputDevice, PinMixin):
                     ]:
                     yield s
                 
-            if off_time > 0:
-                 yield (0, off_time)
+            yield (0, off_time)
             
         self._start_change(blink_generator, n, wait)
 
