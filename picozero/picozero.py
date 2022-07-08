@@ -1526,9 +1526,26 @@ class DistanceSensor(PinsMixin):
     
     @property
     def value(self):
+        """
+        Returns a value between 0, indicating the reflector is either touching 
+        the sensor or is sufficiently near that the sensor can’t tell the 
+        difference, and 1, indicating the reflector is at or beyond the 
+        specified max_distance.
+        """
         distance = self.distance
         return distance / self._max_distance if distance is not None else None
     
     @property
     def distance(self):
+        """
+        Returns the current distance measured by the sensor in meters. Note 
+        that this property will have a value between 0 and max_distance.
+        """
         return self._read()
+
+    @property
+    def max_distance(self):
+        """
+        Returns the maximum distance that the sensor will measure in metres.
+        """
+        return self._max_distance
