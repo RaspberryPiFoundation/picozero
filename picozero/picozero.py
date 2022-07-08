@@ -41,7 +41,7 @@ class PinsMixin:
         """
         Returns a tuple of pins used by the device
         """
-        self._pin_nums
+        return self._pin_nums
 
     def __str__(self):
         return "{} (pins - {})".format(self.__class__.__name__, self._pin_nums)
