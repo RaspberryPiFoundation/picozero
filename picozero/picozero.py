@@ -222,7 +222,10 @@ class OutputDevice:
         off_time = on_time if off_time is None else off_time
         
         self.off()
-        self._start_change(lambda : iter([(1,on_time), (0,off_time)]), n, wait)
+
+        # is there anything to change?
+        if on_time > 0 or off_time > 0:
+            self._start_change(lambda : iter([(1,on_time), (0,off_time)]), n, wait)
             
     def _start_change(self, generator, n, wait):
         self._value_changer = ValueChange(self, generator, n, wait)
@@ -449,8 +452,9 @@ class PWMOutputDevice(OutputDevice, PinMixin):
                     for i in range(int(fps * fade_in_time))
                     ]:
                     yield s
-                
-            yield (1, on_time)
+            
+            if on_time > 0:
+                yield (1, on_time)
 
             if fade_out_time > 0:
                 for s in [
@@ -458,10 +462,13 @@ class PWMOutputDevice(OutputDevice, PinMixin):
                     for i in range(int(fps * fade_out_time))
                     ]:
                     yield s
-                
-            yield (0, off_time)
             
-        self._start_change(blink_generator, n, wait)
+            if off_time > 0:
+                yield (0, off_time)
+        
+        # is there anything to change?
+        if on_time > 0 or off_time > 0 or fade_in_time > 0 or fade_out_time > 0:
+            self._start_change(blink_generator, n, wait)
 
     def pulse(self, fade_in_time=1, fade_out_time=None, n=None, wait=False, fps=25):
         """
