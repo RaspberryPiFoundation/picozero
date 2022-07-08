@@ -6,7 +6,7 @@ Change log
 0.2.0 - 2022-06-29
 ~~~~~~~~~~~~~~~~~~
 
-+ Compatibility fix LED
++ Pico W compatibility fix for onboard LED
 
 0.1.1 - 2022-06-08
 ~~~~~~~~~~~~~~~~~~
