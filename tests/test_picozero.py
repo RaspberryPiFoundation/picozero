@@ -375,5 +375,27 @@ class Testpicozero(unittest.TestCase):
         
         d.close()
         
+    def test_temp_sensory(self):
+        
+        def temp_conversion(voltage):
+            return voltage + 2
+        
+        t = TemperatureSensor(4, conversion=temp_conversion)
 
+        adc = MockADC()
+        t._adc = adc
+
+        adc.write(65535)
+        self.assertEqual(t.temp, 3.3 + 2)
+        
+        adc.write(0)
+        self.assertEqual(t.temp, 2)
+
+        t.close()
+
+    def test_pico_temp_sensor(self):
+        
+        self.assertEqual(pico_temp_sensor.pin, 4)
+        self.assertIsNotNone(pico_temp_sensor.temp)
+        
 unittest.main()
