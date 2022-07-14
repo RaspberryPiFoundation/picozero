@@ -122,7 +122,7 @@ class Testpicozero(unittest.TestCase):
         d = DigitalLED(1)
         self.assertFalse(d.is_lit)
         d.close()
-
+            
     def test_pwm_output_device_default_values(self):
         d = PWMOutputDevice(1)
         
@@ -230,6 +230,18 @@ class Testpicozero(unittest.TestCase):
         d = LED(1, use_pwm=False)
         self.assertIsInstance(d, DigitalLED)
         d.close()
+        
+    def test_pico_led(self):
+        
+        self.assertIsInstance(pico_led, DigitalLED)
+        
+        self.assertEqual(pico_led.value, 0)
+        
+        pico_led.on()
+        self.assertEqual(pico_led.value, 1)
+        
+        pico_led.off()
+        self.assertEqual(pico_led.value, 0)
         
     def test_digital_input_device_default_values(self):
         d = DigitalInputDevice(1)
@@ -395,6 +407,7 @@ class Testpicozero(unittest.TestCase):
 
     def test_pico_temp_sensor(self):
         
+        self.assertIsInstance(pico_temp_sensor, TemperatureSensor)
         self.assertEqual(pico_temp_sensor.pin, 4)
         self.assertIsNotNone(pico_temp_sensor.temp)
         
