@@ -1537,7 +1537,8 @@ class DistanceSensor(PinsMixin):
         Returns a value between 0, indicating the reflector is either touching 
         the sensor or is sufficiently near that the sensor can’t tell the 
         difference, and 1, indicating the reflector is at or beyond the 
-        specified max_distance.
+        specified max_distance. A return value of None indicates that the
+        echo was not received before the time out.
         """
         distance = self.distance
         return distance / self._max_distance if distance is not None else None
