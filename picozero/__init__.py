@@ -32,4 +32,6 @@ from .picozero import (
     pico_temp_sensor,
     TempSensor,
     Thermistor,
+
+    DistanceSensor,
 )
