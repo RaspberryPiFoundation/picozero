@@ -170,11 +170,27 @@ class OutputDevice:
         self._stop_change()
         self._write(value)
         
-    def on(self):
+    def on(self, value=1, t=None, wait=False):
         """
         Turns the device on.
+
+        :param float value:
+            The value to set when turning on. Defaults to 1.
+
+        :param float t:
+            The time in seconds the device should be on. If None is 
+            specified, the device will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the device will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
         """
-        self.value = 1
+        if t is None:
+            self.value = value
+        else:
+            self._start_change(lambda : iter([(value, t), ]), 1, wait)
 
     def off(self):
         """
@@ -1094,6 +1110,36 @@ class RGBLED(OutputDevice, PinsMixin):
         self.blink(on_times, fade_times, colors, n, wait, fps)
 
 RGBLED.colour = RGBLED.color
+
+class Motor(PinsMixin):
+    def __init__(self, forward, backward, use_pwm=True):
+        self._pin_nums = (forward, backward)
+        self._forward = PWMOutputDevice(forward) if use_pwm else DigitalOutputDevice(forward)
+        self._backward = PWMOutputDevice(backward) if use_pwm else DigitalOutputDevice(backward)
+
+    def forward(self, speed=1, t=None, wait=False):
+        self._backward.off()
+        self._forward.on(speed, t, wait)
+
+    def backward(self, speed=1, t=None, wait=False):
+        self._forward.off()
+        self._backward.on(speed, t, wait)
+
+    def stop(self):
+        self._backward.value = 0
+        self._forward.value = 0
+
+    @property
+    def value(self):
+        return(self._forward.value, self._backward.value)
+
+    @value.setter
+    def value(self, value):
+        self._forward.value, self._backward.value = value
+
+    def close(self):
+        self._forward.close()
+        self._backward.close()
 
 ###############################################################################
 # INPUT DEVICES
