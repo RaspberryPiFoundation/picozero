@@ -189,3 +189,10 @@ Internal Temperature Sensor
 Check the internal temperature of the Raspberry Pi Pico in degrees Celcius:
 
 .. literalinclude:: examples/pico_temperature.py
+
+Ultrasonic Distance Sensor
+--------------------------
+
+Get the distance in metres from an ultrasonic distance sensor (HC-SR04):
+
+.. literalinclude:: examples/ultrasonic_distance.py
