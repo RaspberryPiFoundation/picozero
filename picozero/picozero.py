@@ -1192,11 +1192,11 @@ class Motor(PinsMixin):
     @value.setter
     def value(self, value):
         if value > 0:
-            self._backward.off()
-            self._forward.value = value
+            self.forward(value)
         elif value < 0:
-            self._forward.off()
-            self._backward.value = value * -1.0
+            self.backward(value * -1)
+        else:
+            self.stop()
 
     def close(self):
         """
