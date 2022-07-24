@@ -1126,16 +1126,21 @@ class Motor(PinsMixin):
         self._backward.on(speed, t, wait)
 
     def stop(self):
-        self._backward.value = 0
-        self._forward.value = 0
+        self._backward.off()
+        self._forward.off()
 
     @property
     def value(self):
-        return(self._forward.value, self._backward.value)
+        return self._forward.value + (self._backward.value * -1)
 
     @value.setter
     def value(self, value):
-        self._forward.value, self._backward.value = value
+        if value > 0:
+            self._backward.off()
+            self._forward.value = value
+        elif value < 0:
+            self._forward.off()
+            self._backward.value = value * -1.0
 
     def close(self):
         self._forward.close()
