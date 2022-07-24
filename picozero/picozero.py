@@ -1112,25 +1112,81 @@ class RGBLED(OutputDevice, PinsMixin):
 RGBLED.colour = RGBLED.color
 
 class Motor(PinsMixin):
+    """
+    Represents a motor connected to a motor controller which has a 2 pin input. One pin drives the 
+    motor "forward", the other drives the motor "backward".
+
+    :type forward: int
+    :param forward:
+        The GP pin that controls the "forward" motion of the motor. 
+    
+    :type backward: int
+    :param backward:
+        The GP pin that controls the "backward" motion of the motor. 
+    
+    :param bool use_pwm:
+        If :data:`True` (the default), PWM pins are used to drive the motor. When using PWM
+        pins values between 0 and 1 can be used to set the speed.
+    
+    """
     def __init__(self, forward, backward, use_pwm=True):
         self._pin_nums = (forward, backward)
         self._forward = PWMOutputDevice(forward) if use_pwm else DigitalOutputDevice(forward)
         self._backward = PWMOutputDevice(backward) if use_pwm else DigitalOutputDevice(backward)
 
     def forward(self, speed=1, t=None, wait=False):
+        """
+        Makes the motor turn "forward".
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the motor should run for. If None is 
+            specified, the motor will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
         self._backward.off()
         self._forward.on(speed, t, wait)
 
     def backward(self, speed=1, t=None, wait=False):
+        """
+        Makes the motor turn "backward".
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the motor should run for. If None is 
+            specified, the motor will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
         self._forward.off()
         self._backward.on(speed, t, wait)
 
     def stop(self):
+        """
+        Stops the motor turning.
+        """
         self._backward.off()
         self._forward.off()
 
     @property
     def value(self):
+        """
+        Sets or returns the motor speed as a value between -1 and 1. -1 is full speed
+        "backward", 1 is full speed "forward", 0 is stopped.
+        """
         return self._forward.value + (self._backward.value * -1)
 
     @value.setter
@@ -1143,6 +1199,10 @@ class Motor(PinsMixin):
             self._backward.value = value * -1.0
 
     def close(self):
+        """
+        Closes the device and releases any resources. Once closed, the device
+        can no longer be used.
+        """
         self._forward.close()
         self._backward.close()
 
