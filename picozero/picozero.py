@@ -1113,8 +1113,9 @@ RGBLED.colour = RGBLED.color
 
 class Motor(PinsMixin):
     """
-    Represents a motor connected to a motor controller which has a 2 pin input. One pin drives the 
-    motor "forward", the other drives the motor "backward".
+    Represents a motor connected to a motor controller which has a 2 pin
+    input. One pin drives the motor "forward", the other drives the motor
+    "backward".
 
     :type forward: int
     :param forward:
@@ -1173,6 +1174,30 @@ class Motor(PinsMixin):
         """
         self._forward.off()
         self._backward.on(speed, t, wait)
+        
+    def move(self, speed=1, t=None, wait=False):
+        """
+        Makes the motor turn .
+
+        :param float speed:
+            The speed as a value between -1 and 1. 1 turns the motor at
+            full speed direction, -1 turns the motor at full speed in
+            the opposite direction. Defaults to 1.
+
+        :param float t:
+            The time in seconds the motor should run for. If None is 
+            specified, the motor will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        if speed > 0:
+            self.forward(speed, t, wait)
+        elif speed < 0:
+            self.backward(speed * -1, t, wait)
 
     def stop(self):
         """
@@ -1205,6 +1230,9 @@ class Motor(PinsMixin):
         """
         self._forward.close()
         self._backward.close()
+
+Motor.on = Motor.move
+Motor.off = Motor.stop
 
 ###############################################################################
 # INPUT DEVICES
