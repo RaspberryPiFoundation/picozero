@@ -195,4 +195,4 @@ Ultrasonic Distance Sensor
 
 Get the distance in metres from an ultrasonic distance sensor (HC-SR04):
 
-.. literalinclude:: examples/ultrasonic_distance.py
+.. literalinclude:: examples/ultrasonic_distance_sensor.py
