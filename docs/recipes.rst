@@ -169,6 +169,20 @@ Control a passive buzzer or speaker that can play different tones or frequencies
 
 .. literalinclude:: examples/speaker.py
 
+Motor
+-----
+
+Move a motor which is connected via 2 pins (forward / backward) and a motor controller board
+
+.. literalinclude:: examples/motor_move.py
+
+Robot rover
+-------------
+
+Make a simple 2 wheeled robot rover move forward.  
+
+.. literalinclude:: examples/robot_rover_forward.py
+
 Play a tune
 ~~~~~~~~~~~
 

@@ -56,6 +56,21 @@ Speaker
     :inherited-members:
     :members: 
 
+Motor
+-----
+
+.. autoclass:: Motor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+Robot
+-----
+
+.. autoclass:: Robot
+    :show-inheritance:
+    :inherited-members:
+    :members: 
 
 DigitalOutputDevice
 -------------------
@@ -99,6 +114,14 @@ TemperatureSensor
 -----------------
 
 .. autoclass:: TemperatureSensor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+DistanceSensor
+--------------
+
+.. autoclass:: DistanceSensor
     :show-inheritance:
     :inherited-members:
     :members: 

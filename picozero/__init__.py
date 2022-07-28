@@ -20,6 +20,7 @@ from .picozero import (
 
     RGBLED,
     Motor,
+    Robot,
     
     DigitalInputDevice,
     Switch,

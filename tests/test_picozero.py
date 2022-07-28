@@ -259,7 +259,7 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_motor_alt_values(self):
-        d = Motor(1,2,use_pwm=False)
+        d = Motor(1,2,pwm=False)
 
         d.value = 0.5
         self.assertEqual(d.value, 1)
@@ -272,6 +272,27 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
     
+    def test_robot(self):
+        d = Robot(left=(1,2), right=(3,4))
+        
+        d.forward()
+        self.assertEqual(d.value, (1,1))
+        
+        d.left()
+        self.assertEqual(d.value, (-1,1))
+        
+        d.right()
+        self.assertEqual(d.value, (1,-1))
+        
+        d.value = (0.5, -0.5)
+        self.assertAlmostEqual(d.left_motor.value, 0.5, places=2)
+        self.assertAlmostEqual(d.right_motor.value, -0.5, places=2)
+        
+        d.stop()
+        self.assertEqual(d.value, (0,0))
+
+        d.close()
+
     def test_LED_factory(self):
         d = LED(1)
         self.assertIsInstance(d, PWMLED)
@@ -466,3 +487,4 @@ class Testpicozero(unittest.TestCase):
         self.assertIsNotNone(pico_temp_sensor.temp)
 
 unittest.main()
+
