@@ -38,6 +38,7 @@ sys.modules['micropython'] = Mock()
 # add the ticks_ms function to time (as it is in micropython)
 import time
 setattr(time, 'ticks_ms', lambda x: None)
+setattr(time, 'ticks_us', lambda x: None)
 
 # -- Project information -----------------------------------------------------
 
