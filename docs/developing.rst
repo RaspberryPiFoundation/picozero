@@ -38,13 +38,13 @@ Install sphinx using ::
 
     pip3 install sphinx
 
-To build the documentation, run the following command from the docs directory ::
+To test the documentation build, run the following command from the docs directory ::
 
     $ make html
 
 The website will be built in the directory docs/_build/html.
 
-Documentation can be viewed at `picozero.readthedocs.io`_.
+Documentation can be viewed at `picozero.readthedocs.io`_ and is automatically built and deployed on commit.
 
 .. _picozero.readthedocs.io: https://picozero.readthedocs.io
 
@@ -60,3 +60,15 @@ The tests are design to be run on a Raspberry Pi Pico.
 3. Copy the ``test_picozero.py`` to the pico.
 
 4. Run the ``test_picozero.py`` file.
+
+If a test fails it is helpful to be able to see verbose error messages. To see error messages you need to modify the ``lib/unittest.py`` file on the pico.
+
+Locate the following code in the ``run_class`` function::
+
+    # Uncomment to investigate failure in detail
+    #raise
+
+Uncomment ``raise``::
+
+    # Uncomment to investigate failure in detail
+    raise
