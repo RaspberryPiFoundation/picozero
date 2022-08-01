@@ -872,19 +872,11 @@ class RGBLED(OutputDevice, PinsMixin):
             for pin in (red, green, blue))
         super().__init__(active_high, initial_value)
         
-    def __del__(self):
-        if getattr(self, '_leds', None):
-            self._stop_blink()
-            for led in self._leds:
-                led.__del__()
-        self._leds = ()
-        super().__del__()
-
     def _write(self, value):
         if type(value) is not tuple:
             value = (value, ) * 3       
         for led, v in zip(self._leds, value):
-            led.brightness = v
+            led.value = v
         
     @property
     def value(self):
@@ -895,7 +887,7 @@ class RGBLED(OutputDevice, PinsMixin):
         For example, red would be ``(1, 0, 0)`` and yellow would be ``(1, 1,
         0)``, while orange would be ``(1, 0.5, 0)``.
         """
-        return tuple(led.brightness for led in self._leds)
+        return tuple(led.value for led in self._leds)
 
     @value.setter
     def value(self, value):
@@ -1093,6 +1085,12 @@ class RGBLED(OutputDevice, PinsMixin):
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
 
+    def close(self):
+        super().close()
+        for led in self._leds:
+            led.close()
+        self._leds = None
+    
 RGBLED.colour = RGBLED.color
 
 ###############################################################################
