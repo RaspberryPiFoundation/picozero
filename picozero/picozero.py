@@ -1339,7 +1339,7 @@ class Robot:
     def left(self, speed=1, t=None, wait=False):
         """
         Makes the robot turn "left" by turning the left motor backward and the 
-        front motor forward.
+        right motor forward.
 
         :param float speed:
             The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
@@ -1361,7 +1361,7 @@ class Robot:
     def right(self, speed=1, t=None, wait=False):
         """
         Makes the robot turn "right" by turning the left motor forward and the 
-        front motor backward.
+        right motor backward.
 
         :param float speed:
             The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
