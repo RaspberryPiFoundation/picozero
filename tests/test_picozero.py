@@ -318,6 +318,52 @@ class Testpicozero(unittest.TestCase):
     # INPUT DEVICES
     ###########################################################################
         
+    def test_rgb_led_default_values(self):
+        d = RGBLED(1,2,3)
+        
+        self.assertEqual(d.value, (0,0,0))
+        
+        d.on()
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.off()
+        self.assertEqual(d.value, (0,0,0))
+        
+        d.value = (0.25, 0.5, 0.75)
+        self.assertAlmostEqual(d.value[0], 0.25, places=2)
+        self.assertAlmostEqual(d.value[1], 0.5, places=2)
+        self.assertAlmostEqual(d.value[2], 0.75, places=2)
+        
+        d.red = 200
+        self.assertAlmostEqual(d.value[0], 0.78, places=2)
+        
+        d.green = 100
+        self.assertAlmostEqual(d.value[1], 0.39, places=2)
+        
+        d.blue = 50
+        self.assertAlmostEqual(d.value[2], 0.20, places=2)
+        
+        d.close()
+        
+    def test_rgb_led_alt_values(self):
+        d = RGBLED(1,2,3, initial_value=(1,1,1), pwm=False)
+        
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.on()
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.off()
+        self.assertEqual(d.value, (0,0,0))
+        
+        d.value = (1, 1, 1)
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.value = (0, 0.5, 1)
+        self.assertEqual(d.value, (0,1,1))
+        
+        d.close()
+        
     def test_digital_input_device_default_values(self):
         d = DigitalInputDevice(1)
         
