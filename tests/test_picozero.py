@@ -231,14 +231,17 @@ class Testpicozero(unittest.TestCase):
 
         self.assertEqual(d.value, 0)
 
+        d.on()
+        self.assertEqual(d.value, 1)
+
+        d.stop()
+        self.assertEqual(d.value, 0)
+
         d.forward()
         self.assertEqual(d.value, 1)
 
         d.backward()
         self.assertEqual(d.value, -1)
-
-        d.stop()
-        self.assertEqual(d.value, 0)
         
         d.value = 0.5
         self.assertAlmostEqual(d.value, 0.5, places=2)

@@ -1123,9 +1123,10 @@ class Motor(PinsMixin):
     :param backward:
         The GP pin that controls the "backward" motion of the motor. 
     
-    :param bool use_pwm:
-        If :data:`True` (the default), PWM pins are used to drive the motor. When using PWM
-        pins values between 0 and 1 can be used to set the speed.
+    :param bool pwm:
+        If :data:`True` (the default), PWM pins are used to drive the motor. 
+        When using PWM pins values between 0 and 1 can be used to set the 
+        speed.
     
     """
     def __init__(self, forward, backward, pwm=True):
@@ -1135,7 +1136,7 @@ class Motor(PinsMixin):
         
     def on(self, speed=1, t=None, wait=False):
         """
-        Makes the motor turn.
+        Turns the motor on and makes it turn.
 
         :param float speed:
             The speed as a value between -1 and 1. 1 turns the motor at
@@ -1153,9 +1154,15 @@ class Motor(PinsMixin):
            None.
         """
         if speed > 0:
-            self.forward(speed, t, wait)
+            self._backward.off()
+            self._forward.on(speed, t, wait)
+            
         elif speed < 0:
-            self.backward(speed * -1, t, wait)
+            self._forward.off()
+            self._backward.on(-speed, t, wait)
+        
+        else:
+            self.off()
 
     def off(self):
         """
@@ -1163,6 +1170,21 @@ class Motor(PinsMixin):
         """
         self._backward.off()
         self._forward.off()
+
+    @property
+    def value(self):
+        """
+        Sets or returns the motor speed as a value between -1 and 1. -1 is full
+        speed "backward", 1 is full speed "forward", 0 is stopped.
+        """
+        return self._forward.value + (-self._backward.value)
+
+    @value.setter
+    def value(self, value):
+        if value != 0:
+            self.on(value)
+        else:
+            self.stop()
 
     def forward(self, speed=1, t=None, wait=False):
         """
@@ -1172,7 +1194,7 @@ class Motor(PinsMixin):
             The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
 
         :param float t:
-            The time in seconds the motor should run for. If None is 
+            The time in seconds the motor should turn for. If None is 
             specified, the motor will stay on. The default is None.
 
         :param bool wait:
@@ -1181,8 +1203,7 @@ class Motor(PinsMixin):
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
-        self._backward.off()
-        self._forward.on(speed, t, wait)
+        self.on(speed, t, wait)
 
     def backward(self, speed=1, t=None, wait=False):
         """
@@ -1192,7 +1213,7 @@ class Motor(PinsMixin):
             The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
 
         :param float t:
-            The time in seconds the motor should run for. If None is 
+            The time in seconds the motor should turn for. If None is 
             specified, the motor will stay on. The default is None.
 
         :param bool wait:
@@ -1201,23 +1222,7 @@ class Motor(PinsMixin):
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
-        self._forward.off()
-        self._backward.on(speed, t, wait)
-
-    @property
-    def value(self):
-        """
-        Sets or returns the motor speed as a value between -1 and 1. -1 is full speed
-        "backward", 1 is full speed "forward", 0 is stopped.
-        """
-        return self._forward.value + (self._backward.value * -1)
-
-    @value.setter
-    def value(self, value):
-        if value != 0:
-            self.on(value)
-        else:
-            self.stop()
+        self.on(-speed, t, wait)
 
     def close(self):
         """
