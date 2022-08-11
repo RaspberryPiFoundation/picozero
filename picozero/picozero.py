@@ -170,11 +170,27 @@ class OutputDevice:
         self._stop_change()
         self._write(value)
         
-    def on(self):
+    def on(self, value=1, t=None, wait=False):
         """
         Turns the device on.
+
+        :param float value:
+            The value to set when turning on. Defaults to 1.
+
+        :param float t:
+            The time in seconds the device should be on. If None is 
+            specified, the device will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the device will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
         """
-        self.value = 1
+        if t is None:
+            self.value = value
+        else:
+            self._start_change(lambda : iter([(value, t), ]), 1, wait)
 
     def off(self):
         """
@@ -1093,6 +1109,296 @@ class RGBLED(OutputDevice, PinsMixin):
     
 RGBLED.colour = RGBLED.color
 
+class Motor(PinsMixin):
+    """
+    Represents a motor connected to a motor controller which has a 2 pin
+    input. One pin drives the motor "forward", the other drives the motor
+    "backward".
+
+    :type forward: int
+    :param forward:
+        The GP pin that controls the "forward" motion of the motor. 
+    
+    :type backward: int
+    :param backward:
+        The GP pin that controls the "backward" motion of the motor. 
+    
+    :param bool pwm:
+        If :data:`True` (the default), PWM pins are used to drive the motor. 
+        When using PWM pins values between 0 and 1 can be used to set the 
+        speed.
+    
+    """
+    def __init__(self, forward, backward, pwm=True):
+        self._pin_nums = (forward, backward)
+        self._forward = PWMOutputDevice(forward) if pwm else DigitalOutputDevice(forward)
+        self._backward = PWMOutputDevice(backward) if pwm else DigitalOutputDevice(backward)
+        
+    def on(self, speed=1, t=None, wait=False):
+        """
+        Turns the motor on and makes it turn.
+
+        :param float speed:
+            The speed as a value between -1 and 1. 1 turns the motor at
+            full speed direction, -1 turns the motor at full speed in
+            the opposite direction. Defaults to 1.
+
+        :param float t:
+            The time in seconds the motor should run for. If None is 
+            specified, the motor will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        if speed > 0:
+            self._backward.off()
+            self._forward.on(speed, t, wait)
+            
+        elif speed < 0:
+            self._forward.off()
+            self._backward.on(-speed, t, wait)
+        
+        else:
+            self.off()
+
+    def off(self):
+        """
+        Stops the motor turning.
+        """
+        self._backward.off()
+        self._forward.off()
+
+    @property
+    def value(self):
+        """
+        Sets or returns the motor speed as a value between -1 and 1. -1 is full
+        speed "backward", 1 is full speed "forward", 0 is stopped.
+        """
+        return self._forward.value + (-self._backward.value)
+
+    @value.setter
+    def value(self, value):
+        if value != 0:
+            self.on(value)
+        else:
+            self.stop()
+
+    def forward(self, speed=1, t=None, wait=False):
+        """
+        Makes the motor turn "forward".
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the motor should turn for. If None is 
+            specified, the motor will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        self.on(speed, t, wait)
+
+    def backward(self, speed=1, t=None, wait=False):
+        """
+        Makes the motor turn "backward".
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the motor should turn for. If None is 
+            specified, the motor will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        self.on(-speed, t, wait)
+
+    def close(self):
+        """
+        Closes the device and releases any resources. Once closed, the device
+        can no longer be used.
+        """
+        self._forward.close()
+        self._backward.close()
+
+Motor.start = Motor.on
+Motor.stop = Motor.off
+
+class Robot:
+    """
+    Represent a generic dual-motor robot / rover / buggy.
+
+    This class is constructed with two tuples representing the forward and
+    backward pins of the left and right controllers respectively. For example,
+    if the left motor's controller is connected to pins 12 and 13, while the
+    right motor's controller is connected to pins 14 and 15 then the following
+    example will drive the robot forward::
+
+        from picozero import Robot
+
+        robot = Robot(left=(12, 13), right=(14, 15))
+        robot.forward()
+
+    :param tuple left:
+        A tuple of two pins representing the forward and backward inputs of the 
+        left motor's controller.
+
+    :param tuple right:
+        A tuple of two pins representing the forward and backward inputs of the 
+        left motor's controller.
+
+    :param bool pwm:
+        If :data:`True` (the default), pwm pins will be used, allowing ariable 
+        speed control. 
+
+    """
+    def __init__(self, left, right, pwm=True):
+        self._left = Motor(left[0], left[1], pwm)
+        self._right = Motor(right[0], right[1], pwm)
+
+    @property
+    def left_motor(self):
+        """
+        Returns the left :class:`Motor`.
+        """
+        return self._left
+
+    @property
+    def right_motor(self):
+        """
+        Returns the right :class:`Motor`.
+        """
+        return self._right
+
+    @property
+    def value(self):
+        """
+        Represents the motion of the robot as a tuple of (left_motor_speed,
+        right_motor_speed) with ``(-1, -1)`` representing full speed backwards,
+        ``(1, 1)`` representing full speed forwards, and ``(0, 0)``
+        representing stopped.
+        """
+        return (self._left.value, self._right.value)
+
+    @value.setter
+    def value(self, value):
+        self._left.value, self._right.value = value
+        
+    def forward(self, speed=1, t=None, wait=False):
+        """
+        Makes the robot move "forward".
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the robot should move for. If None is 
+            specified, the robot will continue to move until stopped. The default 
+            is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        self._left.forward(speed, t, False)
+        self._right.forward(speed, t, wait)
+        
+    def backward(self, speed=1, t=None, wait=False):
+        """
+        Makes the robot move "backward".
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the robot should move for. If None is 
+            specified, the robot will continue to move until stopped. The default 
+            is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        self._left.backward(speed, t, False)
+        self._right.backward(speed, t, wait)
+        
+    def left(self, speed=1, t=None, wait=False):
+        """
+        Makes the robot turn "left" by turning the left motor backward and the 
+        right motor forward.
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the robot should turn for. If None is 
+            specified, the robot will continue to turn until stopped. The default 
+            is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        self._left.backward(speed, t, False)
+        self._right.forward(speed, t, wait)
+    
+    def right(self, speed=1, t=None, wait=False):
+        """
+        Makes the robot turn "right" by turning the left motor forward and the 
+        right motor backward.
+
+        :param float speed:
+            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+
+        :param float t:
+            The time in seconds the robot should turn for. If None is 
+            specified, the robot will continue to turn until stopped. The default 
+            is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        self._left.forward(speed, t, False)
+        self._right.backward(speed, t, wait)
+        
+    def stop(self):
+        """
+        Stops the robot.
+        """
+        self._left.stop()
+        self._right.stop()
+
+    def close(self):
+        """
+        Closes the device and releases any resources. Once closed, the device
+        can no longer be used.
+        """
+        self._left.close()
+        self._right.close()
+    
+Rover = Robot
+
+
 ###############################################################################
 # INPUT DEVICES
 ###############################################################################
@@ -1555,3 +1861,4 @@ class DistanceSensor(PinsMixin):
         Returns the maximum distance that the sensor will measure in metres.
         """
         return self._max_distance
+

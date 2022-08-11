@@ -19,6 +19,8 @@ from .picozero import (
     Speaker,
 
     RGBLED,
+    Motor,
+    Robot,
     
     DigitalInputDevice,
     Switch,
