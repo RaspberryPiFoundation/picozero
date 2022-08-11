@@ -154,7 +154,6 @@ Print the value, voltage and percent reported by a potentiometer:
 
     In the Thonny Python editor, choose View->Plotter to plot the output of :meth:`print`. 
 
-
 Buzzer
 ------
 
@@ -179,9 +178,18 @@ Move a motor which is connected via 2 pins (forward / backward) and a motor cont
 Robot rover
 -------------
 
-Make a simple 2 wheeled robot rover move forward.  
+Make a simple 2 wheeled robot rover.
+
+.. image:: images/robot_bb.svg
+    :alt: A diagram of the Raspberry Pi Pico connected to 2 motors via a motor controller board powered by a battery pack
+
+Move the rover forward for 1 second and stop.
 
 .. literalinclude:: examples/robot_rover_forward.py
+
+Move the rover *roughly* in a square:
+
+.. literalinclude:: examples/robot_rover_square.py
 
 Play a tune
 ~~~~~~~~~~~
@@ -207,6 +215,9 @@ Check the internal temperature of the Raspberry Pi Pico in degrees Celcius:
 Ultrasonic Distance Sensor
 --------------------------
 
-Get the distance in metres from an ultrasonic distance sensor (HC-SR04):
+Get the distance in metres from an ultrasonic distance sensor (HC-SR04).
+
+.. image:: images/distance_sensor_bb.svg
+    :alt: A diagram of the Raspberry Pi Pico connected to HC-SR04 distance sensor
 
 .. literalinclude:: examples/ultrasonic_distance_sensor.py
