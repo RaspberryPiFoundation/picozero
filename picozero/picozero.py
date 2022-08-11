@@ -1239,6 +1239,8 @@ class Robot:
     """
     Represent a generic dual-motor robot / rover / buggy.
 
+    Alias for :class:`Rover`
+
     This class is constructed with two tuples representing the forward and
     backward pins of the left and right controllers respectively. For example,
     if the left motor's controller is connected to pins 12 and 13, while the
@@ -1696,6 +1698,8 @@ class Potentiometer(AnalogInputDevice):
     Represents a Potentiometer which outputs with a variable voltage
     between 0 and 3.3V.
 
+    Alias for :class:`Pot`.
+
     :param int pin:
         The pin that the device is connected to.
         
@@ -1724,6 +1728,8 @@ class TemperatureSensor(AnalogInputDevice):
     Represents a TemperatureSensor which outputs a variable voltage. The voltage 
     can be converted to a temperature using a `conversion` function passed as a 
     parameter.
+
+    Alias for :class:`Thermistor` and :class:`TempSensor`.
 
     :param int pin:
         The pin that the device is connected to.

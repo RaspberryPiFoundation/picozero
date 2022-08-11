@@ -64,8 +64,8 @@ Motor
     :inherited-members:
     :members: 
 
-Robot
------
+Robot / Rover
+-------------
 
 .. autoclass:: Robot
     :show-inheritance:
@@ -102,16 +102,16 @@ Switch
     :inherited-members:
     :members: 
 
-Potentiometer
--------------
+Potentiometer / Pot
+-------------------
 
 .. autoclass:: Potentiometer
     :show-inheritance:
     :inherited-members:
     :members: 
 
-TemperatureSensor
------------------
+TemperatureSensor / TempSensor / Thermistor
+-------------------------------------------
 
 .. autoclass:: TemperatureSensor
     :show-inheritance:
