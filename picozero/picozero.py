@@ -1132,6 +1132,37 @@ class Motor(PinsMixin):
         self._pin_nums = (forward, backward)
         self._forward = PWMOutputDevice(forward) if pwm else DigitalOutputDevice(forward)
         self._backward = PWMOutputDevice(backward) if pwm else DigitalOutputDevice(backward)
+        
+    def on(self, speed=1, t=None, wait=False):
+        """
+        Makes the motor turn.
+
+        :param float speed:
+            The speed as a value between -1 and 1. 1 turns the motor at
+            full speed direction, -1 turns the motor at full speed in
+            the opposite direction. Defaults to 1.
+
+        :param float t:
+            The time in seconds the motor should run for. If None is 
+            specified, the motor will stay on. The default is None.
+
+        :param bool wait:
+           If True the method will block until the time `t` has expired. 
+           If False the method will return and the motor will turn on in
+           the background. Defaults to False. Only effective if `t` is not
+           None.
+        """
+        if speed > 0:
+            self.forward(speed, t, wait)
+        elif speed < 0:
+            self.backward(speed * -1, t, wait)
+
+    def off(self):
+        """
+        Stops the motor turning.
+        """
+        self._backward.off()
+        self._forward.off()
 
     def forward(self, speed=1, t=None, wait=False):
         """
@@ -1172,37 +1203,6 @@ class Motor(PinsMixin):
         """
         self._forward.off()
         self._backward.on(speed, t, wait)
-        
-    def move(self, speed=1, t=None, wait=False):
-        """
-        Makes the motor turn .
-
-        :param float speed:
-            The speed as a value between -1 and 1. 1 turns the motor at
-            full speed direction, -1 turns the motor at full speed in
-            the opposite direction. Defaults to 1.
-
-        :param float t:
-            The time in seconds the motor should run for. If None is 
-            specified, the motor will stay on. The default is None.
-
-        :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
-           the background. Defaults to False. Only effective if `t` is not
-           None.
-        """
-        if speed > 0:
-            self.forward(speed, t, wait)
-        elif speed < 0:
-            self.backward(speed * -1, t, wait)
-
-    def stop(self):
-        """
-        Stops the motor turning.
-        """
-        self._backward.off()
-        self._forward.off()
 
     @property
     def value(self):
@@ -1214,10 +1214,8 @@ class Motor(PinsMixin):
 
     @value.setter
     def value(self, value):
-        if value > 0:
-            self.forward(value)
-        elif value < 0:
-            self.backward(value * -1)
+        if value != 0:
+            self.on(value)
         else:
             self.stop()
 
@@ -1229,8 +1227,8 @@ class Motor(PinsMixin):
         self._forward.close()
         self._backward.close()
 
-Motor.on = Motor.move
-Motor.off = Motor.stop
+Motor.start = Motor.on
+Motor.stop = Motor.off
 
 class Robot:
     """
