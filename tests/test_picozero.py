@@ -301,7 +301,7 @@ class Testpicozero(unittest.TestCase):
         self.assertIsInstance(d, PWMLED)
         d.close()
         
-        d = LED(1, use_pwm=False)
+        d = LED(1, pwm=False)
         self.assertIsInstance(d, DigitalLED)
         d.close()
         

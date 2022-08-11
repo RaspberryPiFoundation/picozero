@@ -550,10 +550,10 @@ class PWMLED(PWMOutputDevice):
     """
 PWMLED.brightness = PWMLED.value
 
-def LED(pin, use_pwm=True, active_high=True, initial_value=False):
+def LED(pin, pwm=True, active_high=True, initial_value=False):
     """
     Returns an instance of :class:`DigitalLED` or :class:`PWMLED` depending on
-    the value of `use_pwm` parameter. 
+    the value of `pwm` parameter. 
 
     ::
 
@@ -561,14 +561,14 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
 
         my_pwm_led = LED(1)
 
-        my_digital_led = LED(2, use_pwm=False)
+        my_digital_led = LED(2, pwm=False)
 
     :param int pin:
         The pin that the device is connected to.
 
     :param int pin:
-        If `use_pwm` is :data:`True` (the default), a :class:`PWMLED` will be
-        returned. If `use_pwm` is :data:`False`, a :class:`DigitalLED` will be
+        If `pwm` is :data:`True` (the default), a :class:`PWMLED` will be
+        returned. If `pwm` is :data:`False`, a :class:`DigitalLED` will be
         returned. A :class:`PWMLED` can control the brightness of the LED but
         uses 1 PWM channel.
 
@@ -581,7 +581,7 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
         If :data:`False` (the default), the device will be off initially.  If
         :data:`True`, the device will be switched on initially.
     """
-    if use_pwm:
+    if pwm:
         return PWMLED(
             pin=pin,
             active_high=active_high,
@@ -593,10 +593,10 @@ def LED(pin, use_pwm=True, active_high=True, initial_value=False):
             initial_value=initial_value)
 
 try:
-    pico_led = LED("LED", use_pwm=False)
+    pico_led = LED("LED", pwm=False)
 except TypeError:
     # older version of micropython before "LED" was supported
-    pico_led = LED(25, use_pwm=False)
+    pico_led = LED(25, pwm=False)
 
 class PWMBuzzer(PWMOutputDevice):
     """
