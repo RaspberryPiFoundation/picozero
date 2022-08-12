@@ -3,6 +3,16 @@ Change log
 
 .. currentmodule:: picozero
 
+0.3.0 - 2022-08-12
+~~~~~~~~~~~~~~~~~~
+
++ Introduced ``Motor``, ``Robot`` and ``DistanceSensor`` classes.
++ Renamed ``LED`` factory ``use_pwm`` parameter to ``pwm`` to match other classes. Note - this is an API breaking change. 
++ Resolved issue with ``RGBLED`` when not using ``pwm``.
++ Resolved issue where ``blink`` / ``pulse`` rates of ``0`` raised a traceback error.
++ Other minor bug fixes
++ Documentation updates
+
 0.2.0 - 2022-06-29
 ~~~~~~~~~~~~~~~~~~
 

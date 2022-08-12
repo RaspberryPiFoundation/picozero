@@ -47,7 +47,7 @@ copyright = '2022, Raspberry Pi Foundation'
 author = 'Raspberry Pi Foundation'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2.0'
+release = '0.3.0'
 
 
 # -- General configuration ---------------------------------------------------
