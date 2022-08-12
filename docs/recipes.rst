@@ -168,6 +168,20 @@ Control a passive buzzer or speaker that can play different tones or frequencies
 
 .. literalinclude:: examples/speaker.py
 
+Play a tune
+~~~~~~~~~~~
+
+Play a tune of note names and durations in beats: 
+
+.. literalinclude:: examples/speaker_tune.py
+
+Play individual notes
+~~~~~~~~~~~~~~~~~~~~~
+
+Play individual notes and control the timing or perform another action:
+
+.. literalinclude:: examples/speaker_notes.py
+
 Motor
 -----
 
@@ -190,20 +204,6 @@ Move the rover forward for 1 second and stop.
 Move the rover *roughly* in a square:
 
 .. literalinclude:: examples/robot_rover_square.py
-
-Play a tune
-~~~~~~~~~~~
-
-Play a tune of note names and durations in beats: 
-
-.. literalinclude:: examples/speaker_tune.py
-
-Play individual notes
-~~~~~~~~~~~~~~~~~~~~~
-
-Play individual notes and control the timing or perform another action:
-
-.. literalinclude:: examples/speaker_notes.py
 
 Internal Temperature Sensor
 ---------------------------
