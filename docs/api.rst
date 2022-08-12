@@ -56,6 +56,21 @@ Speaker
     :inherited-members:
     :members: 
 
+Motor
+-----
+
+.. autoclass:: Motor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+Robot / Rover
+-------------
+
+.. autoclass:: Robot
+    :show-inheritance:
+    :inherited-members:
+    :members: 
 
 DigitalOutputDevice
 -------------------
@@ -87,18 +102,26 @@ Switch
     :inherited-members:
     :members: 
 
-Potentiometer
--------------
+Potentiometer / Pot
+-------------------
 
 .. autoclass:: Potentiometer
     :show-inheritance:
     :inherited-members:
     :members: 
 
-TemperatureSensor
------------------
+TemperatureSensor / TempSensor / Thermistor
+-------------------------------------------
 
 .. autoclass:: TemperatureSensor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+DistanceSensor
+--------------
+
+.. autoclass:: DistanceSensor
     :show-inheritance:
     :inherited-members:
     :members: 

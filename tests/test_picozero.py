@@ -63,6 +63,10 @@ class MockEvent:
         
 class Testpicozero(unittest.TestCase):
 
+    ###########################################################################
+    # OUTPUT DEVICES
+    ###########################################################################
+
     def test_digital_output_device_default_values(self):
         d = DigitalOutputDevice(1)
         
@@ -122,7 +126,7 @@ class Testpicozero(unittest.TestCase):
         d = DigitalLED(1)
         self.assertFalse(d.is_lit)
         d.close()
-
+            
     def test_pwm_output_device_default_values(self):
         d = PWMOutputDevice(1)
         
@@ -221,14 +225,146 @@ class Testpicozero(unittest.TestCase):
             self.fail(f"{len(values)} values were generated, {len(expected)} were expected.")
         
         d.close()
+        
+    def test_motor_default_values(self):
+        d = Motor(1,2)
+
+        self.assertEqual(d.value, 0)
+
+        d.on()
+        self.assertEqual(d.value, 1)
+
+        d.stop()
+        self.assertEqual(d.value, 0)
+
+        d.forward()
+        self.assertEqual(d.value, 1)
+
+        d.backward()
+        self.assertEqual(d.value, -1)
+        
+        d.value = 0.5
+        self.assertAlmostEqual(d.value, 0.5, places=2)
+
+        d.value = -0.5
+        self.assertAlmostEqual(d.value, -0.5, places=2)
+
+        d.forward(1, t=0.5)
+        values = log_device_values(d, 0.6)
+        self.assertEqual(values, [1,0])
+        self.assertEqual(d.value, 0)
+        
+        d.backward(1, t=0.5)
+        values = log_device_values(d, 0.6)
+        self.assertEqual(values, [-1,0])
+        self.assertEqual(d.value, 0)
+
+        d.close()
+
+    def test_motor_alt_values(self):
+        d = Motor(1,2,pwm=False)
+
+        d.value = 0.5
+        self.assertEqual(d.value, 1)
+
+        d.value = -0.5
+        self.assertEqual(d.value, -1)
+
+        d.value = 0
+        self.assertEqual(d.value, 0)
+
+        d.close()
+    
+    def test_robot(self):
+        d = Robot(left=(1,2), right=(3,4))
+        
+        d.forward()
+        self.assertEqual(d.value, (1,1))
+        
+        d.left()
+        self.assertEqual(d.value, (-1,1))
+        
+        d.right()
+        self.assertEqual(d.value, (1,-1))
+        
+        d.value = (0.5, -0.5)
+        self.assertAlmostEqual(d.left_motor.value, 0.5, places=2)
+        self.assertAlmostEqual(d.right_motor.value, -0.5, places=2)
+        
+        d.stop()
+        self.assertEqual(d.value, (0,0))
+
+        d.close()
 
     def test_LED_factory(self):
         d = LED(1)
         self.assertIsInstance(d, PWMLED)
         d.close()
         
-        d = LED(1, use_pwm=False)
+        d = LED(1, pwm=False)
         self.assertIsInstance(d, DigitalLED)
+        d.close()
+        
+    def test_pico_led(self):
+        
+        self.assertIsInstance(pico_led, DigitalLED)
+        
+        self.assertEqual(pico_led.value, 0)
+        
+        pico_led.on()
+        self.assertEqual(pico_led.value, 1)
+        
+        pico_led.off()
+        self.assertEqual(pico_led.value, 0)
+
+    ###########################################################################
+    # INPUT DEVICES
+    ###########################################################################
+        
+    def test_rgb_led_default_values(self):
+        d = RGBLED(1,2,3)
+        
+        self.assertEqual(d.value, (0,0,0))
+        
+        d.on()
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.off()
+        self.assertEqual(d.value, (0,0,0))
+        
+        d.value = (0.25, 0.5, 0.75)
+        self.assertAlmostEqual(d.value[0], 0.25, places=2)
+        self.assertAlmostEqual(d.value[1], 0.5, places=2)
+        self.assertAlmostEqual(d.value[2], 0.75, places=2)
+        
+        d.red = 200
+        self.assertAlmostEqual(d.value[0], 0.78, places=2)
+        
+        d.green = 100
+        self.assertAlmostEqual(d.value[1], 0.39, places=2)
+        
+        d.blue = 50
+        self.assertAlmostEqual(d.value[2], 0.20, places=2)
+        
+        d.close()
+        
+    def test_rgb_led_alt_values(self):
+        d = RGBLED(1,2,3, initial_value=(1,1,1), pwm=False)
+        
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.on()
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.off()
+        self.assertEqual(d.value, (0,0,0))
+        
+        d.value = (1, 1, 1)
+        self.assertEqual(d.value, (1,1,1))
+        
+        d.value = (0, 0.5, 1)
+        self.assertEqual(d.value, (0,1,1))
+        
         d.close()
         
     def test_digital_input_device_default_values(self):
@@ -375,5 +511,29 @@ class Testpicozero(unittest.TestCase):
         
         d.close()
         
+    def test_temp_sensory(self):
+        
+        def temp_conversion(voltage):
+            return voltage + 2
+        
+        t = TemperatureSensor(4, conversion=temp_conversion)
+
+        adc = MockADC()
+        t._adc = adc
+
+        adc.write(65535)
+        self.assertEqual(t.temp, 3.3 + 2)
+        
+        adc.write(0)
+        self.assertEqual(t.temp, 2)
+
+        t.close()
+
+    def test_pico_temp_sensor(self):
+        
+        self.assertIsInstance(pico_temp_sensor, TemperatureSensor)
+        self.assertEqual(pico_temp_sensor.pin, 4)
+        self.assertIsNotNone(pico_temp_sensor.temp)
 
 unittest.main()
+
