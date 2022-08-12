@@ -12,11 +12,8 @@ A beginner-friendly library for using common electronics components with the Ras
     led = LED(1)
     button = Button(2)
 
-    while True:
-        if button.is_pressed:
-            led.on()
-        else:
-            led.off() 
+    button.when_pressed = led.on
+    button.when_released = led.off
 
 Status
 ------
