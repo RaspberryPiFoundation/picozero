@@ -1,7 +1,7 @@
 from picozero import DistanceSensor
 from time import sleep
 
-ds = DistanceSensor(echo=4, trigger=5)
+ds = DistanceSensor(echo=2, trigger=3)
 
 while True:
     print(ds.distance)
