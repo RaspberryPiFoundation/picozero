@@ -62,7 +62,12 @@ class MockEvent:
         self._is_set = False
         
 class Testpicozero(unittest.TestCase):
-
+    
+    def assertInRange(self, value, lower, upper):
+        msg = "Expected %r to be in range {} to {}".format(lower, upper)
+        self.assertTrue(value <= upper, msg)
+        self.assertTrue(value >= lower, msg)
+        
     ###########################################################################
     # OUTPUT DEVICES
     ###########################################################################
@@ -365,7 +370,46 @@ class Testpicozero(unittest.TestCase):
 
     def test_servo_default_value(self):
         d = Servo(1)
-        self.assertEqual(d.value, 0)
+        
+        self.assertEqual(d.value, None)
+        
+        d.value = 0
+        self.assertAlmostEqual(d.value, 0, 2)
+        self.assertInRange(d._pwm.duty_u16(), int((0.001 / 0.02) * 65535) - 1, int((0.001 / 0.02) * 65535) + 1)
+        
+        d.value = 1
+        self.assertAlmostEqual(d.value, 1, 2)
+        self.assertInRange(d._pwm.duty_u16(), int((0.002 / 0.02) * 65535) - 1, int((0.002 / 0.02) * 65535) + 1)
+        
+        d.value = None
+        self.assertEqual(d.value, None)
+        self.assertEqual(d._pwm.duty_u16(), 0)
+        
+        d.min()
+        self.assertAlmostEqual(d.value, 0, 2)
+        
+        d.mid()
+        self.assertAlmostEqual(d.value, 0.5, 2)
+        
+        d.max()
+        self.assertAlmostEqual(d.value, 1, 2)
+        
+        d.close()
+        
+    def test_servo_alt_values(self):
+        d = Servo(1, initial_value=1, min_pulse_width=0.9/1000, max_pulse_width=2.1/1000, frame_width=19/1000)
+        
+        self.assertAlmostEqual(d.value, 1, 2)
+        
+        d.value = 0
+        self.assertInRange(d._pwm.duty_u16(), int((0.0009 / 0.019) * 65535) - 1, int((0.0009 / 0.019) * 65535) + 1)
+        
+        d.value = 1
+        self.assertInRange(d._pwm.duty_u16(), int((0.0021 / 0.019) * 65535) - 1, int((0.0021 / 0.019) * 65535) + 1)
+        
+        d.value = None
+        self.assertEqual(d._pwm.duty_u16(), 0)
+        
         d.close()
     
     ###########################################################################
