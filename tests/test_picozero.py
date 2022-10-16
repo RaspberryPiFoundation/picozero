@@ -317,10 +317,6 @@ class Testpicozero(unittest.TestCase):
         pico_led.off()
         self.assertEqual(pico_led.value, 0)
 
-    ###########################################################################
-    # INPUT DEVICES
-    ###########################################################################
-        
     def test_rgb_led_default_values(self):
         d = RGBLED(1,2,3)
         
@@ -366,6 +362,15 @@ class Testpicozero(unittest.TestCase):
         self.assertEqual(d.value, (0,1,1))
         
         d.close()
+
+    def test_servo_default_value(self):
+        d = Servo(1)
+        self.assertEqual(d.value, 0)
+        d.close()
+    
+    ###########################################################################
+    # INPUT DEVICES
+    ###########################################################################
         
     def test_digital_input_device_default_values(self):
         d = DigitalInputDevice(1)
