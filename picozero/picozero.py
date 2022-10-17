@@ -1465,6 +1465,12 @@ class Servo(PWMOutputDevice):
         """
         self.value = 1
 
+    def off(self):
+        """
+        Turn the servo "off" by setting the value to `None`.
+        """
+        self.value = None
+
 ###############################################################################
 # INPUT DEVICES
 ###############################################################################

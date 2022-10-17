@@ -394,6 +394,9 @@ class Testpicozero(unittest.TestCase):
         d.max()
         self.assertAlmostEqual(d.value, 1, 2)
         
+        d.off()
+        self.assertEqual(d._pwm.duty_u16(), 0)
+        
         d.close()
         
     def test_servo_alt_values(self):
