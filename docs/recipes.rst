@@ -182,6 +182,26 @@ Play individual notes and control the timing or perform another action:
 
 .. literalinclude:: examples/speaker_notes.py
 
+Servo
+-----
+
+A servo motor connected to a single pin, 3.3v and ground.
+
+.. image:: images/servo.svg
+    :alt: A diagram of the Raspberry Pi Pico connected to a servo motor
+
+Move the servo to its minimum, mid and maximum positions.
+
+.. literalinclude:: examples/servo_move.py
+
+Pulse the servo between its minumum and maximum position.
+
+.. literalinclude:: examples/servo_pulse.py
+
+Move the servo gradually from its minimum to maximum position in 100 increments.
+
+.. literalinclude:: examples/servo_sweep.py
+
 Motor
 -----
 
