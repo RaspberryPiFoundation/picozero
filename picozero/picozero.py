@@ -266,13 +266,6 @@ class DigitalOutputDevice(OutputDevice, PinMixin):
     :param int pin:
         The pin that the device is connected to.
 
-    :param int freq:
-        The frequency of the PWM signal in Hertz. Defaults to 100.
-
-    :param int duty_factor:
-        The duty factor of the PWM signal. This is a value between 0 and 65535.
-        Defaults to 65535.
-
     :param bool active_high:
         If :data:`True` (the default), the :meth:`on` method will set the Pin
         to HIGH. If :data:`False`, the :meth:`on` method will set the Pin to
