@@ -3,6 +3,12 @@ Change log
 
 .. currentmodule:: picozero
 
+0.4.0 - 2022-11-18
+~~~~~~~~~~~~~~~~~~
+
++ Introduced `Servo` classes
++ Documentation fixes
+
 0.3.0 - 2022-08-12
 ~~~~~~~~~~~~~~~~~~
 
