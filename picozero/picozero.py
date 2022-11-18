@@ -16,6 +16,8 @@ class EventFailedScheduleQueueFull(Exception):
 # SUPPORTING CLASSES
 ###############################################################################
 
+def clamp(n, low, high): return max(low, min(n, high))
+
 class PinMixin:
     """
     Mixin used by devices that have a single pin number.
@@ -358,8 +360,8 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the LED will be off initially.  If
-        :data:`True`, the LED will be switched on initially.
+        If :data:`0` (the default), the device will be off initially.  If
+        :data:`1`, the device will be switched on initially.
     """
     
     PIN_TO_PWM_CHANNEL = ["0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B","7A","7B","0A","0B","1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B"]
@@ -1393,6 +1395,74 @@ class Robot:
     
 Rover = Robot
 
+class Servo(PWMOutputDevice):
+    """
+    Represents a PWM-controlled servo motor.
+
+    Setting the `value` to 0 will move the servo to its minimum position,
+    1 will move the servo to its maximum position. Setting the `value` to
+    :data:`None` will turn the servo "off" (i.e. no signal is sent).
+
+    :type pin: int
+    :param pin:
+        The pin the servo motor is connected to. 
+
+    :param bool initial_value:
+        If :data:`0`, the servo will be set to its minimum position.  If
+        :data:`1`, the servo will set to its maximum position. If :data:`None`
+        (the default), the position of the servo will not change.
+
+    :param float min_pulse_width:
+        The pulse width corresponding to the servo's minimum position. This
+        defaults to 1ms.
+
+    :param float max_pulse_width:
+        The pulse width corresponding to the servo's maximum position. This
+        defaults to 2ms.
+
+    :param float frame_width:
+        The length of time between servo control pulses measured in seconds.
+        This defaults to 20ms which is a common value for servos.
+
+    :param int duty_factor:
+        The duty factor of the PWM signal. This is a value between 0 and 65535.
+        Defaults to 65535.    
+    """
+    def __init__(self, pin, initial_value=None, min_pulse_width=1/1000, max_pulse_width=2/1000, frame_width=20/1000, duty_factor=65535):
+        self._min_duty = int((min_pulse_width / frame_width) * duty_factor)
+        self._max_duty = int((max_pulse_width / frame_width) * duty_factor)
+        
+        super().__init__(pin, freq=int(1 / frame_width), duty_factor=duty_factor, initial_value=initial_value)
+        
+    def _state_to_value(self, state):
+        return None if state == 0 else clamp((state - self._min_duty) / (self._max_duty - self._min_duty), 0, 1)
+        
+    def _value_to_state(self, value):
+        return 0 if value is None else int(self._min_duty + ((self._max_duty - self._min_duty) * value))
+    
+    def min(self):
+        """
+        Set the servo to its minimum position.
+        """
+        self.value = 0
+    
+    def mid(self):
+        """
+        Set the servo to its mid-point position.
+        """
+        self.value = 0.5
+        
+    def max(self):
+        """
+        Set the servo to its maximum position.
+        """
+        self.value = 1
+
+    def off(self):
+        """
+        Turn the servo "off" by setting the value to `None`.
+        """
+        self.value = None
 
 ###############################################################################
 # INPUT DEVICES

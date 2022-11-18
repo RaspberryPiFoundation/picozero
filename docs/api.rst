@@ -56,6 +56,13 @@ Speaker
     :inherited-members:
     :members: 
 
+Servo
+-----
+.. autoclass:: Servo
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
 Motor
 -----
 
