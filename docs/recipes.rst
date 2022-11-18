@@ -154,6 +154,10 @@ Print the value, voltage and percent reported by a potentiometer:
 
     In the Thonny Python editor, choose View->Plotter to plot the output of :meth:`print`. 
 
+Use a potentiometer to control the brightness of an LED:
+
+.. literalinclude:: examples/pot_led.py
+
 Buzzer
 ------
 
