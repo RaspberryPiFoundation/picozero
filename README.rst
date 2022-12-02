@@ -3,7 +3,7 @@ picozero
 
 |pypibadge| |docsbadge|
 
-A beginner-friendly library for using common electronics components with the Raspberry Pi Pico.
+A beginner-friendly library to help you use common electronics components with the Raspberry Pi Pico.
 
 .. code-block:: python
 
@@ -34,7 +34,7 @@ Code
 
 The code and project is at `github.com/RaspberryPiFoundation/picozero <https://github.com/RaspberryPiFoundation/picozero>`_. 
 
-Issues can be raised at `github.com/RaspberryPiFoundation/picozero/issues <https://github.com/RaspberryPiFoundation/picozero/issues>`_ (see `contributing <https://picozero.readthedocs.io/en/latest/contributing.html>`_).
+Issues can be raised at `github.com/RaspberryPiFoundation/picozero/issues <https://github.com/RaspberryPiFoundation/picozero/issues>`_ (see `Contributing <https://picozero.readthedocs.io/en/latest/contributing.html>`_).
 
 The latest distribution is available at `pypi.org/project/picozero/ <https://pypi.org/project/picozero/>`_.
 
