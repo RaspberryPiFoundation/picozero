@@ -3,12 +3,12 @@ Recipes
 
 The recipes provide examples of how you can use picozero.
 
-Importing Pico Zero
+Importing picozero
 -------------------
 
 .. currentmodule:: picozero
 
-You will need add an `import` line to the top of your script to use Pico Zero.
+You will need add an `import` line to the top of your script to use picozero.
 
 You can import just what you need, separating items with a comma `,`::
 
@@ -20,11 +20,11 @@ Now you can use :obj:`~picozero.pico_led` and :class:`~picozero.LED` in your scr
     led = LED(14) # Control an LED connected to pin GP14 
     led.on()
  
-Alternatively, the whole Pico Zero library can be imported::
+Alternatively, the whole picozero library can be imported::
 
     import picozero
 
-In this case, all references to Pico Zero items must be prefixed::
+In this case, all references to picozero items must be prefixed::
 
     picozero.pico_led.on()
     led = picozero.LED(14)
@@ -34,9 +34,9 @@ Pico LED
 --------
 
 .. image:: images/pico_led.svg
-    :alt: A diagram of the Raspberry Pi Pico with a GP25 label attached to the onboard LED
+    :alt: A diagram of the Raspberry Pi Pico with a GP25 label attached to the onboard LED.
 
-To turn on the LED on Raspberry Pi Pico:
+To turn on the LED on your Raspberry Pi Pico:
 
 .. literalinclude:: examples/pico_led.py
 
@@ -52,7 +52,7 @@ LED
 ------
  
 .. image:: images/pico_led_14_bb.svg
-    :alt: A diagram of the Raspberry Pi Pico with yellow LED connected to GP14 and GND.
+    :alt: A diagram of the Raspberry Pi Pico with a yellow LED connected to GP14 and GND.
 
 You can control external LEDs with a Raspberry Pi Pico.
 
@@ -82,10 +82,10 @@ Create a pulse effect:
 
 .. literalinclude:: examples/led_pulse.py
 
-Button
+Buttons
 ------
 
-You can connect buttons and switches to a Raspberry Pi Pico and detect whether they are pressed. 
+You can connect buttons and switches to a Raspberry Pi Pico and detect when they are pressed. 
 
 Check if a :class:`Button` is pressed:
 
@@ -102,14 +102,14 @@ Run a function every time a :class:`Button` is pressed:
     function ``led_on_off``, rather it creates a reference to the function to be
     called when the button is pressed. Accidental use of ``button.when_pressed
     = led_on_off()`` would set the ``when_pressed`` action to :data:`None` (the
-    return value of this function) which would mean nothing happens when the
+    return value of this function), which would mean nothing happens when the
     button is pressed.
 
 Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is released:
 
 .. literalinclude:: examples/button_led.py
 
-RGBLED
+RGB LEDs
 ------
 
 Set colours with an :class:`RGBLED`:
@@ -132,7 +132,7 @@ You can control whether :meth:`~picozero.RGBLED.blink` runs a fixed number of ti
 Pulse
 ~~~~~
 
-Use :meth:`~picozero.RGBLED.pulse` to gradually change the LED between colours. The default will pulse between red and off, then green and off, then blue and off. 
+Use :meth:`~picozero.RGBLED.pulse` to gradually change the LED colour. The default will pulse between red and off, then green and off, then blue and off. 
 
 .. literalinclude:: examples/rgb_pulse.py
 
@@ -146,13 +146,13 @@ The default for :meth:`~picozero.RGBLED.cycle` is to cycle from red to green, th
 Potentiometer
 ---------------
 
-Print the value, voltage and percent reported by a potentiometer:
+Print the value, voltage, and percent reported by a potentiometer:
 
 .. literalinclude:: examples/potentiometer.py
 
 .. note::
 
-    In the Thonny Python editor, choose View->Plotter to plot the output of :meth:`print`. 
+    In the Thonny Python editor, choose **View** -> **Plotter** to plot the output of :meth:`print`. 
 
 Buzzer
 ------
@@ -185,39 +185,39 @@ Play individual notes and control the timing or perform another action:
 Motor
 -----
 
-Move a motor which is connected via 2 pins (forward / backward) and a motor controller board
+Move a motor connected via two pins (forward and backward) and a motor controller board:
 
 .. literalinclude:: examples/motor_move.py
 
 Robot rover
 -------------
 
-Make a simple 2 wheeled robot rover.
+Make a simple two-wheeled robot rover.
 
 .. image:: images/robot_bb.svg
-    :alt: A diagram of the Raspberry Pi Pico connected to 2 motors via a motor controller board powered by a battery pack
+    :alt: A diagram of the Raspberry Pi Pico connected to two motors via a motor controller board powered by a battery pack.
 
-Move the rover forward for 1 second and stop.
+Move the rover forward for 1 second and stop:
 
 .. literalinclude:: examples/robot_rover_forward.py
 
-Move the rover *roughly* in a square:
+Move the rover (roughly) in a square:
 
 .. literalinclude:: examples/robot_rover_square.py
 
-Internal Temperature Sensor
+Internal temperature sensor
 ---------------------------
 
 Check the internal temperature of the Raspberry Pi Pico in degrees Celcius:
 
 .. literalinclude:: examples/pico_temperature.py
 
-Ultrasonic Distance Sensor
+Ultrasonic distance sensor
 --------------------------
 
-Get the distance in metres from an ultrasonic distance sensor (HC-SR04).
+Get the distance in metres from an ultrasonic distance sensor (HC-SR04):
 
 .. image:: images/distance_sensor_bb.svg
-    :alt: A diagram of the Raspberry Pi Pico connected to HC-SR04 distance sensor
+    :alt: A diagram of the Raspberry Pi Pico connected to an HC-SR04 distance sensor.
 
 .. literalinclude:: examples/ultrasonic_distance_sensor.py
