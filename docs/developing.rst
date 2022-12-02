@@ -13,7 +13,7 @@ To build and deploy picozero, you need to install the dependencies ::
 Build
 -----
 
-1. Update version numbers in the ``setup.py``, ``picozero/__init__.py`` and ``docs/conf.py`` files.
+1. Update version numbers in the ``setup.py``, ``picozero/__init__.py``, and ``docs/conf.py`` files
 
 2. Add release to ``docs/changelog.rst``
 
@@ -27,7 +27,7 @@ Build
 
 5. Push all changes to ``master`` branch
 
-6. Create a `release <https://github.com/RaspberryPiFoundation/picozero/releases>`_ in github and upload ``picozero-#-#-#.tar.gz`` source file to the release.
+6. Create a `release <https://github.com/RaspberryPiFoundation/picozero/releases>`_ in github and upload ``picozero-#-#-#.tar.gz`` source file to the release
 
 Documentation
 -------------
@@ -53,15 +53,15 @@ Tests
 
 The tests are design to be run on a Raspberry Pi Pico.
 
-1. Install the `picozero <https://pypi.org/project/picozero/>`_ package.
+1. Install the `picozero <https://pypi.org/project/picozero/>`_ package
 
-2. Install the `micropython-unittest <https://pypi.org/project/micropython-unittest/>`_ package.
+2. Install the `micropython-unittest <https://pypi.org/project/micropython-unittest/>`_ package
 
-3. Copy the ``test_picozero.py`` to the pico.
+3. Copy the ``test_picozero.py`` file to the Pico
 
-4. Run the ``test_picozero.py`` file.
+4. Run the ``test_picozero.py`` file
 
-If a test fails it is helpful to be able to see verbose error messages. To see error messages you need to modify the ``lib/unittest.py`` file on the pico.
+If a test fails, it is helpful to be able to see verbose error messages. To see error messages, you need to modify the ``lib/unittest.py`` file on the Pico.
 
 Locate the following code in the ``run_class`` function::
 
