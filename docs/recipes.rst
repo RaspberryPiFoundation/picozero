@@ -10,7 +10,7 @@ Importing picozero
 
 You will need add an `import` line to the top of your script to use picozero.
 
-You can import just what you need, separating items with a comma `,`::
+You can import just what you need, separating items with a comma ``,``::
 
     from picozero import pico_led, LED
 
@@ -48,7 +48,7 @@ Using the :obj:`pico_led` is equivalent to::
 
 You can use :obj:`pico_led` in the same way as external LEDs created using :class:`LED`.
 
-LED
+LEDs
 ------
  
 .. image:: images/pico_led_14_bb.svg
@@ -152,7 +152,7 @@ Print the value, voltage, and percent reported by a potentiometer:
 
 .. note::
 
-    In the Thonny Python editor, choose **View** -> **Plotter** to plot the output of :meth:`print`. 
+    In the Thonny Python editor, choose **View** > **Plotter** to plot the output of :meth:`print`. 
 
 Buzzer
 ------
