@@ -17,7 +17,7 @@ Build
 
 2. Add release to ``docs/changelog.rst``
 
-3. Run `setup.py` and create a source distribution ::
+3. Run ``setup.py`` and create a source distribution ::
 
     python3 setup.py sdist
 
@@ -51,7 +51,7 @@ Documentation can be viewed at `picozero.readthedocs.io`_ and is automatically b
 Tests
 -----
 
-The tests are design to be run on a Raspberry Pi Pico.
+The tests are designed to be run on a Raspberry Pi Pico.
 
 1. Install the `picozero <https://pypi.org/project/picozero/>`_ package
 
