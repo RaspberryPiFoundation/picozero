@@ -23,18 +23,18 @@ Once Thonny is installed, you will need to ensure that you are using the latest 
 Use the MicroPython interpreter
 -------------------------------
 
-You can change which interpreter you are using in Thonny by selection the desired option at the bottom right of the screen. Make sure that **MicroPython (Raspberry Pi Pico)** is selected.
+You can change which interpreter you are using in Thonny by selecting the desired option at the bottom right of the screen. Make sure that **MicroPython (Raspberry Pi Pico)** is selected.
 
 .. image:: images/thonny-switch-interpreter.jpg
 
-Install picozero from PyPi in Thonny
+Install picozero from PyPI in Thonny
 ------------------------------------
 
 To install picozero within Thonny, select **Tools** > **Manage packages...**
 
 .. image:: images/thonny-manage-packages.jpg
 
-Search for `picozero` on PyPi.
+Search for `picozero` on PyPI.
 
 .. image:: images/thonny-packages-picozero.jpg
 
@@ -56,7 +56,7 @@ Either clone the picozero `GitHub repository`_ or copy the code from the `picoze
 .. _GitHub repository: https://github.com/RaspberryPiFoundation/picozero
 .. _picozero.py: https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/master/picozero/picozero.py?token=GHSAT0AAAAAABRLTKWZDBSYBE54NJ7AIZ6MYSENI2A
 
-In Thonny, navigate to the cloned directory or location you save the file in and find the ``picozero.py`` file.
+In Thonny, navigate to the cloned directory or location you saved the file in and find the ``picozero.py`` file.
 
 .. image:: images/thonny-navigate-downloads.jpg
 
