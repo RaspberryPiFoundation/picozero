@@ -23,7 +23,7 @@ Beta. There will be bugs and issues. API changes are likely. More devices will b
 Documentation
 -------------
 
-Documentation is available at `picozero.readthedocs.io <https://picozero.readthedocs.io>`_ :
+Documentation is available at `picozero.readthedocs.io <https://picozero.readthedocs.io>`_:
 
 - `Installation and getting started guide <https://picozero.readthedocs.io/en/latest/gettingstarted.html>`_
 - `Recipes and how-to's <https://picozero.readthedocs.io/en/latest/recipes.html>`_
