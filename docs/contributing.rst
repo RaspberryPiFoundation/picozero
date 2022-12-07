@@ -1,7 +1,7 @@
 Contributing
 ============
 
-Contributions to picozero are welcome. Please keep in mind that picozero is 'lightweight'. It is designed to be easy to use but also needs to run on a microcontroller, please take this into account when considering feature requests or raising issues.
+Contributions to picozero are welcome. Please keep in mind that picozero is 'lightweight'. It is designed to be easy to use but also needs to run on a microcontroller; please take this into account when considering feature requests or raising issues.
 
 For more details, please see the following advice.
 
