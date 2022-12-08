@@ -24,7 +24,7 @@ class PinMixin:
     @property
     def pin(self):
         """
-        Returns the pin number used by the device
+        Returns the pin number used by the device.
         """
         return self._pin_num
 
@@ -33,13 +33,13 @@ class PinMixin:
 
 class PinsMixin:
     """
-    Mixin used by devices that use multiple pins
+    Mixin used by devices that use multiple pins.
     """
 
     @property
     def pins(self):
         """
-        Returns a tuple of pins used by the device
+        Returns a tuple of pins used by the device.
         """
         return self._pin_nums
 
@@ -48,13 +48,13 @@ class PinsMixin:
         
 class ValueChange:
     """
-    Internal class to control the value of an output device 
+    Internal class to control the value of an output device. 
 
     :param OutputDevice output_device:
-        The OutputDevice object you wish to change the value of
+        The OutputDevice object you wish to change the value of.
 
     :param generator:
-        A generator function which yields a 2d list of
+        A generator function that yields a 2d list of
         ((value, seconds), *).
         
         The output_device's value will be set for the number of
@@ -115,7 +115,7 @@ class ValueChange:
             
             self._n = self._n - 1 if self._n is not None else None
             if self._n == 0:
-                # its the end, return None
+                # it's the end, return None
                 return None
             else:
                 # recreate the generator and start again
@@ -148,7 +148,7 @@ class OutputDevice:
         """
         Sets or returns the active_high property. If :data:`True`, the 
         :meth:`on` method will set the Pin to HIGH. If :data:`False`, 
-        the :meth:`on` method will set the Pin toLOW (the :meth:`off` method 
+        the :meth:`on` method will set the Pin to LOW (the :meth:`off` method 
         always does the opposite).
         """
         return self._active_state
@@ -161,7 +161,7 @@ class OutputDevice:
     @property
     def value(self):
         """
-        Sets or returns a value representing the state of the device. 1 is on, 0 is off.
+        Sets or returns a value representing the state of the device: 1 is on, 0 is off.
         """
         return self._read()
 
@@ -178,12 +178,12 @@ class OutputDevice:
             The value to set when turning on. Defaults to 1.
 
         :param float t:
-            The time in seconds the device should be on. If None is 
+            The time in seconds that the device should be on. If None is 
             specified, the device will stay on. The default is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the device will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the device will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -216,13 +216,13 @@ class OutputDevice:
             
     def blink(self, on_time=1, off_time=None, n=None, wait=False):
         """
-        Make the device turn on and off repeatedly.
+        Makes the device turn on and off repeatedly.
         
         :param float on_time:
-            The length of time in seconds the device will be on. Defaults to 1.
+            The length of time in seconds that the device will be on. Defaults to 1.
 
         :param float off_time:
-            The length of time in seconds the device will be off. If `None`, 
+            The length of time in seconds that the device will be off. If `None`, 
             it will be the same as ``on_time``. Defaults to `None`.
 
         :param int n:
@@ -231,8 +231,8 @@ class OutputDevice:
             is None.
 
         :param bool wait:
-           If True the method will block until the device stops turning on and off. 
-           If False the method will return and the device will turn on and off in
+           If True, the method will block until the device stops turning on and off. 
+           If False, the method will return and the device will turn on and off in
            the background. Defaults to False.        
         """
         off_time = on_time if off_time is None else off_time
@@ -270,7 +270,7 @@ class DigitalOutputDevice(OutputDevice, PinMixin):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the LED will be off initially.  If
+        If :data:`False` (the default), the LED will be off initially. If
         :data:`True`, the LED will be switched on initially.
     """
     def __init__(self, pin, active_high=True, initial_value=False):
@@ -300,7 +300,7 @@ class DigitalOutputDevice(OutputDevice, PinMixin):
 
 class DigitalLED(DigitalOutputDevice):
     """
-    Represents a simple LED which can be switched on and off.
+    Represents a simple LED, which can be switched on and off.
 
     :param int pin:
         The pin that the device is connected to.
@@ -311,7 +311,7 @@ class DigitalLED(DigitalOutputDevice):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the LED will be off initially.  If
+        If :data:`False` (the default), the LED will be off initially. If
         :data:`True`, the LED will be switched on initially.
     """
     pass
@@ -320,7 +320,7 @@ DigitalLED.is_lit = DigitalLED.is_active
 
 class Buzzer(DigitalOutputDevice):
     """
-    Represents an active or passive buzzer which can be turned on or off.
+    Represents an active or passive buzzer, which can be turned on or off.
 
     :param int pin:
         The pin that the device is connected to.
@@ -331,7 +331,7 @@ class Buzzer(DigitalOutputDevice):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the Buzzer will be off initially.  If
+        If :data:`False` (the default), the Buzzer will be off initially. If
         :data:`True`, the Buzzer will be switched on initially.
     """
     pass
@@ -346,7 +346,7 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         The pin that the device is connected to.
 
     :param int freq:
-        The frequency of the PWM signal in Hertz. Defaults to 100.
+        The frequency of the PWM signal in hertz. Defaults to 100.
 
     :param int duty_factor:
         The duty factor of the PWM signal. This is a value between 0 and 65535.
@@ -358,7 +358,7 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the LED will be off initially.  If
+        If :data:`False` (the default), the LED will be off initially. If
         :data:`True`, the LED will be switched on initially.
     """
     
@@ -420,7 +420,7 @@ class PWMOutputDevice(OutputDevice, PinMixin):
 
     def blink(self, on_time=1, off_time=None, n=None, wait=False, fade_in_time=0, fade_out_time=None, fps=25):
         """
-        Make the device turn on and off repeatedly.
+        Makes the device turn on and off repeatedly.
         
         :param float on_time:
             The length of time in seconds the device will be on. Defaults to 1.
@@ -434,8 +434,8 @@ class PWMOutputDevice(OutputDevice, PinMixin):
             device will continue blinking forever. The default is `None`.
 
         :param bool wait:
-           If True the method will block until the LED stops blinking. If False
-           the method will return and the LED is will blink in the background.
+           If True, the method will block until the LED stops blinking. If False,
+           the method will return and the LED will blink in the background.
            Defaults to False.
 
         :param float fade_in_time:
@@ -481,14 +481,14 @@ class PWMOutputDevice(OutputDevice, PinMixin):
 
     def pulse(self, fade_in_time=1, fade_out_time=None, n=None, wait=False, fps=25):
         """
-        Make the device pulse on and off repeatedly.
+        Makes the device pulse on and off repeatedly.
         
         :param float fade_in_time:
-            The length of time in seconds the device will take to turn on.
+            The length of time in seconds that the device will take to turn on.
             Defaults to 1.
 
         :param float fade_out_time:
-           The length of time in seconds the device will take to turn off.
+           The length of time in seconds that the device will take to turn off.
            Defaults to 1.
            
         :param int fps:
@@ -496,12 +496,12 @@ class PWMOutputDevice(OutputDevice, PinMixin):
            steps between off/on states. Defaults to 25.
            
         :param int n:
-           The number of times to pulse the LED. If None the LED will pulse
+           The number of times to pulse the LED. If None, the LED will pulse
            forever. Defaults to None.
     
         :param bool wait:
-           If True the method will block until the LED stops pulsing. If False
-           the method will return and the LED is will pulse in the background.
+           If True, the method will block until the LED stops pulsing. If False,
+           the method will return and the LED will pulse in the background.
            Defaults to False.
         """
         self.blink(on_time=0, off_time=0, fade_in_time=fade_in_time, fade_out_time=fade_out_time, n=n, wait=wait, fps=fps)
@@ -520,13 +520,13 @@ class PWMOutputDevice(OutputDevice, PinMixin):
     
 class PWMLED(PWMOutputDevice):
     """
-    Represents an LED driven by a PWM pin whose brightness can be changed.
+    Represents an LED driven by a PWM pin; the brightness of the LED can be changed.
 
     :param int pin:
         The pin that the device is connected to.
 
     :param int freq:
-        The frequency of the PWM signal in Hertz. Defaults to 100.
+        The frequency of the PWM signal in hertz. Defaults to 100.
 
     :param int duty_factor:
         The duty factor of the PWM signal. This is a value between 0 and 65535.
@@ -538,7 +538,7 @@ class PWMLED(PWMOutputDevice):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the LED will be off initially.  If
+        If :data:`False` (the default), the LED will be off initially. If
         :data:`True`, the LED will be switched on initially.
     """
 PWMLED.brightness = PWMLED.value
@@ -546,7 +546,7 @@ PWMLED.brightness = PWMLED.value
 def LED(pin, pwm=True, active_high=True, initial_value=False):
     """
     Returns an instance of :class:`DigitalLED` or :class:`PWMLED` depending on
-    the value of `pwm` parameter. 
+    the value of the `pwm` parameter. 
 
     ::
 
@@ -571,7 +571,7 @@ def LED(pin, pwm=True, active_high=True, initial_value=False):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the device will be off initially.  If
+        If :data:`False` (the default), the device will be off initially. If
         :data:`True`, the device will be switched on initially.
     """
     if pwm:
@@ -593,13 +593,13 @@ except TypeError:
 
 class PWMBuzzer(PWMOutputDevice):
     """
-    Represents a passive buzzer driven by a PWM pin whose volume can be changed.
+    Represents a passive buzzer driven by a PWM pin; the volume of the buzzer can be changed.
 
     :param int pin:
         The pin that the buzzer is connected to.
 
     :param int freq:
-        The frequency of the PWM signal in Hertz. Defaults to 440.
+        The frequency of the PWM signal in hertz. Defaults to 440.
 
     :param int duty_factor:
         The duty factor of the PWM signal. This is a value between 0 and 65535.
@@ -611,8 +611,8 @@ class PWMBuzzer(PWMOutputDevice):
         LOW (the :meth:`off` method always does the opposite).
 
     :param bool initial_value:
-        If :data:`False` (the default), the Buzzer will be off initially.  If
-        :data:`True`, the Buzzer will be switched on initially.
+        If :data:`False` (the default), the buzzer will be off initially.  If
+        :data:`True`, the buzzer will be switched on initially.
     """    
     def __init__(self, pin, freq=440, duty_factor=1023, active_high=True, initial_value=False):
         super().__init__(pin, freq, duty_factor, active_high, initial_value)
@@ -628,7 +628,7 @@ class Speaker(OutputDevice, PinMixin):
         The pin that the speaker is connected to.
 
     :param int initial_freq:
-        The initial frequency of the PWM signal in Hertz. Defaults to 440.
+        The initial frequency of the PWM signal in hertz. Defaults to 440.
     
     :param int initial_volume:
         The initial volume of the PWM signal. This is a value between 0 and
@@ -648,7 +648,7 @@ class Speaker(OutputDevice, PinMixin):
         'a#1': 58, 'b1': 62, 'c2': 65, 'c#2': 69, 'd2': 73, 'd#2': 78,
         'e2': 82, 'f2': 87, 'f#2': 93, 'g2': 98, 'g#2': 104, 'a2': 110, 'a#2': 117, 'b2': 123,
         'c3': 131, 'c#3': 139, 'd3': 147, 'd#3': 156, 'e3': 165, 'f3': 175, 'f#3': 185, 'g3': 196, 'g#3': 208, 'a3': 220, 'a#3': 233, 'b3': 247,
-        'c4': 262, 'c#4': 277, 'd4': 294, 'd#4': 311, 'e4': 330, 'f4': 349, 'f#4': 370, 'g4': 392, 'g#4': 415, 'a4': 440,'a#4': 466,'b4': 494,
+        'c4': 262, 'c#4': 277, 'd4': 294, 'd#4': 311, 'e4': 330, 'f4': 349, 'f#4': 370, 'g4': 392, 'g#4': 415, 'a4': 440, 'a#4': 466, 'b4': 494,
         'c5': 523, 'c#5': 554, 'd5': 587, 'd#5': 622, 'e5': 659, 'f5': 698, 'f#5': 740, 'g5': 784, 'g#5': 831, 'a5': 880, 'a#5': 932, 'b5': 988,
         'c6': 1047, 'c#6': 1109, 'd6': 1175, 'd#6': 1245, 'e6': 1319, 'f6': 1397, 'f#6': 1480, 'g6': 1568, 'g#6': 1661, 'a6': 1760, 'a#6': 1865, 'b6': 1976,
         'c7': 2093, 'c#7': 2217, 'd7': 2349, 'd#7': 2489,
@@ -679,7 +679,7 @@ class Speaker(OutputDevice, PinMixin):
     @property
     def value(self):
         """
-        Sets or returns the value of the speaker. value is a tuple of (freq, volume).
+        Sets or returns the value of the speaker. The value is a tuple of (freq, volume).
         """
         return tuple(self.freq, self.volume)
 
@@ -691,7 +691,7 @@ class Speaker(OutputDevice, PinMixin):
     @property
     def volume(self):
         """
-        Sets or returns the volume of the speaker. 1 for max volume. 0 for off.
+        Sets or returns the volume of the speaker: 1 for maximum volume, 0 for off.
         """
         return self._volume
 
@@ -734,21 +734,21 @@ class Speaker(OutputDevice, PinMixin):
 
     def beep(self, on_time=1, off_time=None, n=None, wait=False, fade_in_time=0, fade_out_time=None, fps=25):
         """
-        Make the buzzer turn on and off repeatedly.
+        Makes the buzzer turn on and off repeatedly.
         
         :param float on_time:
-            The length of time in seconds the device will be on. Defaults to 1.
+            The length of time in seconds that the device will be on. Defaults to 1.
 
         :param float off_time:
-            The length of time in seconds the device will be off. If `None`, 
+            The length of time in seconds that the device will be off. If `None`, 
             it will be the same as ``on_time``. Defaults to `None`.
 
         :param int n:
             The number of times to repeat the beep operation. If `None`, the 
-            device will continue blinking forever. The default is `None`.
+            device will continue beeping forever. The default is `None`.
 
         :param bool wait:
-           If True the method will block until the buzzer stops beeping. If False
+           If True, the method will block until the buzzer stops beeping. If False,
            the method will return and the buzzer will beep in the background.
            Defaults to False.
 
@@ -771,51 +771,51 @@ class Speaker(OutputDevice, PinMixin):
 
         :param int tune:
 
-            The tune to play which can be specified as:
+            The tune to play can be specified as:
 
                 + a single "note", represented as:
                   + a frequency in Hz e.g. `440`
                   + a midi note e.g. `60`
-                  + a note name as a string e.g `"E4"`
-                + a list of note and duration e.g. `[440, 1]` or  `["E4", 2]`
-                + a list of 2 value tuples of (note, duration) e.g. `[(440,1), (60, 2), ("e4", 3)]`
+                  + a note name as a string e.g. `"E4"`
+                + a list of notes and duration e.g. `[440, 1]` or `["E4", 2]`
+                + a list of two value tuples of (note, duration) e.g. `[(440,1), (60, 2), ("e4", 3)]`
 
             Defaults to `440`.
         
         :param int volume:
-            The volume of the tune. 1 is max volume. 0 is mute. Defaults to 1.
+            The volume of the tune; 1 is maximum volume, 0 is mute. Defaults to 1.
 
         :param float duration:
             The duration of each note in seconds. Defaults to 1.
 
         :param int n:
-           The number of times to play the tune. If None the tune will play
+           The number of times to play the tune. If None, the tune will play
            forever. Defaults to 1.
     
         :param bool wait:
-           If True the method will block until the tune has finished. If False
+           If True, the method will block until the tune has finished. If False,
            the method will return and the tune will play in the background.
            Defaults to True.
         """
 
         self.off()
 
-        # tune isnt a list, so it must be a single frequency or note
+        # tune isn't a list, so it must be a single frequency or note
         if not isinstance(tune, (list, tuple)):
             tune = [(tune, duration)]
-        # if the first element isnt a list, then it must be list of a single note and duration
+        # if the first element isn't a list, then it must be list of a single note and duration
         elif not isinstance(tune[0], (list, tuple)):
             tune = [tune]
 
         def tune_generator():
             for note in tune:
                 
-                # note isnt a list or tuple, it must be a single frequency or note
+                # note isn't a list or tuple, it must be a single frequency or note
                 if not isinstance(note, (list, tuple)):
                     # make it into a tuple
                     note = (note, duration)
 
-                # turn the notes in frequencies
+                # turn the notes into frequencies
                 freq = self._to_freq(note[0])
                 freq_duration = note[1]
                 freq_volume = volume if freq is not None else 0
@@ -834,18 +834,18 @@ class Speaker(OutputDevice, PinMixin):
 
 class RGBLED(OutputDevice, PinsMixin):
     """
-    Extends :class:`OutputDevice` and represents a full color LED component (composed
+    Extends :class:`OutputDevice` and represents a full colour LED component (composed
     of red, green, and blue LEDs).
     Connect the common cathode (longest leg) to a ground pin; connect each of
     the other legs (representing the red, green, and blue anodes) to any GP
-    pins.  You should use three limiting resistors (one per anode).
+    pins. You should use three limiting resistors (one per anode).
     The following code will make the LED yellow::
 
         from picozero import RGBLED
         rgb = RGBLED(1, 2, 3)
         rgb.color = (1, 1, 0)
 
-    0-255 colours are also supported::
+    0–255 colours are also supported::
 
         rgb.color = (255, 255, 0)
 
@@ -890,11 +890,11 @@ class RGBLED(OutputDevice, PinsMixin):
     @property
     def value(self):
         """
-        Represents the color of the LED as an RGB 3-tuple of ``(red, green,
+        Represents the colour of the LED as an RGB 3-tuple of ``(red, green,
         blue)`` where each value is between 0 and 1 if *pwm* was :data:`True`
-        when the class was constructed (and only 0 or 1 if not).
+        when the class was constructed (but only takes values of 0 or 1 otherwise).
         For example, red would be ``(1, 0, 0)`` and yellow would be ``(1, 1,
-        0)``, while orange would be ``(1, 0.5, 0)``.
+        0)``, whereas orange would be ``(1, 0.5, 0)``.
         """
         return tuple(led.value for led in self._leds)
 
@@ -922,11 +922,11 @@ class RGBLED(OutputDevice, PinsMixin):
     @property
     def color(self):
         """
-        Represents the color of the LED as an RGB 3-tuple of ``(red, green,
+        Represents the colour of the LED as an RGB 3-tuple of ``(red, green,
         blue)`` where each value is between 0 and 255 if *pwm* was :data:`True`
-        when the class was constructed (and only 0 or 255 if not).
+        when the class was constructed (but only takes values of 0 or 255 otherwise).
         For example, red would be ``(255, 0, 0)`` and yellow would be ``(255, 255,
-        0)``, while orange would be ``(255, 127, 0)``.
+        0)``, whereas orange would be ``(255, 127, 0)``.
         """
         return tuple(self._to_255(v) for v in self.value)
 
@@ -937,8 +937,8 @@ class RGBLED(OutputDevice, PinsMixin):
     @property
     def red(self):
         """
-        Represents the red component of the LED as value between 0 and 255 if *pwm* was :data:`True`
-        when the class was constructed (and only 0 or 255 if not).
+        Represents the red component of the LED as a value between 0 and 255 if *pwm* was :data:`True`
+        when the class was constructed (but only takes values of 0 or 255 otherwise).
         """
         return self._to_255(self.value[0])
 
@@ -950,8 +950,8 @@ class RGBLED(OutputDevice, PinsMixin):
     @property
     def green(self):
         """
-        Represents the green component of the LED as value between 0 and 255 if *pwm* was :data:`True`
-        when the class was constructed (and only 0 or 255 if not).
+        Represents the green component of the LED as a value between 0 and 255 if *pwm* was :data:`True`
+        when the class was constructed (but only takes values of 0 or 255 otherwise).
         """
         return self._to_255(self.value[1])
 
@@ -963,8 +963,8 @@ class RGBLED(OutputDevice, PinsMixin):
     @property
     def blue(self):
         """
-        Represents the blue component of the LED as value between 0 and 255 if *pwm* was :data:`True`
-        when the class was constructed (and only 0 or 255 if not).
+        Represents the blue component of the LED as a value between 0 and 255 if *pwm* was :data:`True`
+        when the class was constructed (but only takes values of 0 or 255 otherwise).
         """
         return self._to_255(self.value[2])
 
@@ -975,25 +975,25 @@ class RGBLED(OutputDevice, PinsMixin):
 
     def on(self):
         """
-        Turn the LED on. This equivalent to setting the LED color to white
+        Turns the LED on. This is equivalent to setting the LED color to white, e.g.
         ``(1, 1, 1)``.
         """
         self.value = (1, 1, 1)
 
     def invert(self):
         """
-        Invert the state of the device. If the device is currently off
+        Inverts the state of the device. If the device is currently off
         (:attr:`value` is ``(0, 0, 0)``), this changes it to "fully" on
-        (:attr:`value` is ``(1, 1, 1)``).  If the device has a specific color,
-        this method inverts the color.
+        (:attr:`value` is ``(1, 1, 1)``). If the device has a specific colour,
+        this method inverts the colour.
         """
         r, g, b = self.value
         self.value = (1 - r, 1 - g, 1 - b)
         
     def toggle(self):
         """
-        Toggle the state of the device. If the device has a specific colour then save that colour and turn off. 
-        If the device is off, change it to the last colour or, if none, to fully on (:attr:`value` is ``(1, 1, 1)``).
+        Toggles the state of the device. If the device has a specific colour, then that colour is saved and the device is turned off. 
+        If the device is off, it will be changed to the last colour it had when it was on or, if none, to fully on (:attr:`value` is ``(1, 1, 1)``).
         """
         if self.value == (0, 0, 0):
             self.value = self._last or (1, 1, 1)
