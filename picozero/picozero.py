@@ -1003,7 +1003,7 @@ class RGBLED(OutputDevice, PinsMixin):
             
     def blink(self, on_times=1, fade_times=0, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
-        Make the device blink between colours repeatedly.
+        Makes the device blink between colours repeatedly.
 
         :param float on_times:
             Single value or tuple of numbers of seconds to stay on each colour. Defaults to 1 second. 
@@ -1013,14 +1013,14 @@ class RGBLED(OutputDevice, PinsMixin):
         :type colors: tuple
             Tuple of colours to blink between, use ``(0, 0, 0)`` for off.
         :param colors:
-            The colors to blink between. Defaults to red, green, blue.
+            The colours to blink between. Defaults to red, green, blue.
         :type n: int or None
         :param n:
             Number of times to blink; :data:`None` (the default) means forever.
         :param bool wait:
-            If :data:`False` (the default), use a Timer to manage blinking
-            continue blinking and return immediately. If :data:`False`, only
-            return when the blink is finished (warning: the default value of
+            If :data:`False` (the default), use a Timer to manage blinking,
+            continue blinking, and return immediately. If :data:`False`, only
+            return when the blinking is finished (warning: the default value of
             *n* will result in this method never returning).
         """    
         self.off()
@@ -1059,7 +1059,7 @@ class RGBLED(OutputDevice, PinsMixin):
             
     def pulse(self, fade_times=1, colors=((0, 0, 0), (1, 0, 0), (0, 0, 0), (0, 1, 0), (0, 0, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
-        Make the device fade between colours repeatedly.
+        Makes the device fade between colours repeatedly.
 
         :param float fade_times:
             Single value or tuple of numbers of seconds to spend fading. Defaults to 1.
@@ -1078,7 +1078,7 @@ class RGBLED(OutputDevice, PinsMixin):
         
     def cycle(self, fade_times=1, colors=((1, 0, 0), (0, 1, 0), (0, 0, 1)), n=None, wait=False, fps=25):
         """
-        Make the device fade in and out repeatedly.
+        Makes the device fade in and out repeatedly.
 
         :param float fade_times:
             Single value or tuple of numbers of seconds to spend fading between colours. Defaults to 1.
@@ -1104,7 +1104,7 @@ RGBLED.colour = RGBLED.color
 
 class Motor(PinsMixin):
     """
-    Represents a motor connected to a motor controller which has a 2 pin
+    Represents a motor connected to a motor controller that has a two-pin
     input. One pin drives the motor "forward", the other drives the motor
     "backward".
 
@@ -1118,7 +1118,7 @@ class Motor(PinsMixin):
     
     :param bool pwm:
         If :data:`True` (the default), PWM pins are used to drive the motor. 
-        When using PWM pins values between 0 and 1 can be used to set the 
+        When using PWM pins, values between 0 and 1 can be used to set the 
         speed.
     
     """
@@ -1132,17 +1132,17 @@ class Motor(PinsMixin):
         Turns the motor on and makes it turn.
 
         :param float speed:
-            The speed as a value between -1 and 1. 1 turns the motor at
-            full speed direction, -1 turns the motor at full speed in
+            The speed as a value between -1 and 1: 1 turns the motor at
+            full speed in one direction, -1 turns the motor at full speed in
             the opposite direction. Defaults to 1.
 
         :param float t:
-            The time in seconds the motor should run for. If None is 
+            The time in seconds that the motor should run for. If None is 
             specified, the motor will stay on. The default is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -1167,7 +1167,7 @@ class Motor(PinsMixin):
     @property
     def value(self):
         """
-        Sets or returns the motor speed as a value between -1 and 1. -1 is full
+        Sets or returns the motor speed as a value between -1 and 1: -1 is full
         speed "backward", 1 is full speed "forward", 0 is stopped.
         """
         return self._forward.value + (-self._backward.value)
@@ -1184,15 +1184,15 @@ class Motor(PinsMixin):
         Makes the motor turn "forward".
 
         :param float speed:
-            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
 
         :param float t:
-            The time in seconds the motor should turn for. If None is 
+            The time in seconds that the motor should turn for. If None is 
             specified, the motor will stay on. The default is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -1203,15 +1203,15 @@ class Motor(PinsMixin):
         Makes the motor turn "backward".
 
         :param float speed:
-            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
 
         :param float t:
-            The time in seconds the motor should turn for. If None is 
+            The time in seconds that the motor should turn for. If None is 
             specified, the motor will stay on. The default is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -1230,14 +1230,14 @@ Motor.stop = Motor.off
 
 class Robot:
     """
-    Represent a generic dual-motor robot / rover / buggy.
+    Represents a generic dual-motor robot / rover / buggy.
 
-    Alias for :class:`Rover`
+    Alias for :class:`Rover`.
 
     This class is constructed with two tuples representing the forward and
-    backward pins of the left and right controllers respectively. For example,
+    backward pins of the left and right controllers. For example,
     if the left motor's controller is connected to pins 12 and 13, while the
-    right motor's controller is connected to pins 14 and 15 then the following
+    right motor's controller is connected to pins 14 and 15, then the following
     example will drive the robot forward::
 
         from picozero import Robot
@@ -1251,10 +1251,10 @@ class Robot:
 
     :param tuple right:
         A tuple of two pins representing the forward and backward inputs of the 
-        left motor's controller.
+        right motor's controller.
 
     :param bool pwm:
-        If :data:`True` (the default), pwm pins will be used, allowing ariable 
+        If :data:`True` (the default), pwm pins will be used, allowing variable 
         speed control. 
 
     """
@@ -1295,16 +1295,16 @@ class Robot:
         Makes the robot move "forward".
 
         :param float speed:
-            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
 
         :param float t:
-            The time in seconds the robot should move for. If None is 
+            The time in seconds that the robot should move for. If None is 
             specified, the robot will continue to move until stopped. The default 
             is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -1316,16 +1316,16 @@ class Robot:
         Makes the robot move "backward".
 
         :param float speed:
-            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
 
         :param float t:
-            The time in seconds the robot should move for. If None is 
+            The time in seconds that the robot should move for. If None is 
             specified, the robot will continue to move until stopped. The default 
             is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -1338,16 +1338,16 @@ class Robot:
         right motor forward.
 
         :param float speed:
-            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
 
         :param float t:
-            The time in seconds the robot should turn for. If None is 
+            The time in seconds that the robot should turn for. If None is 
             specified, the robot will continue to turn until stopped. The default 
             is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -1360,16 +1360,16 @@ class Robot:
         right motor backward.
 
         :param float speed:
-            The speed as a value between 0 and 1. 1 is full speed. Defaults to 1.
+            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
 
         :param float t:
-            The time in seconds the robot should turn for. If None is 
+            The time in seconds that the robot should turn for. If None is 
             specified, the robot will continue to turn until stopped. The default 
             is None.
 
         :param bool wait:
-           If True the method will block until the time `t` has expired. 
-           If False the method will return and the motor will turn on in
+           If True, the method will block until the time `t` has expired. 
+           If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
         """
@@ -1432,7 +1432,7 @@ class InputDevice:
 class DigitalInputDevice(InputDevice, PinMixin):
     """
     Represents a generic input device with digital functionality e.g. buttons 
-    which can be either active or inactive.
+    that can be either active or inactive.
 
     :param int pin:
         The pin that the device is connected to.
@@ -1498,7 +1498,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
         # re-enable the interupt
         p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
         
-        # did the value actually changed? 
+        # did the value actually change? 
         if self._state != last_state:
             # set the state
             self._state = self._pin.value()
@@ -1573,7 +1573,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
 
 class Switch(DigitalInputDevice):
     """
-    Represents a toggle switch which is either open or closed.
+    Represents a toggle switch, which is either open or closed.
 
     :param int pin:
         The pin that the device is connected to.
@@ -1599,7 +1599,7 @@ Switch.when_opened = Switch.when_deactivated
 
 class Button(Switch):
     """
-    Represents a push button which can be either pressed or released.
+    Represents a push button, which can be either pressed or released.
 
     :param int pin:
         The pin that the device is connected to.
@@ -1624,8 +1624,8 @@ Button.when_released = Button.when_deactivated
 
 class AnalogInputDevice(InputDevice, PinMixin):
     """
-    Represents a generic input device with analogy functionality e.g. 
-    a potentiometer
+    Represents a generic input device with analogue functionality, e.g. 
+    a potentiometer.
 
     :param int pin:
         The pin that the device is connected to.
@@ -1633,9 +1633,9 @@ class AnalogInputDevice(InputDevice, PinMixin):
     :param active_state:
         The active state of the device. If :data:`True` (the default),
         the :class:`AnalogInputDevice` will assume that the device is
-        active when the pin is high and above the threshold . If 
+        active when the pin is high and above the threshold. If 
         ``active_state`` is ``False``, the device will be active when 
-        the pin is is low and below the threshold. 
+        the pin is low and below the threshold. 
 
     :param float threshold:
         The threshold that the device must be above or below to be
@@ -1679,7 +1679,7 @@ class AnalogInputDevice(InputDevice, PinMixin):
     @property
     def voltage(self):
         """
-        Returns the voltage of the analog device.
+        Returns the voltage of the analogue device.
         """
         return self.value * 3.3
 
@@ -1688,7 +1688,7 @@ class AnalogInputDevice(InputDevice, PinMixin):
 
 class Potentiometer(AnalogInputDevice):
     """
-    Represents a Potentiometer which outputs with a variable voltage
+    Represents a potentiometer, which outputs a variable voltage
     between 0 and 3.3V.
 
     Alias for :class:`Pot`.
@@ -1699,9 +1699,9 @@ class Potentiometer(AnalogInputDevice):
     :param active_state:
         The active state of the device. If :data:`True` (the default),
         the :class:`AnalogInputDevice` will assume that the device is
-        active when the pin is high and above the threshold . If 
+        active when the pin is high and above the threshold. If 
         ``active_state`` is ``False``, the device will be active when 
-        the pin is is low and below the threshold. 
+        the pin is low and below the threshold. 
 
     :param float threshold:
         The threshold that the device must be above or below to be
@@ -1718,7 +1718,7 @@ def pico_temp_conversion(voltage):
 
 class TemperatureSensor(AnalogInputDevice):
     """
-    Represents a TemperatureSensor which outputs a variable voltage. The voltage 
+    Represents a TemperatureSensor, which outputs a variable voltage. The voltage 
     can be converted to a temperature using a `conversion` function passed as a 
     parameter.
 
@@ -1730,9 +1730,9 @@ class TemperatureSensor(AnalogInputDevice):
     :param active_state:
         The active state of the device. If :data:`True` (the default),
         the :class:`AnalogInputDevice` will assume that the device is
-        active when the pin is high and above the threshold . If 
+        active when the pin is high and above the threshold. If 
         ``active_state`` is ``False``, the device will be active when 
-        the pin is is low and below the threshold. 
+        the pin is low and below the threshold. 
 
     :param float threshold:
         The threshold that the device must be above or below to be
@@ -1770,7 +1770,7 @@ class TemperatureSensor(AnalogInputDevice):
     @property
     def conversion(self):
         """
-        Set or returns the conversion function for the device.
+        Sets or returns the conversion function for the device.
         """
         return self._conversion
 
@@ -1787,10 +1787,10 @@ class DistanceSensor(PinsMixin):
     Represents a HC-SR04 ultrasonic distance sensor.
 
     :param int echo:
-        The pin which the ECHO pin is connected to.
+        The pin that the ECHO pin is connected to.
 
     :param int trigger:
-        The pin which the TRIG pin is connected to. 
+        The pin that the TRIG pin is connected to. 
 
     :param float max_distance:
         The :attr:`value` attribute reports a normalized value between 0 (too
@@ -1814,9 +1814,9 @@ class DistanceSensor(PinsMixin):
         sleep(0.00001)
         self._trigger.off()
 
-        # if an echo isnt measured in 100 milliseconds, it should
-        # be considered out of range the maximum length of the
-        # echo is 38 milliseconds but its not known how long the
+        # If an echo isn't measured in 100 milliseconds, it should
+        # be considered out of range. The maximum length of the
+        # echo is 38 milliseconds but it's not known how long the
         # transmission takes after the trigger
         stop = ticks_ms() + 100
         while echo_off is None and not timed_out:
@@ -1841,7 +1841,7 @@ class DistanceSensor(PinsMixin):
         the sensor or is sufficiently near that the sensor can’t tell the 
         difference, and 1, indicating the reflector is at or beyond the 
         specified max_distance. A return value of None indicates that the
-        echo was not received before the time out.
+        echo was not received before the timeout.
         """
         distance = self.distance
         return distance / self._max_distance if distance is not None else None
