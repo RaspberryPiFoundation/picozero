@@ -1,20 +1,19 @@
 Contributing
 ============
 
-Contributions to the picozero are welcome. Here is some advice.
+Contributions to picozero are welcome. Please keep in mind that picozero is 'lightweight'. It is designed to be easy to use but also needs to run on a microcontroller; please take this into account when considering feature requests or raising issues.
 
-1. picozero is 'lightweight', it is designed to be easy to use but also needs to run on a micro controller, please take this into account when considering feature requests or raising issues.
-2. see below for other stuff!
+For more details, please see the following advice.
 
 Status
 ------
 
-picozero is currently in Beta, pre release 1.0, you should consider the following:
+As picozero is currently in Beta, pre-release 1.0, you should consider the following:
 
 - The API is not yet set, however, this doesn't mean that backwards compatibility is not important! It is a balancing act.
 - Requests for new features will need to be prioritised and responses to feature requests may take some time.
-- Refactoring of the code base is very likely and as a result pull requests may need rework.
-- Issues are likely to exist within the code base, be kind!
+- Refactoring of the code base is very likely and, as a result, pull requests may need rework.
+- Issues are likely to exist within the code base. Be kind!
 
 Suggestions
 -----------
