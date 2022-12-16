@@ -105,4 +105,4 @@ Choose to save the script on **Raspberry Pi Pico** and provide a filename.
 
 .. image:: images/save-this-raspberry-pi-pico.png
 
-If you call the file ``main.py``, it will run automatically when the Pico is powered.
+If you call the file ``main.py``, it will run automatically when the Pico is powered on.

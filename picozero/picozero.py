@@ -1520,7 +1520,8 @@ class DigitalInputDevice(InputDevice, PinMixin):
         The bounce time for the device. If set, the device will ignore
         any button presses that happen within the bounce time after a
         button release. This is useful to prevent accidental button
-        presses from registering as multiple presses.
+        presses from registering as multiple presses. The default is 
+        :data:`None`.
     """
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
         super().__init__(active_state)
