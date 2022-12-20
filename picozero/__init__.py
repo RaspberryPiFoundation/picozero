@@ -7,6 +7,8 @@ from .picozero import (
     PWMChannelAlreadyInUse,
     EventFailedScheduleQueueFull,
 
+    pinout,
+
     DigitalOutputDevice,
     DigitalLED,
     Buzzer,
