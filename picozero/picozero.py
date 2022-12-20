@@ -18,8 +18,15 @@ class EventFailedScheduleQueueFull(Exception):
 
 def clamp(n, low, high): return max(low, min(n, high))
 
-def pinout():
-    print("""        ---usb---
+def pinout(output=True):
+    """
+    Returns a textual representation of the Raspberry Pi pico pins and functions.
+
+    :param bool output:
+        If :data:`True` (the default) the pinout will be "printed".
+        
+    """
+    pins = """        ---usb---
 GP0  1  |o     o| -1  VBUS
 GP1  2  |o     o| -2  VSYS
 GND  3  |o     o| -3  GND
@@ -40,7 +47,11 @@ GP13 17 |o     o| -17 GP18
 GND  18 |o     o| -18 GND
 GP14 19 |o     o| -19 GP17
 GP15 20 |o     o| -20 GP16
-        ---------""")
+        ---------"""
+
+    if output:
+        print(pins)
+    return pins
 
 class PinMixin:
     """

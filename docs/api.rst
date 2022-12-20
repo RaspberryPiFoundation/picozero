@@ -140,3 +140,8 @@ DigitalInputDevice
     :show-inheritance:
     :inherited-members:
     :members: 
+
+pinout
+------
+
+.. autofunction:: pinout

@@ -67,7 +67,15 @@ class Testpicozero(unittest.TestCase):
         msg = "Expected %r to be in range {} to {}".format(lower, upper)
         self.assertTrue(value <= upper, msg)
         self.assertTrue(value >= lower, msg)
-        
+
+    ###########################################################################
+    # SUPPORTING
+    ###########################################################################
+    
+    def test_pinout(self):
+        pins = pinout(output=False)
+        self.assertIsNotNone(pins)
+
     ###########################################################################
     # OUTPUT DEVICES
     ###########################################################################
