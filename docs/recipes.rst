@@ -114,8 +114,12 @@ Create a pulse effect:
 
 .. literalinclude:: examples/led_pulse.py
 
+Alternatively, you can use the :meth:`~picozero.LED.pulse` method.
+
+.. literalinclude:: examples/led_pulse_method.py
+
 Buttons
-------
+-------
 
 You can connect buttons and switches to a Raspberry Pi Pico and detect when they are pressed. 
 
@@ -142,7 +146,7 @@ Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is
 .. literalinclude:: examples/button_led.py
 
 RGB LEDs
-------
+--------
 
 Set colours with an :class:`RGBLED`:
 
@@ -176,7 +180,7 @@ The default for :meth:`~picozero.RGBLED.cycle` is to cycle from red to green, th
 .. literalinclude:: examples/rgb_cycle.py
 
 Potentiometer
----------------
+-------------
 
 Print the value, voltage, and percent reported by a potentiometer:
 
@@ -198,7 +202,7 @@ Control an active buzzer that plays a note when powered:
 .. literalinclude:: examples/buzzer.py
 
 Speaker
---------
+-------
 
 Control a passive buzzer or speaker that can play different tones or frequencies:
 
@@ -246,7 +250,7 @@ Move a motor connected via two pins (forward and backward) and a motor controlle
 .. literalinclude:: examples/motor_move.py
 
 Robot rover
--------------
+-----------
 
 Make a simple two-wheeled robot rover.
 
