@@ -40,11 +40,11 @@ Install sphinx using ::
 
 To test the documentation build, run the following command from the docs directory ::
 
-    $ make html
+    $ ./make html
 
 The website will be built in the directory docs/_build/html.
 
-Documentation can be viewed at `picozero.readthedocs.io`_ and is automatically built and deployed on commit.
+Documentation can be viewed at `picozero.readthedocs.io`_ and is automatically built and deployed on push to github.
 
 .. _picozero.readthedocs.io: https://picozero.readthedocs.io
 

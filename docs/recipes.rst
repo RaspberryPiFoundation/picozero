@@ -48,6 +48,38 @@ Using the :obj:`pico_led` is equivalent to::
 
 You can use :obj:`pico_led` in the same way as external LEDs created using :class:`LED`.
 
+Pin out
+-------
+
+You can output a *diagram* of the Raspberry Pi Pico which displays its pins and their numbers.
+
+.. literalinclude:: examples/print_pinout.py
+
+::
+
+            ---usb---
+    GP0  1  |o     o| -1  VBUS
+    GP1  2  |o     o| -2  VSYS
+    GND  3  |o     o| -3  GND
+    GP2  4  |o     o| -4  3V3_EN
+    GP3  5  |o     o| -5  3V3(OUT)
+    GP4  6  |o     o| -6           ADC_VREF
+    GP5  7  |o     o| -7  GP28     ADC2
+    GND  8  |o     o| -8  GND      AGND
+    GP6  9  |o     o| -9  GP27     ADC1
+    GP7  10 |o     o| -10 GP26     ADC0
+    GP8  11 |o     o| -11 RUN
+    GP9  12 |o     o| -12 GP22
+    GND  13 |o     o| -13 GND
+    GP10 14 |o     o| -14 GP21
+    GP11 15 |o     o| -15 GP20
+    GP12 16 |o     o| -16 GP19
+    GP13 17 |o     o| -17 GP18
+    GND  18 |o     o| -18 GND
+    GP14 19 |o     o| -19 GP17
+    GP15 20 |o     o| -20 GP16
+            ---------
+
 LEDs
 ------
  
@@ -82,8 +114,12 @@ Create a pulse effect:
 
 .. literalinclude:: examples/led_pulse.py
 
+Alternatively, you can use the :meth:`~picozero.LED.pulse` method.
+
+.. literalinclude:: examples/led_pulse_method.py
+
 Buttons
-------
+-------
 
 You can connect buttons and switches to a Raspberry Pi Pico and detect when they are pressed. 
 
@@ -110,7 +146,7 @@ Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is
 .. literalinclude:: examples/button_led.py
 
 RGB LEDs
-------
+--------
 
 Set colours with an :class:`RGBLED`:
 
@@ -144,7 +180,7 @@ The default for :meth:`~picozero.RGBLED.cycle` is to cycle from red to green, th
 .. literalinclude:: examples/rgb_cycle.py
 
 Potentiometer
----------------
+-------------
 
 Print the value, voltage, and percent reported by a potentiometer:
 
@@ -166,7 +202,7 @@ Control an active buzzer that plays a note when powered:
 .. literalinclude:: examples/buzzer.py
 
 Speaker
---------
+-------
 
 Control a passive buzzer or speaker that can play different tones or frequencies:
 
@@ -214,7 +250,7 @@ Move a motor connected via two pins (forward and backward) and a motor controlle
 .. literalinclude:: examples/motor_move.py
 
 Robot rover
--------------
+-----------
 
 Make a simple two-wheeled robot rover.
 

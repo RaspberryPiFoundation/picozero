@@ -1,5 +1,5 @@
-from time import sleep
 from picozero import LED
+from time import sleep
 from math import sin, radians
 
 led = LED(14) 
