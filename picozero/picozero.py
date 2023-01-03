@@ -1543,8 +1543,8 @@ class DigitalInputDevice(InputDevice, PinMixin):
         The pin that the device is connected to.
 
     :param bool pull_up:
-        If :data:`True` (the default), the device will be pulled up to
-        HIGH. If :data:`False`, the device will be pulled down to LOW.
+        If :data:`True`, the device will be pulled up to HIGH. If
+        :data:`False` (the default), the device will be pulled down to LOW.
 
     :param bool active_state:
         If :data:`True` (the default), the device will return :data:`True`
