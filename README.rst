@@ -28,6 +28,7 @@ Documentation is available at `picozero.readthedocs.io <https://picozero.readthe
 - `Installation and getting started guide <https://picozero.readthedocs.io/en/latest/gettingstarted.html>`_
 - `Recipes and how-to's <https://picozero.readthedocs.io/en/latest/recipes.html>`_
 - `API <https://picozero.readthedocs.io/en/latest/api.html>`_
+- `Example code <https://github.com/RaspberryPiFoundation/picozero/tree/master/docs/examples>`_
 
 Code
 ----
