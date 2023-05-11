@@ -179,8 +179,10 @@ class Testpicozero(unittest.TestCase):
         self.assertEqual(d.freq, 200)
         
         d.off()
-        # pwm returns 1 less than the duty_factor unless the duty is set to the maximum 65535
-        self.assertEqual(d._pwm.duty_u16(), 9999)
+        # prior to micropython v1.20 PWM returned 1 less than the duty_factor
+        # unless the duty was set to the maximum 65535
+        # self.assertEqual(d._pwm.duty_u16(), 9999)
+        self.assertEqual(d._pwm.duty_u16(), 10000)
         self.assertAlmostEqual(d.value, 0, places=2) 
         
         d.on()
