@@ -1598,7 +1598,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
             while ticks_ms() < stop:
                 # keep checking, reset the stop if the value changes
                 if p.value() != last_state:
-                    stop = ticks_ms() + self._bounce_time
+                    stop = ticks_ms() + (self._bounce_time * 1000)
                     last_state = p.value()
         
         # re-enable the interupt
