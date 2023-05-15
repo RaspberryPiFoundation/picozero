@@ -3,6 +3,12 @@ Change log
 
 .. currentmodule:: picozero
 
+0.4.2 - 2023-05-12
+------------------
+
++ Bug fix relating to DigitalInputDevice bounce times
++ Updated tests after a change in micropython 1.20+
+
 0.4.1 - 2022-12-22
 ------------------
 
