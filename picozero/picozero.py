@@ -596,7 +596,7 @@ def LED(pin, pwm=True, active_high=True, initial_value=False):
     :param int pin:
         The pin that the device is connected to.
 
-    :param int pin:
+    :param bool pwm:
         If `pwm` is :data:`True` (the default), a :class:`PWMLED` will be
         returned. If `pwm` is :data:`False`, a :class:`DigitalLED` will be
         returned. A :class:`PWMLED` can control the brightness of the LED but
