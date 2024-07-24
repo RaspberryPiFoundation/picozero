@@ -1,7 +1,7 @@
 {
   "urls": [
     ["picozero/__init__.py", "github:RaspberryPiFoundation/picozero/picozero/__init__.py"],
-    ["picozero/picozero.py", "github:RaspberryPiFoundation/picozero/picozero/picozero.py"],
+    ["picozero/picozero.py", "github:RaspberryPiFoundation/picozero/picozero/picozero.py"]
   ],
   "deps": [
   ],
