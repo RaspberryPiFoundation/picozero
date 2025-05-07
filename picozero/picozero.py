@@ -1103,7 +1103,7 @@ class RGBLED(OutputDevice, PinsMixin):
         :param float fade_out_time:
             Number of seconds to spend fading out. Defaults to 1.
         :type colors: tuple
-        :param on_color:
+        :param colors:
             Tuple of colours to pulse between in order. Defaults to red, off, green, off, blue, off. 
         :type off_color: ~colorzero.Color or tuple
         :type n: int or None
@@ -1122,7 +1122,7 @@ class RGBLED(OutputDevice, PinsMixin):
         :param float fade_times:
             Number of seconds to spend fading out. Defaults to 1.
         :type colors: tuple
-        :param on_color:
+        :param colors:
             Tuple of colours to cycle between. Defaults to red, green, blue. 
         :type n: int or None
         :param n:
