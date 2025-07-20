@@ -1903,7 +1903,7 @@ class DistanceSensor(PinsMixin):
         close to measure) and 1 (maximum distance). This parameter specifies
         the maximum distance expected in meters. This defaults to 1.
     """
-    def __init__(self, echo, trigger, max_distance=1):
+    def __init__(self, echo, trigger, max_distance=1.0):
         self._pin_nums = (echo, trigger)
         self._max_distance = max_distance
         self._echo = Pin(echo, mode=Pin.IN, pull=Pin.PULL_DOWN)
