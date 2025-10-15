@@ -6,9 +6,7 @@ __author__ = "Raspberry Pi Foundation"
 from .picozero import (
     PWMChannelAlreadyInUse,
     EventFailedScheduleQueueFull,
-
     pinout,
-
     DigitalOutputDevice,
     DigitalLED,
     Buzzer,
@@ -16,28 +14,23 @@ from .picozero import (
     PWMLED,
     LED,
     pico_led,
-    
     PWMBuzzer,
     Speaker,
-
     RGBLED,
     Motor,
     Robot,
     Servo,
-    
     DigitalInputDevice,
     Switch,
     Button,
     MotionSensor,
-
+    TouchSensor,
     AnalogInputDevice,
     Potentiometer,
     Pot,
-
     TemperatureSensor,
     pico_temp_sensor,
     TempSensor,
     Thermistor,
-
     DistanceSensor,
 )
