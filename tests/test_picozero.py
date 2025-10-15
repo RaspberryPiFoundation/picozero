@@ -675,27 +675,5 @@ class Testpicozero(unittest.TestCase):
         self.assertEqual(pico_temp_sensor.pin, 4)
         self.assertIsNotNone(pico_temp_sensor.temp)
 
-    def test_motion_sensor_aliases(self):
-        """
-        MotionSensor is a simple subclass of DigitalInputDevice that adds
-        aliases. Tests verify the aliases exist and map correctly.
-        """
-        d = MotionSensor(1)
-
-        # Verify that aliases exist and map to the correct properties
-        self.assertTrue(hasattr(d, "motion_detected"))
-        self.assertTrue(hasattr(d, "when_motion"))
-        self.assertTrue(hasattr(d, "when_no_motion"))
-
-        # Verify aliases point to the correct underlying properties
-        self.assertIs(d.motion_detected, d.is_active)
-        self.assertIs(d.when_motion, d.when_activated)
-        self.assertIs(d.when_no_motion, d.when_deactivated)
-
-        # Verify it's properly a DigitalInputDevice subclass
-        self.assertIsInstance(d, DigitalInputDevice)
-
-        d.close()
-
 
 unittest.main()

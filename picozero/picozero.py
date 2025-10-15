@@ -1999,6 +1999,35 @@ Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated
 
 
+class MotionSensor(DigitalInputDevice):
+    """
+    Represents a PIR (Passive Infrared) motion sensor (e.g. HC-SR501)
+
+    :param int pin:
+        The pin that the motion sensor is connected to.
+
+    :param bool pull_up:
+        If :data:`True` (the default), the device will be pulled up to
+        HIGH. If :data:`False`, the device will be pulled down to LOW.
+        Most PIR sensors work with pull_up=False.
+
+    :param float bounce_time:
+        The bounce time for the device. If set, the device will ignore
+        any motion events that happen within the bounce time after a
+        motion event. This is useful to prevent false triggers.
+        Defaults to 0.02 seconds.
+    """
+
+    def __init__(self, pin, pull_up=False, bounce_time=0.02):
+        super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
+
+
+MotionSensor.motion_detected = MotionSensor.is_active
+# Note: No alias for is_inactive - use 'not pir.motion_detected' for clarity
+MotionSensor.when_motion = MotionSensor.when_activated
+MotionSensor.when_no_motion = MotionSensor.when_deactivated
+
+
 class AnalogInputDevice(InputDevice, PinMixin):
     """
     Represents a generic input device with analogue functionality, e.g.
@@ -2247,31 +2276,3 @@ class DistanceSensor(PinsMixin):
         Returns the maximum distance that the sensor will measure in metres.
         """
         return self._max_distance
-
-
-class MotionSensor(DigitalInputDevice):
-    """
-    Represents a PIR (Passive Infrared) motion sensor (e.g. HC-SR501)
-
-    :param int pin:
-        The pin that the motion sensor is connected to.
-
-    :param bool pull_up:
-        If :data:`True` (the default), the device will be pulled up to
-        HIGH. If :data:`False`, the device will be pulled down to LOW.
-        Most PIR sensors work with pull_up=False.
-
-    :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any motion events that happen within the bounce time after a
-        motion event. This is useful to prevent false triggers.
-        Defaults to 0.02 seconds.
-    """
-
-    def __init__(self, pin, pull_up=False, bounce_time=0.02):
-        super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
-
-
-MotionSensor.motion_detected = MotionSensor.is_active
-MotionSensor.when_motion = MotionSensor.when_activated
-MotionSensor.when_no_motion = MotionSensor.when_deactivated

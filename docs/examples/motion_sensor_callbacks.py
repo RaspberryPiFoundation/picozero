@@ -2,20 +2,17 @@ from picozero import MotionSensor, LED
 from time import sleep
 
 pir = MotionSensor(2)
-led = LED(14)
 
-print("Advanced PIR Motion Sensor Example")
-print("Using event callbacks for motion detection...")
+# Create an LED on pin 25 (built-in LED)
+led = LED(25)
 
 
 def motion_detected():
-    print("🚶 Motion detected!")
-    led.on()  # Turn on LED when motion detected
+    led.on()
 
 
 def no_motion():
-    print("😴 No motion detected")
-    led.off()  # Turn off LED when no motion
+    led.off()
 
 
 # Set up event callbacks
