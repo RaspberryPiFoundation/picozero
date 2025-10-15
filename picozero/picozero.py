@@ -2027,6 +2027,7 @@ MotionSensor.motion_detected = MotionSensor.is_active
 MotionSensor.when_motion = MotionSensor.when_activated
 MotionSensor.when_no_motion = MotionSensor.when_deactivated
 
+
 class TouchSensor(Button):
     """
     Represents a capacitive touch sensor (e.g. TTP223)
