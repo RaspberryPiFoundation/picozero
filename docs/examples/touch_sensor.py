@@ -1,13 +1,12 @@
-from picozero import TouchSensor
+from picozero import TouchSensor, pico_led
 from time import sleep
 
+# Capacitive touch sensor output connected to pin 2
 touch = TouchSensor(2)
-
-print("Touch the sensor...")
 
 while True:
     if touch.is_touched:
-        print("Touch detected!")
+        pico_led.on()
     else:
-        print("No touch")
+        pico_led.off()
     sleep(0.1)
