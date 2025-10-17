@@ -7,6 +7,8 @@ Change log
 -----------
 
 + Introduced ``MotionSensor`` class for PIR sensors
++ Introduced ``Stepper`` class for stepper motor control
++ Added comprehensive stepper motor API with multiple control methods
 
 0.4.2 - 2023-05-12
 ------------------

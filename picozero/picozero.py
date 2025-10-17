@@ -1664,6 +1664,277 @@ class Robot:
 Rover = Robot
 
 
+class Stepper(PinsMixin):
+    """
+    Represents a stepper motor connected via a driver board (e.g. ULN2003).
+
+    Supports both 4-pin unipolar stepper motors and bipolar steppers via driver boards.
+
+    :param tuple pins:
+        A tuple of 4 pins connected to the stepper motor driver.
+        For ULN2003: (IN1, IN2, IN3, IN4)
+
+    :param str step_sequence:
+        The stepping sequence to use. Options are:
+        - 'wave' - Wave drive (1 coil energized, lower torque, lower power)
+        - 'full' - Full step (2 coils energized, higher torque)
+        - 'half' - Half step (alternates between wave and full, smoother)
+        Defaults to 'full'.
+
+    :param float step_delay:
+        Delay in seconds between steps. Smaller values = faster rotation.
+        Defaults to 0.002 (2ms) which gives ~500 steps/second.
+
+    :param int steps_per_revolution:
+        Number of steps for a complete 360-degree rotation.
+        Common values: 2048 (28BYJ-48 with ULN2003), 200 (NEMA steppers).
+        Defaults to 2048.
+    """
+
+    # Step sequences for different drive modes
+    STEP_SEQUENCES = {
+        "wave": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+        "full": [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]],
+        "half": [
+            [1, 0, 0, 0],
+            [1, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 1],
+            [0, 0, 0, 1],
+            [1, 0, 0, 1],
+        ],
+    }
+
+    def __init__(
+        self, pins, step_sequence="full", step_delay=0.002, steps_per_revolution=2048
+    ):
+        if len(pins) != 4:
+            raise ValueError("Stepper requires exactly 4 pins")
+
+        self._pin_nums = tuple(pins)
+        self._pins = tuple(DigitalOutputDevice(pin) for pin in pins)
+        self._step_delay = step_delay
+        self._steps_per_revolution = steps_per_revolution
+        self._current_step = 0
+        self._step_count = 0
+
+        if step_sequence not in self.STEP_SEQUENCES:
+            raise ValueError(
+                f"Invalid step_sequence. Must be one of: {list(self.STEP_SEQUENCES.keys())}"
+            )
+        self._step_sequence = step_sequence
+        self._sequence = self.STEP_SEQUENCES[step_sequence]
+
+        # Turn off all coils initially
+        self._set_step([0, 0, 0, 0])
+
+    def _normalize_direction(self, direction):
+        """
+        Normalize direction parameter to internal numeric representation.
+
+        Accepts:
+        - Numeric: 1 or positive numbers for clockwise, -1 or negative for counter-clockwise
+        - String: 'cw' or 'clockwise' for clockwise, 'ccw' or 'counter-clockwise' for counter-clockwise
+
+        Returns: 1 for clockwise, -1 for counter-clockwise
+        """
+        if isinstance(direction, str):
+            direction_lower = direction.lower().strip()
+            if direction_lower in ("cw", "clockwise"):
+                return 1
+            elif direction_lower in ("ccw", "counter-clockwise", "counterclockwise"):
+                return -1
+            else:
+                raise ValueError(
+                    f"Invalid direction string: '{direction}'. Use 'cw', 'ccw', 'clockwise', or 'counter-clockwise'"
+                )
+        else:
+            # Numeric direction: positive = clockwise, negative = counter-clockwise
+            return 1 if direction >= 0 else -1
+
+    def _set_step(self, pattern):
+        """Set the pin states for a step pattern."""
+        for pin, state in zip(self._pins, pattern):
+            pin.value = state
+
+    def _single_step(self, direction=1):
+        """Execute a single step in the given direction."""
+        normalized_direction = self._normalize_direction(direction)
+
+        if normalized_direction > 0:  # Clockwise
+            self._current_step = (self._current_step + 1) % len(self._sequence)
+            self._step_count += 1
+        else:  # Counter-clockwise
+            self._current_step = (self._current_step - 1) % len(self._sequence)
+            self._step_count -= 1
+
+        self._set_step(self._sequence[self._current_step])
+        sleep(self._step_delay)
+
+    def step(self, steps, direction=1):
+        """
+        Move the stepper motor by a number of steps.
+
+        :param int steps:
+            Number of steps to move. Must be positive.
+
+        :param direction:
+            Direction to move. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
+            - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
+            Defaults to 1 (clockwise).
+        :type direction: int or str
+        """
+        steps = abs(int(steps))
+
+        for _ in range(steps):
+            self._single_step(direction)
+
+    def rotate(self, angle, direction=1):
+        """
+        Rotate the stepper motor by a specific angle.
+
+        :param float angle:
+            Angle to rotate in degrees. Must be positive.
+
+        :param direction:
+            Direction to rotate. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
+            - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
+            Defaults to 1 (clockwise).
+        :type direction: int or str
+        """
+        angle = abs(float(angle))
+        steps = int((angle / 360.0) * self._steps_per_revolution)
+        self.step(steps, direction)
+
+    def revolution(self, revolutions=1, direction=1):
+        """
+        Rotate the stepper motor by full revolutions.
+
+        :param float revolutions:
+            Number of full revolutions. Must be positive.
+
+        :param direction:
+            Direction to rotate. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
+            - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
+            Defaults to 1 (clockwise).
+        :type direction: int or str
+        """
+        revolutions = abs(float(revolutions))
+        steps = int(revolutions * self._steps_per_revolution)
+        self.step(steps, direction)
+
+    def reset_position(self):
+        """Reset the step counter to zero (home position)."""
+        self._step_count = 0
+
+    def step_clockwise(self, steps):
+        """
+        Move the stepper motor clockwise by a number of steps.
+
+        :param int steps:
+            Number of steps to move clockwise. Must be positive.
+        """
+        self.step(steps, direction=1)
+
+    def step_counterclockwise(self, steps):
+        """
+        Move the stepper motor counter-clockwise by a number of steps.
+
+        :param int steps:
+            Number of steps to move counter-clockwise. Must be positive.
+        """
+        self.step(steps, direction=-1)
+
+    def rotate_clockwise(self, angle):
+        """
+        Rotate the stepper motor clockwise by a specific angle.
+
+        :param float angle:
+            Angle to rotate clockwise in degrees. Must be positive.
+        """
+        self.rotate(angle, direction=1)
+
+    def rotate_counterclockwise(self, angle):
+        """
+        Rotate the stepper motor counter-clockwise by a specific angle.
+
+        :param float angle:
+            Angle to rotate counter-clockwise in degrees. Must be positive.
+        """
+        self.rotate(angle, direction=-1)
+
+    def revolve_clockwise(self, revolutions=1):
+        """
+        Revolve the stepper motor clockwise by full revolutions.
+
+        :param float revolutions:
+            Number of full clockwise revolutions. Must be positive. Defaults to 1.
+        """
+        self.revolution(revolutions, direction=1)
+
+    def revolve_counterclockwise(self, revolutions=1):
+        """
+        Revolve the stepper motor counter-clockwise by full revolutions.
+
+        :param float revolutions:
+            Number of full counter-clockwise revolutions. Must be positive. Defaults to 1.
+        """
+        self.revolution(revolutions, direction=-1)
+
+    def off(self):
+        """Turn off all coils to reduce power consumption."""
+        self._set_step([0, 0, 0, 0])
+
+    @property
+    def step_delay(self):
+        """Get or set the delay between steps in seconds."""
+        return self._step_delay
+
+    @step_delay.setter
+    def step_delay(self, value):
+        self._step_delay = float(value)
+
+    @property
+    def step_count(self):
+        """Get the current step count (can be negative)."""
+        return self._step_count
+
+    @property
+    def angle(self):
+        """Get the current angle in degrees from the reset position."""
+        return (self._step_count / self._steps_per_revolution) * 360.0
+
+    @property
+    def steps_per_revolution(self):
+        """Get the configured steps per full revolution."""
+        return self._steps_per_revolution
+
+    def close(self):
+        """Turn off the motor and close all pin resources."""
+        self.off()
+        for pin in self._pins:
+            pin.close()
+        self._pins = None
+
+
+# Convenience method aliases for Stepper
+Stepper.step_cw = Stepper.step_clockwise
+Stepper.step_ccw = Stepper.step_counterclockwise
+Stepper.rotate_cw = Stepper.rotate_clockwise
+Stepper.rotate_ccw = Stepper.rotate_counterclockwise
+Stepper.revolve_cw = Stepper.revolve_clockwise
+Stepper.revolve_ccw = Stepper.revolve_counterclockwise
+Stepper.revolve = Stepper.revolution
+
+# Alias for backward compatibility
+StepperMotor = Stepper
+
+
 class Servo(PWMOutputDevice):
     """
     Represents a PWM-controlled servo motor.

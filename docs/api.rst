@@ -63,6 +63,14 @@ Servo
     :inherited-members:
     :members: 
 
+Stepper
+-------
+
+.. autoclass:: Stepper
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
 Motor
 -----
 
