@@ -6,18 +6,9 @@ pir = MotionSensor(2)
 # Create an LED on pin 25 (built-in LED)
 led = LED(25)
 
-
-def motion_detected():
-    led.on()
-
-
-def no_motion():
-    led.off()
-
-
 # Set up event callbacks
-pir.when_motion = motion_detected
-pir.when_no_motion = no_motion
+pir.when_motion = led.on
+pir.when_no_motion = led.off
 
 # Keep the program running
 try:

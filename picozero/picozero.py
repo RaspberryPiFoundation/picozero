@@ -2015,10 +2015,10 @@ class MotionSensor(DigitalInputDevice):
         The bounce time for the device. If set, the device will ignore
         any motion events that happen within the bounce time after a
         motion event. This is useful to prevent false triggers.
-        Defaults to 0.02 seconds.
+        Defaults to 1 seconds.
     """
 
-    def __init__(self, pin, pull_up=False, bounce_time=0.02):
+    def __init__(self, pin, pull_up=False, bounce_time=1.00):
         super().__init__(pin=pin, pull_up=pull_up, bounce_time=bounce_time)
 
 
