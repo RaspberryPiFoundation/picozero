@@ -3,6 +3,11 @@ Change log
 
 .. currentmodule:: picozero
 
+0.5.0 - TBD
+-----------
+
++ Introduced ``MotionSensor`` class for PIR sensors
+
 0.4.2 - 2023-05-12
 ------------------
 
