@@ -145,6 +145,17 @@ Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is
 
 .. literalinclude:: examples/button_led.py
 
+Touch sensor
+------------
+
+Detect touch using a capacitive touch sensor:
+
+.. literalinclude:: examples/touch_sensor.py
+
+Use callbacks to respond to touch events:
+
+.. literalinclude:: examples/touch_sensor_callbacks.py
+
 Motion sensor
 -------------
 
