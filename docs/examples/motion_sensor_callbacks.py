@@ -1,14 +1,11 @@
-from picozero import MotionSensor, LED
+from picozero import MotionSensor, pico_led
 from time import sleep
 
 pir = MotionSensor(2)
 
-# Create an LED on pin 25 (built-in LED)
-led = LED(25)
-
 # Set up event callbacks
-pir.when_motion = led.on
-pir.when_no_motion = led.off
+pir.when_motion = pico_led.on
+pir.when_no_motion = pico_led.off
 
 # Keep the program running
 try:
@@ -16,4 +13,4 @@ try:
         sleep(1)
 except KeyboardInterrupt:
     print("\nShutting down...")
-    led.off()  # Make sure LED is off when exiting
+    pico_led.off()  # Make sure LED is off when exiting
