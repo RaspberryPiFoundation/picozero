@@ -145,6 +145,17 @@ Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is
 
 .. literalinclude:: examples/button_led.py
 
+Motion sensor
+-------------
+
+Detect motion using a PIR (Passive Infrared) sensor:
+
+.. literalinclude:: examples/motion_sensor.py
+
+Use callbacks to respond to motion events:
+
+.. literalinclude:: examples/motion_sensor_callbacks.py
+
 RGB LEDs
 --------
 
