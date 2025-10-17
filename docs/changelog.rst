@@ -17,6 +17,7 @@ Change log
 -----------
 
 + Introduced ``MotionSensor`` class for PIR sensors
++ Introduced ``TouchSensor`` class for capacitive touch sensors
 
 0.4.2 - 2023-05-12
 ------------------
