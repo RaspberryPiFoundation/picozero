@@ -28,6 +28,7 @@ from .picozero import (
     DigitalInputDevice,
     Switch,
     Button,
+    MotionSensor,
 
     AnalogInputDevice,
     Potentiometer,
