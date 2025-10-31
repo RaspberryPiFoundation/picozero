@@ -101,6 +101,14 @@ Button
     :inherited-members:
     :members:
 
+MotionSensor
+------------
+
+.. autoclass:: MotionSensor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
 Switch
 ------
 

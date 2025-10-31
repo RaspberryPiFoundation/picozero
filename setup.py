@@ -3,7 +3,7 @@ from setuptools import setup
 __project__ = 'picozero'
 __packages__ = ['picozero']
 __desc__ = 'A beginner-friendly library for using common electronics components with the Raspberry Pi Pico. '
-__version__ = '0.4.1'
+__version__ = '0.5.0'
 __author__ = "Raspberry Pi Foundation"
 __author_email__ = 'learning@raspberrypi.org'
 __license__ = 'MIT'

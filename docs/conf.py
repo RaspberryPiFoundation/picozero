@@ -43,11 +43,11 @@ setattr(time, 'ticks_us', lambda x: None)
 # -- Project information -----------------------------------------------------
 
 project = 'picozero'
-copyright = '2022, Raspberry Pi Foundation'
+copyright = '2025, Raspberry Pi Foundation'
 author = 'Raspberry Pi Foundation'
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.1'
+release = '0.5.0'
 
 
 # -- General configuration ---------------------------------------------------
