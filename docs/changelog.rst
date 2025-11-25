@@ -3,10 +3,16 @@ Change log
 
 .. currentmodule:: picozero
 
+0.6.0 - 2025-11-26
+-----------
+
++ Introduced ``Stepper`` class for stepper motors
++ Fixed 404 in manual install instructions
+
 0.5.1 - 2025-11-24
+-----------
 
 + Fix to incorrect example in documentation
-+ Fixed 404 in manual install instructions
 
 0.5.0 - 2025-10-31
 -----------
