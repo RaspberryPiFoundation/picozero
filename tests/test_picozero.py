@@ -573,6 +573,30 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
 
+    def test_digital_input_device_bounce_time(self):
+        # Test that bounce_time is properly stored and device works with it
+        d = DigitalInputDevice(1, bounce_time=0.01)
+        
+        self.assertEqual(d._bounce_time, 0.01)
+        
+        pin = MockPin(irq_handler=d._pin_change)
+        d._pin = pin
+        
+        event_activated = MockEvent()
+        d.when_activated = event_activated.set
+        
+        # Trigger should still work with bounce_time set
+        self.assertFalse(event_activated.is_set())
+        self.assertFalse(d.is_active)
+        
+        pin.write(1)
+        # Note: In real device, callback fires immediately then interrupts disabled for bounce_time
+        # In MockPin, sleep happens synchronously so callback should be set
+        self.assertTrue(event_activated.is_set())
+        self.assertTrue(d.is_active)
+        
+        d.close()
+
     def test_adc_input_device_default_values(self):
         d = AnalogInputDevice(1)
 
