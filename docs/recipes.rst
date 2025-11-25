@@ -294,6 +294,17 @@ Check the internal temperature of the Raspberry Pi Pico in degrees Celcius:
 
 .. literalinclude:: examples/pico_temperature.py
 
+Motion sensor
+-------------
+
+Detect motion using a PIR (Passive Infrared) sensor:
+
+.. literalinclude:: examples/motion_sensor.py
+
+Use callbacks to respond to motion events:
+
+.. literalinclude:: examples/motion_sensor_callbacks.py
+
 Ultrasonic distance sensor
 --------------------------
 
