@@ -1,0 +1,11 @@
+# Each line is a file pattern followed by one or more owners.
+
+# These owners will be the default owners for everything in
+# the repo, unless a later match takes precedence.
+# They will be requested for review when a pull request is opened.
+
+# Teams:
+# * @raspberrypifoundation/digital-products-team @raspberrypifoundation/pico-zero
+
+# Individuals:
+* @grega @MarcScott

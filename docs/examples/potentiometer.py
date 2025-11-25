@@ -1,7 +1,7 @@
 # Potentiometer connected to GP26 (ADC0), GND and 3V
 
 from time import sleep
-from pico import Pot
+from picozero import Pot
 
 pot = Pot(26)
 
