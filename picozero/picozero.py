@@ -1849,27 +1849,13 @@ class DigitalInputDevice(InputDevice, PinMixin):
         return self._state_to_value(self._state)
 
     def _pin_change(self, p):
-        # turn off the interupt
-        p.irq(handler=None)
-
-        last_state = p.value()
-
-        if self._bounce_time is not None:
-            # wait for stability
-            stop = ticks_ms() + (self._bounce_time * 1000)
-            while ticks_ms() < stop:
-                # keep checking, reset the stop if the value changes
-                if p.value() != last_state:
-                    stop = ticks_ms() + (self._bounce_time * 1000)
-                    last_state = p.value()
-
-        # re-enable the interupt
-        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
-
-        # did the value actually change?
-        if self._state != last_state:
-            # set the state
-            self._state = self._pin.value()
+        # read the state that triggered the interrupt
+        new_state = p.value()
+        
+        # did the state actually change from our stored state?
+        if self._state != new_state:
+            # update the stored state
+            self._state = new_state
 
             # manage call backs
             callback_to_run = None
@@ -1896,6 +1882,13 @@ class DigitalInputDevice(InputDevice, PinMixin):
                         )
                     else:
                         raise e
+
+        if self._bounce_time is not None:
+            # turn off the interrupt during bounce time to ignore further triggers
+            p.irq(handler=None)
+            sleep(self._bounce_time)
+            # re-enable the interrupt
+            p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
 
     @property
     def is_active(self):
