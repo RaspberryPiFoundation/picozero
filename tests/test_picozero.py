@@ -590,8 +590,7 @@ class Testpicozero(unittest.TestCase):
         self.assertFalse(d.is_active)
         
         pin.write(1)
-        # Note: In real device, callback fires immediately then interrupts disabled for bounce_time
-        # In MockPin, sleep happens synchronously so callback should be set
+        # With the timestamp-based approach, first event always fires callback
         self.assertTrue(event_activated.is_set())
         self.assertTrue(d.is_active)
         

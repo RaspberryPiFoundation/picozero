@@ -1828,7 +1828,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
             pin, mode=Pin.IN, pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN
         )
         self._bounce_time = bounce_time
-        self._last_change_ms = None  # None indicates no previous change
+        self._last_callback_ms = None  # Track when we last fired a callback for debouncing
 
         if active_state is None:
             self._active_state = False if pull_up else True
@@ -1855,14 +1855,15 @@ class DigitalInputDevice(InputDevice, PinMixin):
         
         # did the state actually change from our stored state?
         if self._state != new_state:
-            # check if enough time has passed since last change (debounce)
+            # check if enough time has passed since last callback (debounce)
             current_time_ms = ticks_ms()
-            time_since_last_change = current_time_ms - self._last_change_ms if self._last_change_ms is not None else float('inf')
+            # Use infinity for first event to ensure it always passes the time check
+            time_since_last_callback = current_time_ms - self._last_callback_ms if self._last_callback_ms is not None else float('inf')
             
-            if self._bounce_time is None or time_since_last_change >= (self._bounce_time * 1000):
+            if self._bounce_time is None or time_since_last_callback >= (self._bounce_time * 1000):
                 # update the stored state
                 self._state = new_state
-                self._last_change_ms = current_time_ms
+                self._last_callback_ms = current_time_ms
 
                 # manage call backs
                 callback_to_run = None
