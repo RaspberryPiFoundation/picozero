@@ -2199,7 +2199,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
         # did the value actually change?
         if self._state != last_state:
             # set the state
-            self._state = self._pin.value()
+            self._state = last_state
 
             # manage call backs
             callback_to_run = None
