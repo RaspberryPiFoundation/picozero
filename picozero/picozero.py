@@ -1857,11 +1857,12 @@ class DigitalInputDevice(InputDevice, PinMixin):
         if self._state != new_state:
             # check if enough time has passed since last callback (debounce)
             current_time_ms = ticks_ms()
-            # Use infinity for first event to ensure it always passes the time check
+            # Use infinity for first event to ensure it always passes the time check.
+            # This is mathematically cleaner than checking if _last_callback_ms is None separately.
             time_since_last_callback = current_time_ms - self._last_callback_ms if self._last_callback_ms is not None else float('inf')
             
             if self._bounce_time is None or time_since_last_callback >= (self._bounce_time * 1000):
-                # update the stored state
+                # Enough time has passed - update state, fire callback, and record timestamp
                 self._state = new_state
                 self._last_callback_ms = current_time_ms
 
@@ -1891,7 +1892,9 @@ class DigitalInputDevice(InputDevice, PinMixin):
                         else:
                             raise e
             else:
-                # Within bounce time - still update state but don't fire callback
+                # Within bounce time - update state to track reality, but suppress callback.
+                # Note: _last_callback_ms is intentionally NOT updated here because we want
+                # to measure time from the last callback, not the last state change.
                 self._state = new_state
 
     @property
