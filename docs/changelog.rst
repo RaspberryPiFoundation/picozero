@@ -3,12 +3,16 @@ Change log
 
 .. currentmodule:: picozero
 
-0.5.0 - TBD
+0.6.0 - 2025-11-24
+-----------
+
++ Introduced ``Stepper`` class for stepper motor control
++ Fixes to documentation
+
+0.5.0 - 2025-10-31
 -----------
 
 + Introduced ``MotionSensor`` class for PIR sensors
-+ Introduced ``Stepper`` class for stepper motor control
-+ Added comprehensive stepper motor API with multiple control methods
 
 0.4.2 - 2023-05-12
 ------------------

@@ -1685,7 +1685,7 @@ class Stepper(PinsMixin):
         Delay in seconds between steps. Smaller values = faster rotation.
         Defaults to 0.002 (2ms) which gives ~500 steps/second.
 
-    :param int steps_per_revolution:
+    :param int steps_per_rotation:
         Number of steps for a complete 360-degree rotation.
         Common values: 2048 (28BYJ-48 with ULN2003), 200 (NEMA steppers).
         Defaults to 2048.
@@ -1708,7 +1708,7 @@ class Stepper(PinsMixin):
     }
 
     def __init__(
-        self, pins, step_sequence="full", step_delay=0.002, steps_per_revolution=2048
+        self, pins, step_sequence="full", step_delay=0.002, steps_per_rotation=2048
     ):
         if len(pins) != 4:
             raise ValueError("Stepper requires exactly 4 pins")
@@ -1716,7 +1716,7 @@ class Stepper(PinsMixin):
         self._pin_nums = tuple(pins)
         self._pins = tuple(DigitalOutputDevice(pin) for pin in pins)
         self._step_delay = step_delay
-        self._steps_per_revolution = steps_per_revolution
+        self._steps_per_rotation = steps_per_rotation
         self._current_step = 0
         self._step_count = 0
 
@@ -1730,9 +1730,9 @@ class Stepper(PinsMixin):
         # Turn off all coils initially
         self._set_step([0, 0, 0, 0])
 
-    def _normalize_direction(self, direction):
+    def _normalise_direction(self, direction):
         """
-        Normalize direction parameter to internal numeric representation.
+        normalise direction parameter to internal numeric representation.
 
         Accepts:
         - Numeric: 1 or positive numbers for clockwise, -1 or negative for counter-clockwise
@@ -1761,9 +1761,9 @@ class Stepper(PinsMixin):
 
     def _single_step(self, direction=1):
         """Execute a single step in the given direction."""
-        normalized_direction = self._normalize_direction(direction)
+        normalised_direction = self._normalise_direction(direction)
 
-        if normalized_direction > 0:  # Clockwise
+        if normalised_direction > 0:  # Clockwise
             self._current_step = (self._current_step + 1) % len(self._sequence)
             self._step_count += 1
         else:  # Counter-clockwise
@@ -1792,103 +1792,171 @@ class Stepper(PinsMixin):
         for _ in range(steps):
             self._single_step(direction)
 
-    def rotate(self, angle, direction=1):
+    def step_to(self, steps, direction, /):
         """
-        Rotate the stepper motor by a specific angle.
+        Move to a specific step position from the current position.
+
+        :param int steps:
+            Target step position (absolute). The motor will move the minimum
+            distance to reach this position in the specified direction.
+
+        :param direction:
+            Direction to move. Accepts:
+            - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
+        :type direction: str
+        """
+        target_steps = int(steps)
+        current_steps = self._step_count
+
+        # Calculate the distance to target in the specified direction
+        if direction.lower() in ("cw", "clockwise", 1, -1):
+            normalised_dir = self._normalise_direction(direction)
+            if normalised_dir > 0:  # clockwise
+                # Distance going clockwise
+                distance = target_steps - current_steps
+                if distance < 0:
+                    distance += self._steps_per_rotation
+            else:  # counter-clockwise
+                # Distance going counter-clockwise
+                distance = current_steps - target_steps
+                if distance < 0:
+                    distance += self._steps_per_rotation
+        else:
+            raise ValueError(f"Invalid direction: {direction}")
+
+        # Move to target if distance > 0
+        if distance > 0:
+            self.step(distance, direction)
+
+    def turn(self, angle, direction, /):
+        """
+        Turn the stepper motor by a specific angle.
 
         :param float angle:
-            Angle to rotate in degrees. Must be positive.
+            Angle to turn in degrees. Must be positive.
 
         :param direction:
-            Direction to rotate. Accepts:
-            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
+            Direction to turn. Accepts:
             - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
-            Defaults to 1 (clockwise).
-        :type direction: int or str
+        :type direction: str
         """
         angle = abs(float(angle))
-        steps = int((angle / 360.0) * self._steps_per_revolution)
+        steps = int((angle / 360.0) * self._steps_per_rotation)
         self.step(steps, direction)
 
-    def revolution(self, revolutions=1, direction=1):
+    def rotate(self, rotations, direction, /):
         """
-        Rotate the stepper motor by full revolutions.
+        Rotate the stepper motor by full rotations.
 
-        :param float revolutions:
-            Number of full revolutions. Must be positive.
+        :param float rotations:
+            Number of full rotations. Must be positive.
 
         :param direction:
             Direction to rotate. Accepts:
-            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
             - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
-            Defaults to 1 (clockwise).
-        :type direction: int or str
+        :type direction: str
         """
-        revolutions = abs(float(revolutions))
-        steps = int(revolutions * self._steps_per_revolution)
+        rotations = abs(float(rotations))
+        steps = int(rotations * self._steps_per_rotation)
         self.step(steps, direction)
+
+    def turn_to(self, angle, direction, /):
+        """
+        Turn to a specific angle position (0-359 degrees).
+
+        :param float angle:
+            Target angle in degrees (0-359). If angle is outside this range,
+            it will be normalised to 0-359.
+
+        :param direction:
+            Direction to turn. Accepts:
+            - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
+        :type direction: str
+        """
+        # normalise target angle to 0-359 range
+        target_angle = abs(float(angle)) % 360.0
+        current_angle = self.angle
+
+        # Calculate the shortest path to target angle
+        if direction.lower() in ("cw", "clockwise"):
+            # Clockwise: calculate distance going clockwise
+            if target_angle >= current_angle:
+                rotation_angle = target_angle - current_angle
+            else:
+                rotation_angle = 360.0 - current_angle + target_angle
+        else:  # counter-clockwise
+            # Counter-clockwise: calculate distance going counter-clockwise
+            if target_angle <= current_angle:
+                rotation_angle = current_angle - target_angle
+            else:
+                rotation_angle = current_angle + (360.0 - target_angle)
+
+        # Convert angle to steps and rotate
+        steps = int((rotation_angle / 360.0) * self._steps_per_rotation)
+        if steps > 0:
+            self.step(steps, direction)
 
     def reset_position(self):
         """Reset the step counter to zero (home position)."""
         self._step_count = 0
 
-    def step_clockwise(self, steps):
-        """
-        Move the stepper motor clockwise by a number of steps.
-
-        :param int steps:
-            Number of steps to move clockwise. Must be positive.
-        """
-        self.step(steps, direction=1)
-
-    def step_counterclockwise(self, steps):
-        """
-        Move the stepper motor counter-clockwise by a number of steps.
-
-        :param int steps:
-            Number of steps to move counter-clockwise. Must be positive.
-        """
-        self.step(steps, direction=-1)
-
-    def rotate_clockwise(self, angle):
-        """
-        Rotate the stepper motor clockwise by a specific angle.
-
-        :param float angle:
-            Angle to rotate clockwise in degrees. Must be positive.
-        """
-        self.rotate(angle, direction=1)
-
-    def rotate_counterclockwise(self, angle):
-        """
-        Rotate the stepper motor counter-clockwise by a specific angle.
-
-        :param float angle:
-            Angle to rotate counter-clockwise in degrees. Must be positive.
-        """
-        self.rotate(angle, direction=-1)
-
-    def revolve_clockwise(self, revolutions=1):
-        """
-        Revolve the stepper motor clockwise by full revolutions.
-
-        :param float revolutions:
-            Number of full clockwise revolutions. Must be positive. Defaults to 1.
-        """
-        self.revolution(revolutions, direction=1)
-
-    def revolve_counterclockwise(self, revolutions=1):
-        """
-        Revolve the stepper motor counter-clockwise by full revolutions.
-
-        :param float revolutions:
-            Number of full counter-clockwise revolutions. Must be positive. Defaults to 1.
-        """
-        self.revolution(revolutions, direction=-1)
-
     def off(self):
         """Turn off all coils to reduce power consumption."""
         self._set_step([0, 0, 0, 0])
+
+    def set_speed(self, rpm, /):
+        """
+        Set the motor speed in rotations per minute (RPM).
+
+        :param float rpm:
+            Speed in rotations per minute. Must be positive.
+            The step delay will be calculated based on the number of steps
+            per rotation and the desired RPM.
+        """
+        rpm = abs(float(rpm))
+        if rpm <= 0:
+            raise ValueError("RPM must be positive")
+
+        # Calculate step delay from RPM
+        # RPM = rotations per minute
+        # steps per rotation = self._steps_per_rotation
+        # Total steps per minute = RPM * steps_per_rotation
+        # Total steps per second = (RPM * steps_per_rotation) / 60
+        # Delay per step = 1 / steps_per_second = 60 / (RPM * steps_per_rotation)
+        self._step_delay = 60.0 / (rpm * self._steps_per_rotation)
+
+    def run_continuous(self, seconds=None, direction=1, /):
+        """
+        Run the stepper motor continuously for a specified duration or until stopped.
+
+        :param float seconds:
+            Duration to run in seconds. If None (the default), the motor will run
+            until stopped by calling off() or close().
+
+        :param direction:
+            Direction to run. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
+            - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
+            Defaults to 1 (clockwise).
+        :type direction: int or str
+        """
+        if seconds is None:
+            # Run until manually stopped
+            try:
+                while True:
+                    self._single_step(direction)
+            except KeyboardInterrupt:
+                self.off()
+        else:
+            # Run for specified duration
+            seconds = abs(float(seconds))
+            start_time = ticks_ms()
+            end_time = start_time + int(seconds * 1000)
+
+            while ticks_ms() < end_time:
+                self._single_step(direction)
+
+            self.off()
 
     @property
     def step_delay(self):
@@ -1906,13 +1974,13 @@ class Stepper(PinsMixin):
 
     @property
     def angle(self):
-        """Get the current angle in degrees from the reset position."""
-        return (self._step_count / self._steps_per_revolution) * 360.0
+        """Get the current angle in degrees (0-359) from the reset position."""
+        return ((self._step_count / self._steps_per_rotation) * 360.0) % 360.0
 
     @property
-    def steps_per_revolution(self):
-        """Get the configured steps per full revolution."""
-        return self._steps_per_revolution
+    def steps_per_rotation(self):
+        """Get the configured steps per full rotation."""
+        return self._steps_per_rotation
 
     def close(self):
         """Turn off the motor and close all pin resources."""
@@ -1921,15 +1989,6 @@ class Stepper(PinsMixin):
             pin.close()
         self._pins = None
 
-
-# Convenience method aliases for Stepper
-Stepper.step_cw = Stepper.step_clockwise
-Stepper.step_ccw = Stepper.step_counterclockwise
-Stepper.rotate_cw = Stepper.rotate_clockwise
-Stepper.rotate_ccw = Stepper.rotate_counterclockwise
-Stepper.revolve_cw = Stepper.revolve_clockwise
-Stepper.revolve_ccw = Stepper.revolve_counterclockwise
-Stepper.revolve = Stepper.revolution
 
 # Alias for backward compatibility
 StepperMotor = Stepper
@@ -2479,7 +2538,7 @@ class DistanceSensor(PinsMixin):
         The pin that the TRIG pin is connected to.
 
     :param float max_distance:
-        The :attr:`value` attribute reports a normalized value between 0 (too
+        The :attr:`value` attribute reports a normalised value between 0 (too
         close to measure) and 1 (maximum distance). This parameter specifies
         the maximum distance expected in meters. This defaults to 1.
     """
