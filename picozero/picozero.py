@@ -2539,11 +2539,10 @@ class DistanceSensor(PinsMixin):
 
     :param float max_distance:
         The :attr:`value` attribute reports a normalised value between 0 (too
-        close to measure) and 1 (maximum distance). This parameter specifies
-        the maximum distance expected in meters. This defaults to 1.
+        close to measure) and 1.0 (maximum distance). This parameter specifies
+        the maximum distance expected in meters. This defaults to 1.0.
     """
-
-    def __init__(self, echo, trigger, max_distance=1):
+    def __init__(self, echo, trigger, max_distance=1.0):
         self._pin_nums = (echo, trigger)
         self._max_distance = max_distance
         self._echo = Pin(echo, mode=Pin.IN, pull=Pin.PULL_DOWN)
