@@ -7,6 +7,10 @@ Change log
 -----------
 
 + Introduced ``Stepper`` class for stepper motors
+
+0.5.2 - 2025-11-26
+-----------
+
 + Fixed 404 in manual install instructions
 
 0.5.1 - 2025-11-24
