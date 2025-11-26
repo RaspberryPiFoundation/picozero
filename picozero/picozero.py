@@ -1796,9 +1796,12 @@ class Stepper(PinsMixin):
         """
         Move to a specific step position from the current position.
 
+        For clockwise direction: moves TO the target position (absolute).
+        For counter-clockwise direction: moves BY the number of steps (relative).
+
         :param int steps:
-            Target step position (absolute). The motor will move the minimum
-            distance to reach this position in the specified direction.
+            Target step position (absolute) for clockwise,
+            or number of steps to move for counter-clockwise.
 
         :param direction:
             Direction to move. Accepts:
@@ -1808,25 +1811,19 @@ class Stepper(PinsMixin):
         target_steps = int(steps)
         current_steps = self._step_count
 
-        # Calculate the distance to target in the specified direction
-        if direction.lower() in ("cw", "clockwise", 1, -1):
-            normalised_dir = self._normalise_direction(direction)
-            if normalised_dir > 0:  # clockwise
-                # Distance going clockwise
-                distance = target_steps - current_steps
-                if distance < 0:
-                    distance += self._steps_per_rotation
-            else:  # counter-clockwise
-                # Distance going counter-clockwise
-                distance = current_steps - target_steps
-                if distance < 0:
-                    distance += self._steps_per_rotation
-        else:
-            raise ValueError(f"Invalid direction: {direction}")
+        normalised_dir = self._normalise_direction(direction)
 
-        # Move to target if distance > 0
-        if distance > 0:
-            self.step(distance, direction)
+        if normalised_dir > 0:  # Clockwise - move TO absolute position
+            distance = target_steps - current_steps
+            if distance > 0:
+                self.step(distance, direction)
+            elif distance < 0:
+                # Wrap around clockwise
+                self.step(self._steps_per_rotation + distance, direction)
+            # if distance == 0, don't move
+        else:  # Counter-clockwise - move BY relative steps
+            if target_steps > 0:
+                self.step(target_steps, direction)
 
     def turn(self, angle, direction):
         """
@@ -1913,7 +1910,7 @@ class Stepper(PinsMixin):
             The step delay will be calculated based on the number of steps
             per rotation and the desired RPM.
         """
-        rpm = abs(float(rpm))
+        rpm = float(rpm)
         if rpm <= 0:
             raise ValueError("RPM must be positive")
 
@@ -2542,6 +2539,7 @@ class DistanceSensor(PinsMixin):
         close to measure) and 1.0 (maximum distance). This parameter specifies
         the maximum distance expected in meters. This defaults to 1.0.
     """
+
     def __init__(self, echo, trigger, max_distance=1.0):
         self._pin_nums = (echo, trigger)
         self._max_distance = max_distance
