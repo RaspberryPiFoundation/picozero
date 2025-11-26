@@ -1792,7 +1792,7 @@ class Stepper(PinsMixin):
         for _ in range(steps):
             self._single_step(direction)
 
-    def step_to(self, steps, direction, /):
+    def step_to(self, steps, direction):
         """
         Move to a specific step position from the current position.
 
@@ -1828,7 +1828,7 @@ class Stepper(PinsMixin):
         if distance > 0:
             self.step(distance, direction)
 
-    def turn(self, angle, direction, /):
+    def turn(self, angle, direction):
         """
         Turn the stepper motor by a specific angle.
 
@@ -1844,7 +1844,7 @@ class Stepper(PinsMixin):
         steps = int((angle / 360.0) * self._steps_per_rotation)
         self.step(steps, direction)
 
-    def rotate(self, rotations, direction, /):
+    def rotate(self, rotations, direction):
         """
         Rotate the stepper motor by full rotations.
 
@@ -1860,7 +1860,7 @@ class Stepper(PinsMixin):
         steps = int(rotations * self._steps_per_rotation)
         self.step(steps, direction)
 
-    def turn_to(self, angle, direction, /):
+    def turn_to(self, angle, direction):
         """
         Turn to a specific angle position (0-359 degrees).
 
@@ -1904,7 +1904,7 @@ class Stepper(PinsMixin):
         """Turn off all coils to reduce power consumption."""
         self._set_step([0, 0, 0, 0])
 
-    def set_speed(self, rpm, /):
+    def set_speed(self, rpm):
         """
         Set the motor speed in rotations per minute (RPM).
 
@@ -1925,7 +1925,7 @@ class Stepper(PinsMixin):
         # Delay per step = 1 / steps_per_second = 60 / (RPM * steps_per_rotation)
         self._step_delay = 60.0 / (rpm * self._steps_per_rotation)
 
-    def run_continuous(self, seconds=None, direction=1, /):
+    def run_continuous(self, seconds=None, direction=1):
         """
         Run the stepper motor continuously for a specified duration or until stopped.
 
