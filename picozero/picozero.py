@@ -1828,7 +1828,9 @@ class DigitalInputDevice(InputDevice, PinMixin):
             pin, mode=Pin.IN, pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN
         )
         self._bounce_time = bounce_time
-        self._last_callback_ms = None  # Track when we last fired a callback for debouncing
+        self._last_callback_ms = (
+            None  # Track when we last fired a callback for debouncing
+        )
 
         if active_state is None:
             self._active_state = False if pull_up else True
@@ -1852,16 +1854,22 @@ class DigitalInputDevice(InputDevice, PinMixin):
     def _pin_change(self, p):
         # read the state that triggered the interrupt
         new_state = p.value()
-        
+
         # did the state actually change from our stored state?
         if self._state != new_state:
             # check if enough time has passed since last callback (debounce)
             current_time_ms = ticks_ms()
             # Use infinity for first event to ensure it always passes the time check.
             # This is mathematically cleaner than checking if _last_callback_ms is None separately.
-            time_since_last_callback = current_time_ms - self._last_callback_ms if self._last_callback_ms is not None else float('inf')
-            
-            if self._bounce_time is None or time_since_last_callback >= (self._bounce_time * 1000):
+            time_since_last_callback = (
+                current_time_ms - self._last_callback_ms
+                if hasattr(self, "_last_callback_ms")
+                and self._last_callback_ms is not None
+                else float("inf")
+            )
+
+            bounce_time = getattr(self, "_bounce_time", None)
+            if bounce_time is None or time_since_last_callback >= (bounce_time * 1000):
                 # Enough time has passed - update state, fire callback, and record timestamp
                 self._state = new_state
                 self._last_callback_ms = current_time_ms
@@ -2212,6 +2220,7 @@ class DistanceSensor(PinsMixin):
         close to measure) and 1.0 (maximum distance). This parameter specifies
         the maximum distance expected in meters. This defaults to 1.0.
     """
+
     def __init__(self, echo, trigger, max_distance=1.0):
         self._pin_nums = (echo, trigger)
         self._max_distance = max_distance
