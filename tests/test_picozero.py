@@ -503,6 +503,81 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
 
+    def test_speaker_default_values(self):
+        s = Speaker(15)
+
+        self.assertEqual(s.pin, 15)
+        self.assertEqual(s.volume, 0)
+        self.assertEqual(s.freq, 440)
+
+        s.on()
+        self.assertEqual(s.volume, 1)
+
+        s.off()
+        self.assertEqual(s.volume, 0)
+
+        s.close()
+
+    def test_speaker_alt_values(self):
+        s = Speaker(16, initial_freq=523, initial_volume=0.5)
+
+        # PWM frequency may be slightly different due to hardware limitations
+        self.assertAlmostEqual(s.freq, 523, delta=10)
+        self.assertEqual(s.volume, 0.5)
+
+        s.volume = 0.75
+        self.assertEqual(s.volume, 0.75)
+
+        s.freq = 440
+        self.assertAlmostEqual(s.freq, 440, delta=10)
+
+        s.close()
+
+    def test_speaker_note_conversion(self):
+        s = Speaker(17)
+
+        # Test string note conversion
+        freq = s._to_freq("a4")
+        self.assertEqual(freq, 440)
+
+        freq = s._to_freq("c4")
+        self.assertEqual(freq, 262)
+
+        # Test MIDI note conversion (A4 = MIDI note 69 = 440Hz)
+        freq = s._to_freq(69)
+        self.assertEqual(freq, 440)
+
+        # Test direct frequency
+        freq = s._to_freq(500)
+        self.assertEqual(freq, 500)
+
+        # Test None/empty
+        freq = s._to_freq(None)
+        self.assertIsNone(freq)
+
+        freq = s._to_freq("")
+        self.assertIsNone(freq)
+
+        s.close()
+
+    def test_speaker_play_single_note(self):
+        s = Speaker(18)
+
+        # Play single frequency
+        s.play(440, duration=0.1, n=1, wait=True)
+        self.assertEqual(s.volume, 0)  # Should be off after playing
+
+        s.close()
+
+    def test_speaker_play_note_list(self):
+        s = Speaker(19)
+
+        # Play list of notes with durations
+        s.play([(440, 0.1), (523, 0.1)], n=1, wait=True)
+        self.assertEqual(s.volume, 0)
+
+        s.close()
+
     ###########################################################################
     # INPUT DEVICES
     ###########################################################################
@@ -697,6 +772,24 @@ class Testpicozero(unittest.TestCase):
         self.assertIsInstance(pico_temp_sensor, TemperatureSensor)
         self.assertEqual(pico_temp_sensor.pin, 4)
         self.assertIsNotNone(pico_temp_sensor.temp)
+
+    def test_distance_sensor_basic(self):
+        # Create a mock distance sensor
+        d = DistanceSensor(echo=22, trigger=23)
+
+        self.assertEqual(d.pins, (22, 23))
+        self.assertEqual(d.max_distance, 1.0)
+
+        # Note: Without actual hardware, we can't test the distance reading
+        # but we can verify the object is created correctly
+
+        # Clean up - Note: DistanceSensor doesn't have a close() method
+        # so we just let it go out of scope
+
+    def test_distance_sensor_custom_max_distance(self):
+        d = DistanceSensor(echo=24, trigger=25, max_distance=2.5)
+
+        self.assertEqual(d.max_distance, 2.5)
 
 
 unittest.main()
