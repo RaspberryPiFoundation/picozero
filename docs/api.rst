@@ -117,6 +117,14 @@ MotionSensor
     :inherited-members:
     :members: 
 
+TouchSensor
+-----------
+
+.. autoclass:: TouchSensor
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
 Switch
 ------
 

@@ -7,6 +7,10 @@ Change log
 -----------
 
 + Introduced ``Stepper`` class for stepper motors
++ Introduced ``TouchSensor`` class for capacitive touch sensors
++ Updated tests and documentation
++ Other minor bug fixes
+
 
 0.5.2 - 2025-11-26
 -----------

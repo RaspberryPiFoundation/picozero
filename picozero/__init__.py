@@ -25,6 +25,7 @@ from .picozero import (
     Switch,
     Button,
     MotionSensor,
+    TouchSensor,
     AnalogInputDevice,
     Potentiometer,
     Pot,
