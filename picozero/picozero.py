@@ -2354,7 +2354,7 @@ class MotionSensor(DigitalInputDevice):
 
 
 MotionSensor.motion_detected = MotionSensor.is_active
-# Note: No alias for is_inactive - use 'not pir.motion_detected' for clarity
+MotionSensor.motion_not_detected = MotionSensor.is_inactive
 MotionSensor.when_motion = MotionSensor.when_activated
 MotionSensor.when_no_motion = MotionSensor.when_deactivated
 
