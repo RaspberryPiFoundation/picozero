@@ -1987,10 +1987,6 @@ class Stepper(PinsMixin):
         self._pins = None
 
 
-# Alias for backward compatibility
-StepperMotor = Stepper
-
-
 class Servo(PWMOutputDevice):
     """
     Represents a PWM-controlled servo motor.
