@@ -3,6 +3,11 @@ Change log
 
 .. currentmodule:: picozero
 
+0.6.1 - 2025-11-28
+-----------
+
++ Updated documentation
+
 0.6.0 - 2025-11-26
 -----------
 
@@ -10,7 +15,6 @@ Change log
 + Introduced ``TouchSensor`` class for capacitive touch sensors
 + Updated tests and documentation
 + Other minor bug fixes
-
 
 0.5.2 - 2025-11-26
 -----------
