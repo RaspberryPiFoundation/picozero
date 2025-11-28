@@ -2151,6 +2151,9 @@ class DigitalInputDevice(InputDevice, PinMixin):
             pin, mode=Pin.IN, pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN
         )
         self._bounce_time = bounce_time
+        self._last_callback_ms = (
+            None  # Track when we last fired a callback for debouncing
+        )
 
         if active_state is None:
             self._active_state = False if pull_up else True
@@ -2172,53 +2175,58 @@ class DigitalInputDevice(InputDevice, PinMixin):
         return self._state_to_value(self._state)
 
     def _pin_change(self, p):
-        # turn off the interupt
-        p.irq(handler=None)
+        # read the state that triggered the interrupt
+        new_state = p.value()
 
-        last_state = p.value()
+        # did the state actually change from our stored state?
+        if self._state != new_state:
+            # check if enough time has passed since last callback (debounce)
+            current_time_ms = ticks_ms()
+            # Use infinity for first event to ensure it always passes the time check.
+            # This is mathematically cleaner than checking if _last_callback_ms is None separately.
+            time_since_last_callback = (
+                current_time_ms - self._last_callback_ms
+                if hasattr(self, "_last_callback_ms")
+                and self._last_callback_ms is not None
+                else float("inf")
+            )
 
-        if self._bounce_time is not None:
-            # wait for stability
-            stop = ticks_ms() + (self._bounce_time * 1000)
-            while ticks_ms() < stop:
-                # keep checking, reset the stop if the value changes
-                if p.value() != last_state:
-                    stop = ticks_ms() + (self._bounce_time * 1000)
-                    last_state = p.value()
+            bounce_time = getattr(self, "_bounce_time", None)
+            if bounce_time is None or time_since_last_callback >= (bounce_time * 1000):
+                # Enough time has passed - update state, fire callback, and record timestamp
+                self._state = new_state
+                self._last_callback_ms = current_time_ms
 
-        # re-enable the interupt
-        p.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
+                # manage call backs
+                callback_to_run = None
+                if self.value and self._when_activated is not None:
+                    callback_to_run = self._when_activated
 
-        # did the value actually change?
-        if self._state != last_state:
-            # set the state
-            self._state = last_state
+                elif not self.value and self._when_deactivated is not None:
+                    callback_to_run = self._when_deactivated
 
-            # manage call backs
-            callback_to_run = None
-            if self.value and self._when_activated is not None:
-                callback_to_run = self._when_activated
+                if callback_to_run is not None:
 
-            elif not self.value and self._when_deactivated is not None:
-                callback_to_run = self._when_deactivated
+                    def schedule_callback(callback):
+                        callback()
 
-            if callback_to_run is not None:
+                    try:
+                        schedule(schedule_callback, callback_to_run)
 
-                def schedule_callback(callback):
-                    callback()
-
-                try:
-                    schedule(schedule_callback, callback_to_run)
-
-                except RuntimeError as e:
-                    if str(e) == "schedule queue full":
-                        raise EventFailedScheduleQueueFull(
-                            "{} - {} not run due to the micropython schedule being full".format(
-                                str(self), callback_to_run.__name__
+                    except RuntimeError as e:
+                        if str(e) == "schedule queue full":
+                            raise EventFailedScheduleQueueFull(
+                                "{} - {} not run due to the micropython schedule being full".format(
+                                    str(self), callback_to_run.__name__
+                                )
                             )
-                        )
-                    else:
-                        raise e
+                        else:
+                            raise e
+            else:
+                # Within bounce time - update state to track reality, but suppress callback.
+                # Note: _last_callback_ms is intentionally NOT updated here because we want
+                # to measure time from the last callback, not the last state change.
+                self._state = new_state
 
     @property
     def is_active(self):
