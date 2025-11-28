@@ -291,12 +291,20 @@ Move the rover (roughly) in a square:
 Stepper motor
 -------------
 
-Control a stepper motor connected via a driver board (e.g. ULN2003) to create:
+Control a stepper motor connected via a driver board (e.g. ULN2003).
 
-Analog clock (continuous second hand):
+Analog clock
+~~~~~~~~~~~~
+
+Create a continuously-running analog clock second hand:
+
 .. literalinclude:: examples/stepper_analog_clock.py
 
-Automatic blinds (multi-rotation, time-based):
+Automatic blinds
+~~~~~~~~~~~~~~~~
+
+Time-based blind controller:
+
 .. literalinclude:: examples/stepper_automatic_blinds.py
 
 
