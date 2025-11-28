@@ -287,12 +287,34 @@ Move the rover (roughly) in a square:
 
 .. literalinclude:: examples/robot_rover_square.py
 
+Stepper motor
+-------------
+
+Control a stepper motor connected via a driver board (e.g. ULN2003):
+
+.. literalinclude:: examples/stepper.py
+
+Advanced positioning with precise angle control:
+
+.. literalinclude:: examples/stepper_positioning.py
+
 Internal temperature sensor
 ---------------------------
 
 Check the internal temperature of the Raspberry Pi Pico in degrees Celcius:
 
 .. literalinclude:: examples/pico_temperature.py
+
+Motion sensor
+-------------
+
+Detect motion using a PIR (Passive Infrared) sensor:
+
+.. literalinclude:: examples/motion_sensor.py
+
+Use callbacks to respond to motion events:
+
+.. literalinclude:: examples/motion_sensor_callbacks.py
 
 Ultrasonic distance sensor
 --------------------------

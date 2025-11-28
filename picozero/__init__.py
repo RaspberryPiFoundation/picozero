@@ -1,6 +1,6 @@
 __name__ = "picozero"
 __package__ = "picozero"
-__version__ = '0.5.0'
+__version__ = "0.6.0"
 __author__ = "Raspberry Pi Foundation"
 
 from .picozero import (
@@ -19,6 +19,7 @@ from .picozero import (
     RGBLED,
     Motor,
     Robot,
+    Stepper,
     Servo,
     DigitalInputDevice,
     Switch,
