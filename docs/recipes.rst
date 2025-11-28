@@ -276,16 +276,18 @@ Move the rover (roughly) in a square:
 
 .. literalinclude:: examples/robot_rover_square.py
 
+
 Stepper motor
 -------------
 
-Control a stepper motor connected via a driver board (e.g. ULN2003):
+Control a stepper motor connected via a driver board (e.g. ULN2003) to create:
 
-.. literalinclude:: examples/stepper.py
+Analog clock (continuous second hand):
+.. literalinclude:: examples/stepper_analog_clock.py
 
-Advanced positioning with precise angle control:
+Automatic blinds (multi-rotation, time-based):
+.. literalinclude:: examples/stepper_automatic_blinds.py
 
-.. literalinclude:: examples/stepper_positioning.py
 
 Internal temperature sensor
 ---------------------------
