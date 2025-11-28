@@ -146,7 +146,7 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_pwm_output_device_default_values(self):
-        d = PWMOutputDevice(1)
+        d = PWMOutputDevice(14)
 
         self.assertTrue(d.active_high)
         self.assertEqual(d.value, 0)
@@ -178,7 +178,7 @@ class Testpicozero(unittest.TestCase):
 
     def test_pwm_output_device_alt_values(self):
         d = PWMOutputDevice(
-            1, freq=200, duty_factor=10000, active_high=False, initial_value=True
+            5, freq=200, duty_factor=10000, active_high=False, initial_value=True
         )
 
         self.assertFalse(d.active_high)
@@ -188,8 +188,8 @@ class Testpicozero(unittest.TestCase):
         d.off()
         # prior to micropython v1.20 PWM returned 1 less than the duty_factor
         # unless the duty was set to the maximum 65535
-        # self.assertEqual(d._pwm.duty_u16(), 9999)
-        self.assertEqual(d._pwm.duty_u16(), 10000)
+        # Accept either 9999 (older MicroPython) or 10000 (v1.20+)
+        self.assertIn(d._pwm.duty_u16(), [9999, 10000])
         self.assertAlmostEqual(d.value, 0, places=2)
 
         d.on()
@@ -201,7 +201,7 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_pwm_output_device_blink(self):
-        d = PWMOutputDevice(1)
+        d = PWMOutputDevice(6)
 
         d.blink()
         values = log_device_values(d, 1.1)
@@ -217,7 +217,7 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_pwm_output_device_pulse(self):
-        d = PWMOutputDevice(1)
+        d = PWMOutputDevice(7)
 
         d.pulse(n=1)
         values = log_device_values(d, 2.1)
@@ -298,7 +298,7 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_motor_default_values(self):
-        d = Motor(1, 2)
+        d = Motor(8, 9)
 
         self.assertEqual(d.value, 0)
 
@@ -347,7 +347,7 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_robot(self):
-        d = Robot(left=(1, 2), right=(3, 4))
+        d = Robot(left=(10, 11), right=(12, 13))
 
         d.forward()
         self.assertEqual(d.value, (1, 1))
@@ -368,11 +368,11 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_LED_factory(self):
-        d = LED(1)
+        d = LED(20)
         self.assertIsInstance(d, PWMLED)
         d.close()
 
-        d = LED(1, pwm=False)
+        d = LED(21, pwm=False)
         self.assertIsInstance(d, DigitalLED)
         d.close()
 
