@@ -3,6 +3,11 @@ Change log
 
 .. currentmodule:: picozero
 
+0.6.0 - 2025-11-26
+-----------
+
++ Introduced ``Stepper`` class for stepper motors
+
 0.5.2 - 2025-11-26
 -----------
 

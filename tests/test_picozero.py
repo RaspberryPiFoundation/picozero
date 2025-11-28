@@ -773,6 +773,245 @@ class Testpicozero(unittest.TestCase):
         self.assertEqual(pico_temp_sensor.pin, 4)
         self.assertIsNotNone(pico_temp_sensor.temp)
 
+    def test_stepper_basic_configuration(self):
+        """
+        Test 1: Basic stepper motor initialization and configuration.
+        """
+        stepper = Stepper((1, 2, 3, 4))
+
+        # Test initial configuration
+        self.assertEqual(stepper.pins, (1, 2, 3, 4))
+        self.assertEqual(stepper.step_count, 0)
+        self.assertEqual(stepper.angle, 0.0)
+        self.assertEqual(stepper.steps_per_rotation, 2048)
+        self.assertEqual(stepper.step_delay, 0.002)
+
+        # Test invalid pin count
+        with self.assertRaises(ValueError):
+            Stepper((1, 2, 3))  # Too few pins
+
+        # Test invalid step sequence
+        with self.assertRaises(ValueError):
+            Stepper((1, 2, 3, 4), step_sequence="invalid")
+
+        stepper.close()
+
+    def test_stepper_simple_methods(self):
+        """
+        Test 2: Basic step() method with default direction.
+        """
+        stepper = Stepper((1, 2, 3, 4))
+
+        # Test default direction (should be clockwise/1)
+        initial_count = stepper.step_count
+        stepper.step(10)  # Default direction
+        self.assertEqual(stepper.step_count, initial_count + 10)
+
+        # Test step with numeric direction
+        stepper.step(5, direction=1)  # Clockwise
+        self.assertEqual(stepper.step_count, initial_count + 15)
+
+        # Test step with string direction
+        stepper.step(3, direction="cw")
+        self.assertEqual(stepper.step_count, initial_count + 18)
+
+        # Test step counter-clockwise
+        stepper.step(2, direction="ccw")
+        self.assertEqual(stepper.step_count, initial_count + 16)
+
+        stepper.close()
+
+    def test_stepper_parameterized_methods(self):
+        """
+        Test 3: Parameterized methods with flexible direction handling.
+        """
+        stepper = Stepper((1, 2, 3, 4))
+        initial_count = stepper.step_count
+
+        # Test numeric directions
+        stepper.step(10, direction=1)  # Clockwise
+        self.assertEqual(stepper.step_count, initial_count + 10)
+
+        stepper.step(5, direction=-1)  # Counter-clockwise
+        self.assertEqual(stepper.step_count, initial_count + 5)
+
+        # Test string directions
+        stepper.step(8, direction="cw")
+        self.assertEqual(stepper.step_count, initial_count + 13)
+
+        stepper.step(3, direction="ccw")
+        self.assertEqual(stepper.step_count, initial_count + 10)
+
+        # Test full string directions
+        stepper.step(5, direction="clockwise")
+        self.assertEqual(stepper.step_count, initial_count + 15)
+
+        stepper.step(7, direction="counter-clockwise")
+        self.assertEqual(stepper.step_count, initial_count + 8)
+
+        # Test invalid direction
+        with self.assertRaises(ValueError):
+            stepper.step(5, direction="invalid")
+
+        stepper.close()
+
+    def test_stepper_angle_and_rotation_methods(self):
+        """
+        Test 4: Higher-level methods (angle-based and rotation-based).
+        """
+        stepper = Stepper(
+            (1, 2, 3, 4), steps_per_rotation=200
+        )  # Use smaller value for testing
+
+        # Test angle calculations
+        initial_angle = stepper.angle
+        stepper.turn(90, "cw")
+        expected_steps = int((90 / 360.0) * 200)
+        self.assertEqual(stepper.step_count, expected_steps)
+        self.assertAlmostEqual(stepper.angle, 90.0, places=1)
+
+        # Test rotation methods
+        stepper.reset_position()
+        stepper.rotate(0.5, "cw")  # Half rotation
+        self.assertEqual(stepper.step_count, 100)
+        self.assertAlmostEqual(stepper.angle, 180.0, places=1)
+
+        # Test rotate alias
+        stepper.reset_position()
+        stepper.rotate(1, "cw")  # Full rotation
+        self.assertEqual(stepper.step_count, 200)
+        self.assertAlmostEqual(stepper.angle, 0.0, places=1)
+
+        stepper.close()
+
+    def test_stepper_advanced_features(self):
+        """
+        Test 5: Advanced features (position tracking, sequences, etc.).
+        """
+        stepper = Stepper((1, 2, 3, 4), step_sequence="half", steps_per_rotation=100)
+
+        # Test different step sequences
+        self.assertEqual(len(stepper.STEP_SEQUENCES["half"]), 8)
+        self.assertEqual(len(stepper.STEP_SEQUENCES["full"]), 4)
+        self.assertEqual(len(stepper.STEP_SEQUENCES["wave"]), 4)
+
+        # Test position tracking through multiple movements
+        stepper.step(25, direction="cw")
+        stepper.step(10, direction="ccw")
+        stepper.turn(90, "cw")
+
+        expected_angle_steps = int((90 / 360.0) * 100)
+        expected_total = 25 - 10 + expected_angle_steps
+        self.assertEqual(stepper.step_count, expected_total)
+
+        # Test position reset
+        stepper.reset_position()
+        self.assertEqual(stepper.step_count, 0)
+        self.assertEqual(stepper.angle, 0.0)
+
+        # Test speed control
+        original_delay = stepper.step_delay
+        stepper.step_delay = 0.001
+        self.assertEqual(stepper.step_delay, 0.001)
+        stepper.step_delay = original_delay
+
+        stepper.close()
+
+    def test_stepper_step_to_method(self):
+        """
+        Test 6: step_to() method for moving to absolute step position.
+        """
+        stepper = Stepper((1, 2, 3, 4), steps_per_rotation=100)
+
+        # Test step_to clockwise
+        stepper.reset_position()
+        stepper.step_to(50, "cw")
+        self.assertEqual(stepper.step_count, 50)
+
+        # Test step_to counter-clockwise (should go backwards)
+        stepper.step_to(30, "ccw")
+        self.assertEqual(stepper.step_count, 20)  # 50 - 30 = 20
+
+        # Test step_to when already at target (should do nothing)
+        initial_count = stepper.step_count
+        stepper.step_to(20, "cw")
+        self.assertEqual(stepper.step_count, initial_count)
+
+        stepper.close()
+
+    def test_stepper_turn_to_method(self):
+        """
+        Test 7: turn_to() method for moving to absolute angle position.
+        """
+        stepper = Stepper((1, 2, 3, 4), steps_per_rotation=200)
+
+        # Test turn_to clockwise
+        stepper.reset_position()
+        stepper.turn_to(90, "cw")
+        self.assertAlmostEqual(stepper.angle, 90.0, places=1)
+
+        # Test turn_to counter-clockwise
+        stepper.reset_position()
+        stepper.turn_to(270, "ccw")
+        self.assertAlmostEqual(stepper.angle, 270.0, places=1)
+
+        # Test turn_to with wrapping (angle > 360)
+        stepper.reset_position()
+        stepper.turn_to(450, "cw")  # 450 % 360 = 90
+        self.assertAlmostEqual(stepper.angle, 90.0, places=1)
+
+        stepper.close()
+
+    def test_stepper_set_speed_method(self):
+        """
+        Test 8: set_speed() method for RPM-based speed control.
+        """
+        stepper = Stepper((1, 2, 3, 4), steps_per_rotation=200)
+
+        # Test setting speed to 60 RPM
+        stepper.set_speed(60)
+        # 60 RPM = 60 * 200 steps per minute = 12000 steps per minute
+        # = 200 steps per second = 0.005 seconds per step
+        expected_delay = 60.0 / (60 * 200)
+        self.assertAlmostEqual(stepper.step_delay, expected_delay, places=4)
+
+        # Test setting speed to 30 RPM
+        stepper.set_speed(30)
+        expected_delay = 60.0 / (30 * 200)
+        self.assertAlmostEqual(stepper.step_delay, expected_delay, places=4)
+
+        # Test invalid RPM (should raise ValueError)
+        with self.assertRaises(ValueError):
+            stepper.set_speed(0)
+
+        with self.assertRaises(ValueError):
+            stepper.set_speed(-10)
+
+        stepper.close()
+
+    def test_stepper_angle_wrapping(self):
+        """
+        Test 9: Angle property wrapping at 360 degrees.
+        """
+        stepper = Stepper((1, 2, 3, 4), steps_per_rotation=200)
+
+        # Test angle normalisation after multiple rotations
+        stepper.reset_position()
+        stepper.step(200, "cw")  # One full rotation
+        self.assertAlmostEqual(stepper.angle, 0.0, places=1)
+
+        # Test angle normalisation after 1.5 rotations
+        stepper.reset_position()
+        stepper.step(300, "cw")  # 1.5 rotations
+        self.assertAlmostEqual(stepper.angle, 180.0, places=1)
+
+        # Test negative step count (counter-clockwise)
+        stepper.reset_position()
+        stepper.step(50, "ccw")  # 50 steps counter-clockwise
+        self.assertAlmostEqual(stepper.angle, 270.0, places=1)  # -90 normalised to 270
+
+        stepper.close()
+        
     def test_distance_sensor_basic(self):
         # Create a mock distance sensor
         d = DistanceSensor(echo=22, trigger=23)
