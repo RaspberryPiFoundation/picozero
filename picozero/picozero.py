@@ -2376,8 +2376,8 @@ class TouchSensor(Button):
 
 
 TouchSensor.is_touched = TouchSensor.is_active
-# Note: No alias for is_inactive - use 'not touch.is_touched' for clarity
-TouchSensor.when_touched = TouchSensor.when_activated
+TouchSensor.is_not_touched = TouchSensor.is_inactive
+TouchSensor.when_touch_starts = TouchSensor.when_activated
 TouchSensor.when_touch_ends = TouchSensor.when_deactivated
 
 
