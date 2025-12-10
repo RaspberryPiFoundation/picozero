@@ -297,6 +297,77 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
 
+    def test_pwm_output_device_pulse_with_min_max_value(self):
+        d = PWMOutputDevice(7)
+
+        # Test pulse with max_value=0.2 (sleep mode use case)
+        d.pulse(
+            fade_in_time=0.5, fade_out_time=0.5, n=1, fps=4, min_value=0, max_value=0.2
+        )
+        values = log_device_values(d, 1.1)
+
+        expected = [0.0, 0.05, 0.1, 0.15, 0.2, 0.15, 0.1, 0.05, 0.0]
+
+        if len(values) == len(expected):
+            for i in range(len(values)):
+                self.assertAlmostEqual(values[i], expected[i], places=2)
+        else:
+            self.fail(
+                f"{len(values)} values were generated, {len(expected)} were expected."
+            )
+
+        # Test pulse with min_value=0.2 and max_value=0.8
+        d.pulse(
+            fade_in_time=0.5,
+            fade_out_time=0.5,
+            n=1,
+            fps=4,
+            min_value=0.2,
+            max_value=0.8,
+        )
+        values = log_device_values(d, 1.1)
+
+        expected = [0.2, 0.35, 0.5, 0.65, 0.8, 0.65, 0.5, 0.35, 0.2]
+
+        if len(values) == len(expected):
+            for i in range(len(values)):
+                self.assertAlmostEqual(values[i], expected[i], places=2)
+        else:
+            self.fail(
+                f"{len(values)} values were generated, {len(expected)} were expected."
+            )
+
+        d.close()
+
+    def test_pwm_output_device_blink_with_min_max_value(self):
+        d = PWMOutputDevice(7)
+
+        # Test blink with fade and custom min/max values
+        d.blink(
+            on_time=0.2,
+            off_time=0.2,
+            fade_in_time=0.2,
+            fade_out_time=0.2,
+            n=1,
+            fps=4,
+            min_value=0.1,
+            max_value=0.5,
+        )
+        values = log_device_values(d, 1.0)
+
+        # Fade in from 0.1 to 0.5, stay at 0.5, fade out to 0.1, stay at 0.1
+        expected = [0.1, 0.2, 0.3, 0.4, 0.5, 0.4, 0.3, 0.2, 0.1]
+
+        if len(values) == len(expected):
+            for i in range(len(values)):
+                self.assertAlmostEqual(values[i], expected[i], places=2)
+        else:
+            self.fail(
+                f"{len(values)} values were generated, {len(expected)} were expected."
+            )
+
+        d.close()
+
     def test_motor_default_values(self):
         d = Motor(8, 9)
 
@@ -651,24 +722,24 @@ class Testpicozero(unittest.TestCase):
     def test_digital_input_device_bounce_time(self):
         # Test that bounce_time is properly stored and device works with it
         d = DigitalInputDevice(1, bounce_time=0.01)
-        
+
         self.assertEqual(d._bounce_time, 0.01)
-        
+
         pin = MockPin(irq_handler=d._pin_change)
         d._pin = pin
-        
+
         event_activated = MockEvent()
         d.when_activated = event_activated.set
-        
+
         # Trigger should still work with bounce_time set
         self.assertFalse(event_activated.is_set())
         self.assertFalse(d.is_active)
-        
+
         pin.write(1)
         # With the timestamp-based approach, first event always fires callback
         self.assertTrue(event_activated.is_set())
         self.assertTrue(d.is_active)
-        
+
         d.close()
 
     def test_adc_input_device_default_values(self):
@@ -1011,7 +1082,7 @@ class Testpicozero(unittest.TestCase):
         self.assertAlmostEqual(stepper.angle, 270.0, places=1)  # -90 normalised to 270
 
         stepper.close()
-        
+
     def test_distance_sensor_basic(self):
         # Create a mock distance sensor
         d = DistanceSensor(echo=22, trigger=23)
