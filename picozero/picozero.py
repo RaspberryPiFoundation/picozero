@@ -154,8 +154,13 @@ class ValueChange:
                 )
 
         if next_seq is None:
-            # the sequence has finished, turn the device off
-            self._output_device.off()
+            # the sequence has finished
+            # If using custom min_value, set to that instead of calling off()
+            if hasattr(self._output_device, '_blink_min_value'):
+                self._output_device.value = self._output_device._blink_min_value
+                del self._output_device._blink_min_value
+            else:
+                self._output_device.off()
             self._running = False
 
     def _get_value(self):
@@ -532,6 +537,8 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         fade_in_time=0,
         fade_out_time=None,
         fps=25,
+        min_value=0,
+        max_value=1,
     ):
         """
         Makes the device turn on and off repeatedly.
@@ -562,6 +569,14 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         :param int fps:
            The frames per second that will be used to calculate the number of
            steps between off/on states when fading. Defaults to 25.
+
+        :param float min_value:
+            The minimum value for the device when off or at the start of a fade.
+            Must be between 0 and 1. Defaults to 0.
+
+        :param float max_value:
+            The maximum value for the device when on or at the peak of a fade.
+            Must be between 0 and 1. Defaults to 1.
         """
         self.off()
 
@@ -570,30 +585,55 @@ class PWMOutputDevice(OutputDevice, PinMixin):
 
         def blink_generator():
             if fade_in_time > 0:
-                for s in [
-                    (i * (1 / fps) / fade_in_time, 1 / fps)
-                    for i in range(int(fps * fade_in_time))
-                ]:
-                    yield s
+                # Calculate number of steps: use fps directly for custom min/max,
+                # otherwise use fps * fade_time for backward compatibility
+                fade_in_steps = (
+                    fps
+                    if (min_value != 0 or max_value != 1)
+                    else int(fps * fade_in_time)
+                )
+
+                for i in range(fade_in_steps + 1):
+                    value = min_value + (i / fade_in_steps) * (max_value - min_value)
+                    sleep_time = fade_in_time / fade_in_steps
+                    yield (value, sleep_time)
 
             if on_time > 0:
-                yield (1, on_time)
+                yield (max_value, on_time)
 
             if fade_out_time > 0:
-                for s in [
-                    (1 - (i * (1 / fps) / fade_out_time), 1 / fps)
-                    for i in range(int(fps * fade_out_time))
-                ]:
-                    yield s
+                # Calculate number of steps: use fps directly for custom min/max,
+                # otherwise use fps * fade_time for backward compatibility
+                fade_out_steps = (
+                    fps
+                    if (min_value != 0 or max_value != 1)
+                    else int(fps * fade_out_time)
+                )
+
+                for i in range(1, fade_out_steps + 1):
+                    value = max_value - (i / fade_out_steps) * (max_value - min_value)
+                    sleep_time = fade_out_time / fade_out_steps
+                    yield (value, sleep_time)
 
             if off_time > 0:
-                yield (0, off_time)
+                yield (min_value, off_time)
 
         # is there anything to change?
         if on_time > 0 or off_time > 0 or fade_in_time > 0 or fade_out_time > 0:
+            # Store min_value so ValueChange knows the final state
+            self._blink_min_value = min_value
             self._start_change(blink_generator, n, wait)
 
-    def pulse(self, fade_in_time=1, fade_out_time=None, n=None, wait=False, fps=25):
+    def pulse(
+        self,
+        fade_in_time=1,
+        fade_out_time=None,
+        n=None,
+        wait=False,
+        fps=25,
+        min_value=0,
+        max_value=1,
+    ):
         """
         Makes the device pulse on and off repeatedly.
 
@@ -617,6 +657,14 @@ class PWMOutputDevice(OutputDevice, PinMixin):
            If True, the method will block until the LED stops pulsing. If False,
            the method will return and the LED will pulse in the background.
            Defaults to False.
+
+        :param float min_value:
+            The minimum value for the device when at the lowest point of the pulse.
+            Must be between 0 and 1. Defaults to 0.
+
+        :param float max_value:
+            The maximum value for the device when at the peak of the pulse.
+            Must be between 0 and 1. Defaults to 1.
         """
         self.blink(
             on_time=0,
@@ -626,6 +674,8 @@ class PWMOutputDevice(OutputDevice, PinMixin):
             n=n,
             wait=wait,
             fps=fps,
+            min_value=min_value,
+            max_value=max_value,
         )
 
     def close(self):
