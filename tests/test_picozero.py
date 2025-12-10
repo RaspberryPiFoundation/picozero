@@ -434,6 +434,119 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
 
+    def test_rgb_led_brightness_default(self):
+        d = RGBLED(1, 2, 3)
+
+        # default brightness should be 1.0
+        self.assertEqual(d.brightness, 1.0)
+
+        # setting color should not be affected by default brightness
+        d.value = (0.5, 0.5, 0.5)
+        self.assertAlmostEqual(d.value[0], 0.5, places=2)
+        self.assertAlmostEqual(d.value[1], 0.5, places=2)
+        self.assertAlmostEqual(d.value[2], 0.5, places=2)
+
+        d.close()
+
+    def test_rgb_led_brightness_init(self):
+        # test brightness parameter in constructor
+        d = RGBLED(1, 2, 3, brightness=0.5)
+
+        self.assertEqual(d.brightness, 0.5)
+
+        # set color to full white
+        d.value = (1, 1, 1)
+
+        # actual LED values should be scaled by brightness
+        self.assertAlmostEqual(d.value[0], 0.5, places=2)
+        self.assertAlmostEqual(d.value[1], 0.5, places=2)
+        self.assertAlmostEqual(d.value[2], 0.5, places=2)
+
+        d.close()
+
+    def test_rgb_led_brightness_scaling(self):
+        d = RGBLED(1, 2, 3, brightness=0.5)
+
+        # set color to red
+        d.color = (255, 0, 0)
+
+        # check that values are scaled by brightness
+        self.assertAlmostEqual(d.value[0], 0.5, places=2)
+        self.assertAlmostEqual(d.value[1], 0.0, places=2)
+        self.assertAlmostEqual(d.value[2], 0.0, places=2)
+
+        # set partial color
+        d.color = (128, 64, 32)
+
+        # values should be scaled proportionally
+        self.assertAlmostEqual(d.value[0], 0.25, places=2)  # 128/255 * 0.5
+        self.assertAlmostEqual(d.value[1], 0.125, places=2)  # 64/255 * 0.5
+        self.assertAlmostEqual(d.value[2], 0.0625, places=2)  # 32/255 * 0.5
+
+        d.close()
+
+    def test_rgb_led_brightness_change(self):
+        d = RGBLED(1, 2, 3)
+
+        # set color first
+        d.value = (1, 0.5, 0.25)
+
+        # change brightness
+        d.brightness = 0.5
+
+        # color ratios should be preserved
+        self.assertAlmostEqual(d.value[0], 0.5, places=2)
+        self.assertAlmostEqual(d.value[1], 0.25, places=2)
+        self.assertAlmostEqual(d.value[2], 0.125, places=2)
+
+        # increase brightness
+        d.brightness = 0.8
+
+        self.assertAlmostEqual(d.value[0], 0.8, places=2)
+        self.assertAlmostEqual(d.value[1], 0.4, places=2)
+        self.assertAlmostEqual(d.value[2], 0.2, places=2)
+
+        d.close()
+
+    def test_rgb_led_brightness_clamping(self):
+        # test that brightness is clamped to 0-1 range
+        d = RGBLED(1, 2, 3, brightness=1.5)
+        self.assertEqual(d.brightness, 1.0)
+        d.close()
+
+        d = RGBLED(1, 2, 3, brightness=-0.5)
+        self.assertEqual(d.brightness, 0.0)
+        
+        # test dynamic brightness clamping
+        d.brightness = 2.0
+        self.assertEqual(d.brightness, 1.0)
+
+        d.brightness = -1.0
+        self.assertEqual(d.brightness, 0.0)
+
+        d.close()
+
+    def test_rgb_led_brightness_zero(self):
+        d = RGBLED(1, 2, 3, brightness=0)
+
+        # set color
+        d.value = (1, 1, 1)
+
+        # all values should be 0 due to brightness
+        self.assertEqual(d.value[0], 0)
+        self.assertEqual(d.value[1], 0)
+        self.assertEqual(d.value[2], 0)
+
+        # changing brightness from zero should work
+        d.brightness = 0.5
+        d.value = (1, 0.5, 0.25)
+
+        self.assertAlmostEqual(d.value[0], 0.5, places=2)
+        self.assertAlmostEqual(d.value[1], 0.25, places=2)
+        self.assertAlmostEqual(d.value[2], 0.125, places=2)
+
+        d.close()
+
     def test_servo_default_value(self):
         d = Servo(1)
 
