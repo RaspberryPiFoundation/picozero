@@ -1095,8 +1095,8 @@ class RGBLED(OutputDevice, PinsMixin):
         each component of the RGBLED. If :data:`False`, construct
         :class:`DigitalLED` instances.
     :param float brightness:
-        The overall brightness of the LED as a value between 0 and 1. 
-        Defaults to 1 (full brightness). This scales all color values proportionally.
+        The overall brightness of the LED as a value between 0.0 and 1.0.
+        Defaults to 1.0 (full brightness). This scales all color values proportionally.
 
     """
 
@@ -1108,12 +1108,14 @@ class RGBLED(OutputDevice, PinsMixin):
         active_high=True,
         initial_value=(0, 0, 0),
         pwm=True,
-        brightness=1,
+        brightness=1.0,
     ):
         self._pin_nums = (red, green, blue)
         self._leds = ()
         self._last = initial_value
-        self._brightness = max(0, min(1, brightness))  # clamp between 0 and 1
+        self._brightness = max(
+            0.0, min(1.0, float(brightness))
+        )  # clamp between 0 and 1
         LEDClass = PWMLED if pwm else DigitalLED
         self._leds = tuple(
             LEDClass(pin, active_high=active_high) for pin in (red, green, blue)
@@ -1225,7 +1227,7 @@ class RGBLED(OutputDevice, PinsMixin):
     @brightness.setter
     def brightness(self, value):
         # clamp value between 0 and 1
-        value = max(0, min(1, value))
+        value = max(0.0, min(1.0, float(value)))
         # get current unscaled color values
         if self._brightness > 0:
             # recover original color by dividing by current brightness
