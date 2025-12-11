@@ -34,5 +34,11 @@ from .picozero import (
     TempSensor,
     Thermistor,
     DistanceSensor,
-    WiFi,
 )
+
+# WiFi is only available on Pico W, so import it from a separate module to avoid
+# memory issues on regular Pico
+try:
+    from .wifi import WiFi
+except ImportError:
+    pass
