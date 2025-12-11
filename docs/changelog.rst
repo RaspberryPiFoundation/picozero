@@ -3,6 +3,14 @@ Change log
 
 .. currentmodule:: picozero
 
+0.7.0 - 2025-12-11
+-----------
+
++ Introduced ``WiFi`` class for connecting to wireless networks on Pico W
++ Added ``brightness`` parameter to ``RGBLED`` class to control overall LED brightness
++ Added ``min_value`` and ``max_value`` parameters to ``PWMOutputDevice.pulse()`` and ``blink()`` methods to control brightness range
++ Updated documentation
+
 0.6.1 - 2025-11-28
 -----------
 
