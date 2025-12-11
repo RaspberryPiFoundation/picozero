@@ -147,3 +147,6 @@ tags
 
 # MKDocs build
 site/
+
+# MicroPico
+.micropico

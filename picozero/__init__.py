@@ -1,6 +1,6 @@
 __name__ = "picozero"
 __package__ = "picozero"
-__version__ = "0.6.1"
+__version__ = "0.7.0"
 __author__ = "Raspberry Pi Foundation"
 
 from .picozero import (
@@ -35,3 +35,10 @@ from .picozero import (
     Thermistor,
     DistanceSensor,
 )
+
+# WiFi is only available on Pico W, so import it from a separate module to avoid
+# memory issues on regular Pico
+try:
+    from .wifi import WiFi
+except ImportError:
+    pass

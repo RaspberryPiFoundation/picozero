@@ -165,6 +165,15 @@ DigitalInputDevice
     :inherited-members:
     :members: 
 
+WiFi
+----
+
+.. autoclass:: WiFi
+    :show-inheritance:
+    :inherited-members:
+    :members: 
+
+
 pinout
 ------
 

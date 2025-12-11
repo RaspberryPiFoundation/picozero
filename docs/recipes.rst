@@ -335,3 +335,27 @@ Get the distance in metres from an ultrasonic distance sensor (HC-SR04):
     :alt: A diagram of the Raspberry Pi Pico connected to an HC-SR04 distance sensor.
 
 .. literalinclude:: examples/ultrasonic_distance_sensor.py
+
+WiFi (Pico W only)
+------------------
+
+Connect to a WiFi network
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Connect your Raspberry Pi Pico W to a wireless network using :class:`WiFi`:
+
+.. literalinclude:: examples/wifi_connect.py
+
+Get connection information
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Get detailed information about the WiFi connection including IP address and signal strength:
+
+.. literalinclude:: examples/wifi_info.py
+
+Handle reconnection
+~~~~~~~~~~~~~~~~~~~
+
+For long-running programs, check the connection status and reconnect if needed:
+
+.. literalinclude:: examples/wifi_reconnect.py

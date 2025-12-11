@@ -2637,3 +2637,4 @@ class DistanceSensor(PinsMixin):
         Returns the maximum distance that the sensor will measure in metres.
         """
         return self._max_distance
+
