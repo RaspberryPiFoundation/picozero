@@ -251,6 +251,13 @@ Play individual notes and control the timing or perform another action:
 
 .. literalinclude:: examples/speaker_notes.py
 
+Play MIDI notes
+~~~~~~~~~~~~~~~
+
+Step through a few MIDI notes with custom durations:
+
+.. literalinclude:: examples/speaker_midi_notes.py
+
 Servo
 -----
 
