@@ -178,6 +178,13 @@ Use :meth:`~picozero.RGBLED.toggle` and :meth:`~picozero.RGBLED.invert`:
 
 .. literalinclude:: examples/rgb_toggle_invert.py
 
+Brightness
+~~~~~~~~~~
+
+Adjust overall brightness while keeping the same colour:
+
+.. literalinclude:: examples/rgb_brightness.py
+
 Blink
 ~~~~~
 
