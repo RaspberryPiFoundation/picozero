@@ -1,14 +1,14 @@
 from picozero import RGBLED
 from time import sleep
 
-rgb = RGBLED(red=2, green=1, blue=0)
+rgb = RGBLED(red=1, green=2, blue=3)
 
 rgb.red = 255  # full red
 sleep(1)
 rgb.red = 128  # half red
 sleep(1)
 
-rgb.on() # white
+rgb.on()  # white
 
 rgb.color = (0, 255, 0)  # full green
 sleep(1)

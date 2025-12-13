@@ -178,6 +178,13 @@ Use :meth:`~picozero.RGBLED.toggle` and :meth:`~picozero.RGBLED.invert`:
 
 .. literalinclude:: examples/rgb_toggle_invert.py
 
+Brightness
+~~~~~~~~~~
+
+Adjust overall brightness while keeping the same colour:
+
+.. literalinclude:: examples/rgb_brightness.py
+
 Blink
 ~~~~~
 
@@ -243,6 +250,13 @@ Play individual notes
 Play individual notes and control the timing or perform another action:
 
 .. literalinclude:: examples/speaker_notes.py
+
+Play MIDI notes
+~~~~~~~~~~~~~~~
+
+Step through a few MIDI notes with custom durations:
+
+.. literalinclude:: examples/speaker_midi_notes.py
 
 Servo
 -----

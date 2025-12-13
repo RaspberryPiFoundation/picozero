@@ -1094,6 +1094,9 @@ class RGBLED(OutputDevice, PinsMixin):
         If :data:`True` (the default), construct :class:`PWMLED` instances for
         each component of the RGBLED. If :data:`False`, construct
         :class:`DigitalLED` instances.
+    :param float brightness:
+        The overall brightness of the LED as a value between 0.0 and 1.0.
+        Defaults to 1.0 (full brightness). This scales all color values proportionally.
 
     """
 
@@ -1105,10 +1108,14 @@ class RGBLED(OutputDevice, PinsMixin):
         active_high=True,
         initial_value=(0, 0, 0),
         pwm=True,
+        brightness=1.0,
     ):
         self._pin_nums = (red, green, blue)
         self._leds = ()
         self._last = initial_value
+        self._brightness = max(
+            0.0, min(1.0, float(brightness))
+        )  # clamp between 0 and 1
         LEDClass = PWMLED if pwm else DigitalLED
         self._leds = tuple(
             LEDClass(pin, active_high=active_high) for pin in (red, green, blue)
@@ -1118,7 +1125,9 @@ class RGBLED(OutputDevice, PinsMixin):
     def _write(self, value):
         if type(value) is not tuple:
             value = (value,) * 3
-        for led, v in zip(self._leds, value):
+        # apply brightness scaling
+        scaled_value = tuple(v * self._brightness for v in value)
+        for led, v in zip(self._leds, scaled_value):
             led.value = v
 
     @property
@@ -1206,6 +1215,28 @@ class RGBLED(OutputDevice, PinsMixin):
     def blue(self, value):
         r, g, b = self.value
         self.value = r, g, self._from_255(value)
+
+    @property
+    def brightness(self):
+        """
+        Represents the overall brightness of the LED as a value between 0 and 1.
+        Setting brightness scales all color components proportionally.
+        """
+        return self._brightness
+
+    @brightness.setter
+    def brightness(self, value):
+        # clamp value between 0 and 1
+        value = max(0.0, min(1.0, float(value)))
+        # get current unscaled color values
+        if self._brightness > 0:
+            # recover original color by dividing by current brightness
+            current_color = tuple(v / self._brightness for v in self.value)
+        else:
+            current_color = self.value
+        self._brightness = value
+        # reapply the color which will use new brightness
+        self.value = current_color
 
     def on(self):
         """
