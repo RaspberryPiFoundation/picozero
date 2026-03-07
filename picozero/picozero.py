@@ -2130,6 +2130,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
     :param bool pull_up:
         If :data:`True`, the device will be pulled up to HIGH. If
         :data:`False` (the default), the device will be pulled down to LOW.
+        If :data:'None', the device will not be pulled either HIGH or LOW.
 
     :param bool active_state:
         If :data:`True` (the default), the device will return :data:`True`
@@ -2148,7 +2149,7 @@ class DigitalInputDevice(InputDevice, PinMixin):
         super().__init__(active_state)
         self._pin_num = pin
         self._pin = Pin(
-            pin, mode=Pin.IN, pull=Pin.PULL_UP if pull_up else Pin.PULL_DOWN
+            pin, mode=Pin.IN, pull=Pin.PULL_UP if myvalue else pull=Pin.PULL_DOWN if myvalue == False else pull=Pin.None
         )
         self._bounce_time = bounce_time
         self._last_callback_ms = (
