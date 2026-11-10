@@ -14,6 +14,8 @@ Setup
 
 4. Run the ``test_picozero.py`` file.
 
+To test changes that haven't been released, run ``python3 tools/strip_docstrings.py`` and copy the ``device/picozero`` folder to the ``lib`` folder on the Pico instead of installing the package. Don't use the ``picozero`` folder: its docstrings leave too little memory on a Pico with an RP2040 to run the tests.
+
 Error messsages
 ---------------
 

@@ -3,6 +3,8 @@ Development
 
 Instructions on how build and deploy picozero.
 
+The docstrings in ``picozero/picozero.py`` are only used for this documentation. MicroPython holds every docstring in memory while it compiles ``picozero.py`` on a Raspberry Pi Pico, which takes most of the free memory on an RP2040, so the copies that are installed on a Pico don't have them: ``setup.py`` removes them when the package that pip and Thonny install is built, and ``tools/strip_docstrings.py`` writes the copy in ``device/`` that mip and the manual install use. Line numbers in these copies are the same as in the source.
+
 Pre-requisites
 --------------
 
@@ -17,17 +19,21 @@ Build
 
 2. Add release to ``docs/changelog.rst``
 
-3. Run ``setup.py`` and create a source distribution ::
+3. Update the copy of picozero without docstrings in ``device/``, which mip and the manual install use ::
+
+    python3 tools/strip_docstrings.py
+
+4. Run ``setup.py`` and create a source distribution ::
 
     python3 setup.py sdist
 
-4. Upload to PyPI ::
+5. Upload to PyPI ::
 
     twine upload dist/*
 
-5. Push all changes to the ``main`` branch
+6. Push all changes to the ``main`` branch
 
-6. Create a `release <https://github.com/RaspberryPiFoundation/picozero/releases>`_ in github and upload ``picozero-#-#-#.tar.gz`` source file to the release
+7. Create a `release <https://github.com/RaspberryPiFoundation/picozero/releases>`_ in github and upload ``picozero-#-#-#.tar.gz`` source file to the release
 
 Documentation
 -------------
@@ -60,6 +66,8 @@ The tests are designed to be run on a Raspberry Pi Pico.
 3. Copy the ``test_picozero.py`` file to the Pico
 
 4. Run the ``test_picozero.py`` file
+
+To test changes that haven't been released, run ``python3 tools/strip_docstrings.py`` and copy the ``device/picozero`` folder to the ``lib`` folder on the Pico instead of installing the package. Don't use the ``picozero`` folder: its docstrings leave too little memory on a Pico with an RP2040 to run the tests.
 
 If a test fails, it is helpful to be able to see verbose error messages. To see error messages, you need to modify the ``lib/unittest.py`` file on the Pico.
 
