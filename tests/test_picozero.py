@@ -367,6 +367,18 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
 
+    def test_aliases(self):
+        self.assertIs(Rover, Robot)
+        self.assertIs(Pot, Potentiometer)
+        self.assertIs(TempSensor, TemperatureSensor)
+
+        # LED() returns a PWMLED, which has is_lit like DigitalLED
+        d = LED(1)
+        self.assertFalse(d.is_lit)
+        d.on()
+        self.assertTrue(d.is_lit)
+        d.close()
+
     def test_LED_factory(self):
         d = LED(20)
         self.assertIsInstance(d, PWMLED)
