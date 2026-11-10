@@ -33,26 +33,26 @@ def pinout(output=True):
 
     """
     pins = """        ---usb---
-GP0  1  |o     o| -1  VBUS
-GP1  2  |o     o| -2  VSYS
-GND  3  |o     o| -3  GND
-GP2  4  |o     o| -4  3V3_EN
-GP3  5  |o     o| -5  3V3(OUT)
-GP4  6  |o     o| -6           ADC_VREF
-GP5  7  |o     o| -7  GP28     ADC2
-GND  8  |o     o| -8  GND      AGND
-GP6  9  |o     o| -9  GP27     ADC1
-GP7  10 |o     o| -10 GP26     ADC0
-GP8  11 |o     o| -11 RUN
-GP9  12 |o     o| -12 GP22
-GND  13 |o     o| -13 GND
-GP10 14 |o     o| -14 GP21
-GP11 15 |o     o| -15 GP20
-GP12 16 |o     o| -16 GP19
-GP13 17 |o     o| -17 GP18
-GND  18 |o     o| -18 GND
-GP14 19 |o     o| -19 GP17
-GP15 20 |o     o| -20 GP16
+GP0  1  |o     o| 40  VBUS
+GP1  2  |o     o| 39  VSYS
+GND  3  |o     o| 38  GND
+GP2  4  |o     o| 37  3V3_EN
+GP3  5  |o     o| 36  3V3(OUT)
+GP4  6  |o     o| 35           ADC_VREF
+GP5  7  |o     o| 34  GP28     ADC2
+GND  8  |o     o| 33  GND      AGND
+GP6  9  |o     o| 32  GP27     ADC1
+GP7  10 |o     o| 31  GP26     ADC0
+GP8  11 |o     o| 30  RUN
+GP9  12 |o     o| 29  GP22
+GND  13 |o     o| 28  GND
+GP10 14 |o     o| 27  GP21
+GP11 15 |o     o| 26  GP20
+GP12 16 |o     o| 25  GP19
+GP13 17 |o     o| 24  GP18
+GND  18 |o     o| 23  GND
+GP14 19 |o     o| 22  GP17
+GP15 20 |o     o| 21  GP16
         ---------"""
 
     if output:
@@ -2511,7 +2511,7 @@ class TemperatureSensor(AnalogInputDevice):
         The threshold that the device must be above or below to be
         considered active. The default is 0.5.
 
-    :param float conversion:
+    :param conversion:
         A function that takes a voltage and returns a temperature.
 
         e.g. The internal temperature sensor has a voltage range of 0.706V to 0.716V

@@ -4,12 +4,12 @@ Change log
 .. currentmodule:: picozero
 
 0.6.1 - 2025-11-28
------------
+------------------
 
 + Updated documentation
 
 0.6.0 - 2025-11-26
------------
+------------------
 
 + Introduced ``Stepper`` class for stepper motors
 + Introduced ``TouchSensor`` class for capacitive touch sensors
@@ -17,17 +17,17 @@ Change log
 + Other minor bug fixes
 
 0.5.2 - 2025-11-26
------------
+------------------
 
 + Fixed 404 in manual install instructions
 
 0.5.1 - 2025-11-24
------------
+------------------
 
 + Fix to incorrect example in documentation
 
 0.5.0 - 2025-10-31
------------
+------------------
 
 + Introduced ``MotionSensor`` class for PIR sensors
 
