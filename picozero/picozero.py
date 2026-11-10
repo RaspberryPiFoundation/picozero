@@ -2447,9 +2447,10 @@ class AnalogInputDevice(InputDevice, PinMixin):
     @property
     def voltage(self):
         """
-        Returns the voltage of the analogue device.
+        Returns the voltage on the pin, between 0 and 3.3V. Unlike
+        :attr:`value`, this is not affected by ``active_state``.
         """
-        return self.value * 3.3
+        return self._adc.read_u16() / 65535 * 3.3
 
     def close(self):
         self._adc = None

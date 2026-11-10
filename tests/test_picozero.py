@@ -708,17 +708,30 @@ class Testpicozero(unittest.TestCase):
         self.assertTrue(d.is_active)
         self.assertEqual(d.value, 1)
 
+        # active_state inverts the value, but the voltage is the pin's
         adc.write(65535)
         self.assertFalse(d.is_active)
         self.assertEqual(d.value, 0)
-        self.assertEqual(d.voltage, 0)
+        self.assertEqual(d.voltage, 3.3)
 
         adc.write(0)
         self.assertTrue(d.is_active)
         self.assertEqual(d.value, 1)
-        self.assertEqual(d.voltage, 3.3)
+        self.assertEqual(d.voltage, 0)
 
         d.close()
+
+    def test_temp_sensor_active_state_false(self):
+        # the temperature comes from the pin's real voltage
+        t = TemperatureSensor(4, active_state=False, conversion=lambda v: v)
+
+        adc = MockADC()
+        t._adc = adc
+
+        adc.write(65535)
+        self.assertEqual(t.temp, 3.3)
+
+        t.close()
 
     def test_adc_input_device_threshold(self):
         d = AnalogInputDevice(1)
