@@ -2050,11 +2050,20 @@ class Servo(PWMOutputDevice):
         )
 
     def _value_to_state(self, value):
-        return (
-            0
-            if value is None
-            else int(self._min_duty + ((self._max_duty - self._min_duty) * value))
-        )
+        if value is None:
+            return 0
+        if not 0 <= value <= 1:
+            # a pulse outside the servo's range could drive it past its end stops
+            raise ValueError("Servo value must be between 0 and 1, or None")
+        return int(self._min_duty + ((self._max_duty - self._min_duty) * value))
+
+    @property
+    def is_active(self):
+        """
+        Returns :data:`True` if the servo is being sent a position, or
+        :data:`False` if it is off (its value is :data:`None`).
+        """
+        return self.value is not None
 
     def min(self):
         """

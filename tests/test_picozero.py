@@ -503,6 +503,33 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
 
+    def test_servo_is_active(self):
+        d = Servo(1)
+
+        # off by default
+        self.assertFalse(d.is_active)
+
+        # the minimum position is still active
+        d.min()
+        self.assertTrue(d.is_active)
+
+        d.off()
+        self.assertFalse(d.is_active)
+
+        d.close()
+
+    def test_servo_value_out_of_range(self):
+        d = Servo(1)
+
+        d.mid()
+        for value in (-1, 1.5, 2):
+            with self.assertRaises(ValueError):
+                d.value = value
+        # the servo stays where it was
+        self.assertAlmostEqual(d.value, 0.5, places=2)
+
+        d.close()
+
     def test_speaker_default_values(self):
         s = Speaker(15)
 
