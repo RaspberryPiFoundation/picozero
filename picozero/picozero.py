@@ -76,6 +76,13 @@ class PinMixin:
         return "{} (pin {})".format(self.__class__.__name__, self._pin_num)
 
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+
 class PinsMixin:
     """
     Mixin used by devices that use multiple pins.
@@ -90,6 +97,13 @@ class PinsMixin:
 
     def __str__(self):
         return "{} (pins - {})".format(self.__class__.__name__, self._pin_nums)
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
 
 class ValueChange:
@@ -317,7 +331,9 @@ class OutputDevice:
         """
         Turns the device off.
         """
-        self.value = 0
+        # off() rather than value = 0, so that a Servo is released (None)
+        # rather than moved to its minimum position
+        self.off()
 
 
 class DigitalOutputDevice(OutputDevice, PinMixin):
@@ -359,6 +375,9 @@ class DigitalOutputDevice(OutputDevice, PinMixin):
         Closes the device and turns the device off. Once closed, the device
         can no longer be used.
         """
+        if self._pin is None:
+            # already closed
+            return
         super().close()
         self._pin = None
 
@@ -633,6 +652,9 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         Closes the device and turns the device off. Once closed, the device
         can no longer be used.
         """
+        if self._pwm is None:
+            # already closed
+            return
         super().close()
         del PWMOutputDevice._channels_used[
             PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
@@ -1354,6 +1376,13 @@ class RGBLED(OutputDevice, PinsMixin):
         self.blink(on_times, fade_times, colors, n, wait, fps)
 
     def close(self):
+        """
+        Closes the device and turns the device off. Once closed, the device
+        can no longer be used.
+        """
+        if self._leds is None:
+            # already closed
+            return
         super().close()
         for led in self._leds:
             led.close()
@@ -1389,9 +1418,14 @@ class Motor(PinsMixin):
         self._forward = (
             PWMOutputDevice(forward) if pwm else DigitalOutputDevice(forward)
         )
-        self._backward = (
-            PWMOutputDevice(backward) if pwm else DigitalOutputDevice(backward)
-        )
+        try:
+            self._backward = (
+                PWMOutputDevice(backward) if pwm else DigitalOutputDevice(backward)
+            )
+        except Exception:
+            # release the forward pin, so it can be used again
+            self._forward.close()
+            raise
 
     def on(self, speed=1, t=None, wait=False):
         """
@@ -1529,7 +1563,12 @@ class Robot:
 
     def __init__(self, left, right, pwm=True):
         self._left = Motor(left[0], left[1], pwm)
-        self._right = Motor(right[0], right[1], pwm)
+        try:
+            self._right = Motor(right[0], right[1], pwm)
+        except Exception:
+            # release the left motor's pins, so they can be used again
+            self._left.close()
+            raise
 
     @property
     def left_motor(self):
@@ -1659,6 +1698,13 @@ class Robot:
         """
         self._left.close()
         self._right.close()
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
 
 Rover = Robot
@@ -1981,6 +2027,9 @@ class Stepper(PinsMixin):
 
     def close(self):
         """Turn off the motor and close all pin resources."""
+        if self._pins is None:
+            # already closed
+            return
         self.off()
         for pin in self._pins:
             pin.close()
@@ -2630,6 +2679,16 @@ class DistanceSensor(PinsMixin):
         that this property will have a value between 0 and max_distance.
         """
         return self._read()
+
+    def close(self):
+        """
+        Closes the device and releases any resources. Once closed, the device
+        can no longer be used.
+        """
+        if self._trigger is not None:
+            self._trigger.off()
+        self._echo = None
+        self._trigger = None
 
     @property
     def max_distance(self):
