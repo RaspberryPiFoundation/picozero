@@ -1,6 +1,6 @@
 from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
-from time import ticks_ms, ticks_us, sleep
+from time import ticks_ms, ticks_us, ticks_add, ticks_diff, sleep, sleep_ms, sleep_us
 
 ###############################################################################
 # EXCEPTIONS
@@ -2137,11 +2137,17 @@ class DigitalInputDevice(InputDevice, PinMixin):
         :data:`False` if the pin is LOW.
 
     :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any button presses that happen within the bounce time after a
-        button release. This is useful to prevent accidental button
-        presses from registering as multiple presses. The default is
-        :data:`None`.
+        The bounce time for the device in seconds. If set, further changes
+        are ignored for this long after a change, which filters out the
+        "bounce" of switch contacts. If the input is still different when the
+        bounce time is over, that change is reported then, so a quick press
+        and release isn't missed. The default is :data:`None`.
+
+    .. note::
+
+        On Raspberry Pi Pico 2 boards with an RP2350 A2 chip, an internal
+        pull-down resistor can fail to pull an input back to LOW (RP2350
+        erratum E9). Use ``pull_up=True``, or an external pull-down resistor.
     """
 
     def __init__(self, pin, pull_up=False, active_state=None, bounce_time=None):
@@ -2165,6 +2171,9 @@ class DigitalInputDevice(InputDevice, PinMixin):
         self._when_activated = None
         self._when_deactivated = None
 
+        # checks the pin again when the bounce time is over
+        self._bounce_timer = None
+
         # setup interupt
         self._pin.irq(self._pin_change, Pin.IRQ_RISING | Pin.IRQ_FALLING)
 
@@ -2172,61 +2181,73 @@ class DigitalInputDevice(InputDevice, PinMixin):
         return int(bool(state) == self._active_state)
 
     def _read(self):
-        return self._state_to_value(self._state)
+        # read the pin itself, so the value is right even if an interrupt
+        # was missed or a change is waiting for the bounce time to pass
+        return self._state_to_value(self._pin.value())
 
     def _pin_change(self, p):
         # read the state that triggered the interrupt
-        new_state = p.value()
+        self._check_state(p.value())
 
-        # did the state actually change from our stored state?
-        if self._state != new_state:
-            # check if enough time has passed since last callback (debounce)
-            current_time_ms = ticks_ms()
-            # Use infinity for first event to ensure it always passes the time check.
-            # This is mathematically cleaner than checking if _last_callback_ms is None separately.
-            time_since_last_callback = (
-                current_time_ms - self._last_callback_ms
-                if hasattr(self, "_last_callback_ms")
-                and self._last_callback_ms is not None
-                else float("inf")
+    def _check_state(self, new_state):
+        # did the state actually change from the last state reported?
+        if self._state == new_state:
+            return
+
+        current_time_ms = ticks_ms()
+        if self._bounce_time is not None and self._last_callback_ms is not None:
+            # ticks_diff() copes with ticks_ms() wrapping around
+            remaining_ms = int(self._bounce_time * 1000) - ticks_diff(
+                current_time_ms, self._last_callback_ms
             )
+            if remaining_ms > 0:
+                # Within bounce time - ignore the change for now, and check the
+                # pin again when the bounce time is over, so that a change that
+                # lasts (e.g. a quick release) isn't lost
+                self._start_bounce_timer(remaining_ms)
+                return
 
-            bounce_time = getattr(self, "_bounce_time", None)
-            if bounce_time is None or time_since_last_callback >= (bounce_time * 1000):
-                # Enough time has passed - update state, fire callback, and record timestamp
-                self._state = new_state
-                self._last_callback_ms = current_time_ms
+        # Enough time has passed - update state, fire callback, and record timestamp
+        self._state = new_state
+        self._last_callback_ms = current_time_ms
 
-                # manage call backs
-                callback_to_run = None
-                if self.value and self._when_activated is not None:
-                    callback_to_run = self._when_activated
+        # manage call backs
+        callback_to_run = None
+        if self._state_to_value(new_state) and self._when_activated is not None:
+            callback_to_run = self._when_activated
 
-                elif not self.value and self._when_deactivated is not None:
-                    callback_to_run = self._when_deactivated
+        elif not self._state_to_value(new_state) and self._when_deactivated is not None:
+            callback_to_run = self._when_deactivated
 
-                if callback_to_run is not None:
+        if callback_to_run is not None:
 
-                    def schedule_callback(callback):
-                        callback()
+            def schedule_callback(callback):
+                callback()
 
-                    try:
-                        schedule(schedule_callback, callback_to_run)
+            try:
+                schedule(schedule_callback, callback_to_run)
 
-                    except RuntimeError as e:
-                        if str(e) == "schedule queue full":
-                            raise EventFailedScheduleQueueFull(
-                                "{} - {} not run due to the micropython schedule being full".format(
-                                    str(self), callback_to_run.__name__
-                                )
-                            )
-                        else:
-                            raise e
-            else:
-                # Within bounce time - update state to track reality, but suppress callback.
-                # Note: _last_callback_ms is intentionally NOT updated here because we want
-                # to measure time from the last callback, not the last state change.
-                self._state = new_state
+            except RuntimeError as e:
+                if str(e) == "schedule queue full":
+                    raise EventFailedScheduleQueueFull(
+                        "{} - {} not run due to the micropython schedule being full".format(
+                            str(self), callback_to_run.__name__
+                        )
+                    )
+                else:
+                    raise e
+
+    def _start_bounce_timer(self, period_ms):
+        if self._bounce_timer is None:
+            self._bounce_timer = Timer()
+        self._bounce_timer.init(
+            period=period_ms, mode=Timer.ONE_SHOT, callback=self._bounce_time_over
+        )
+
+    def _bounce_time_over(self, timer):
+        # report the pin's state if it changed during the bounce time
+        if self._pin is not None:
+            self._check_state(self._pin.value())
 
     @property
     def is_active(self):
@@ -2269,7 +2290,12 @@ class DigitalInputDevice(InputDevice, PinMixin):
         Closes the device and releases any resources. Once closed, the device
         can no longer be used.
         """
+        if self._pin is None:
+            # already closed
+            return
         self._pin.irq(handler=None)
+        if self._bounce_timer is not None:
+            self._bounce_timer.deinit()
         self._pin = None
 
 
@@ -2285,11 +2311,9 @@ class Switch(DigitalInputDevice):
         HIGH. If :data:`False`, the device will be pulled down to LOW.
 
     :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any button presses that happen within the bounce time after a
-        button release. This is useful to prevent accidental button
-        presses from registering as multiple presses. Defaults to 0.02
-        seconds.
+        The time in seconds to ignore further changes after a press or
+        release, which filters out the "bounce" of the switch contacts so
+        that one press isn't seen as several. Defaults to 0.02 seconds.
     """
 
     def __init__(self, pin, pull_up=True, bounce_time=0.02):
@@ -2314,11 +2338,9 @@ class Button(Switch):
         HIGH. If :data:`False`, the device will be pulled down to LOW.
 
     :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any button presses that happen within the bounce time after a
-        button release. This is useful to prevent accidental button
-        presses from registering as multiple presses. Defaults to 0.02
-        seconds.
+        The time in seconds to ignore further changes after a press or
+        release, which filters out the "bounce" of the switch contacts so
+        that one press isn't seen as several. Defaults to 0.02 seconds.
     """
 
     pass
@@ -2338,15 +2360,13 @@ class MotionSensor(DigitalInputDevice):
         The pin that the motion sensor is connected to.
 
     :param bool pull_up:
-        If :data:`True` (the default), the device will be pulled up to
-        HIGH. If :data:`False`, the device will be pulled down to LOW.
+        If :data:`True`, the device will be pulled up to HIGH. If
+        :data:`False` (the default), the device will be pulled down to LOW.
         Most PIR sensors work with pull_up=False.
 
     :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any motion events that happen within the bounce time after a
-        motion event. This is useful to prevent false triggers.
-        Defaults to 1 seconds.
+        The time in seconds to ignore further changes after motion starts
+        or stops, which prevents false triggers. Defaults to 1 second.
     """
 
     def __init__(self, pin, pull_up=False, bounce_time=1.00):
@@ -2372,10 +2392,8 @@ class TouchSensor(Button):
         Most capacitive touch sensors work with pull_up=False.
 
     :param float bounce_time:
-        The bounce time for the device. If set, the device will ignore
-        any touch events that happen within the bounce time after a
-        touch event. This is useful to prevent false triggers from
-        electrical noise or multiple rapid touches.
+        The time in seconds to ignore further changes after a touch starts
+        or ends, which prevents false triggers from electrical noise.
         Defaults to 0.02 seconds.
     """
 

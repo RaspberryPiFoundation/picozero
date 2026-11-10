@@ -1,6 +1,6 @@
 import unittest
 from picozero import *
-from time import ticks_ms
+from time import ticks_ms, ticks_us, ticks_diff, sleep
 
 
 def log_device_values(d, timeout):
@@ -623,6 +623,62 @@ class Testpicozero(unittest.TestCase):
 
         self.assertTrue(d.is_active)
         self.assertEqual(d.value, 1)
+
+        d.close()
+
+    def test_digital_input_device_value_reads_pin(self):
+        d = DigitalInputDevice(1)
+
+        # a change that no interrupt reported
+        pin = MockPin()
+        d._pin = pin
+        pin.write(1)
+        self.assertTrue(d.is_active)
+
+        d.close()
+        # closing twice is fine
+        d.close()
+
+    def test_digital_input_device_change_within_bounce_time(self):
+        d = DigitalInputDevice(1, bounce_time=0.1)
+
+        pin = MockPin(irq_handler=d._pin_change)
+        d._pin = pin
+
+        event_activated = MockEvent()
+        event_deactivated = MockEvent()
+        d.when_activated = event_activated.set
+        d.when_deactivated = event_deactivated.set
+
+        pin.write(1)
+        self.assertTrue(event_activated.is_set())
+
+        # deactivated again within the bounce time
+        pin.write(0)
+        self.assertFalse(event_deactivated.is_set())
+
+        # the change is reported when the bounce time is over
+        sleep(0.2)
+        self.assertTrue(event_deactivated.is_set())
+        self.assertFalse(d.is_active)
+
+        d.close()
+
+    def test_digital_input_device_bounce_time_ticks_wrap(self):
+        d = DigitalInputDevice(1, bounce_time=0.01)
+
+        pin = MockPin(irq_handler=d._pin_change)
+        d._pin = pin
+
+        event_activated = MockEvent()
+        d.when_activated = event_activated.set
+
+        # the last change was 50ms ago, just before ticks_ms() wrapped round
+        # to 0 (it wraps at 2**30)
+        d._last_callback_ms = ticks_ms() - 50 + (1 << 30)
+
+        pin.write(1)
+        self.assertTrue(event_activated.is_set())
 
         d.close()
 
