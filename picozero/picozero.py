@@ -1735,7 +1735,7 @@ class Stepper(PinsMixin):
         self._step_count = 0
         # the part of a step left over from turn() and rotate()
         self._step_fraction = 0
-        # when the next step is due, see _wait_step_delay()
+        # when the next step is due, see _wait_for_next_step()
         self._next_step_us = None
 
         self._step_sequence = step_sequence
@@ -1784,36 +1784,52 @@ class Stepper(PinsMixin):
             self._current_step = (self._current_step - 1) % len(self._sequence)
             self._step_count -= 1
 
+        # wait until step_delay has passed since the previous step
+        step_time = self._wait_for_next_step()
         self._set_step(self._sequence[self._current_step])
-        self._wait_step_delay()
+        self._next_step_us = ticks_add(step_time, int(self._step_delay * 1000000))
 
-    def _wait_step_delay(self):
-        # Wait until step_delay has passed since the previous step.
+    def _wait_for_next_step(self):
+        # Wait until the next step is due, and return the time it was due.
         # time.sleep() only has millisecond resolution on the Pico, so this
-        # uses ticks_us(), and keeps to a schedule so that the time the code
-        # takes between steps doesn't add up over a long run.
-        delay_us = int(self._step_delay * 1000000)
+        # uses ticks_us(). The steps keep to a schedule, so the time the code
+        # takes between steps doesn't add up over a long run, and a step that
+        # is a little late doesn't hold up the ones after it.
         now = ticks_us()
-        if (
-            self._next_step_us is None
-            or ticks_diff(now, self._next_step_us) > delay_us
-        ):
-            # the first step, or the motor was idle or is running late
-            self._next_step_us = now
-        self._next_step_us = ticks_add(self._next_step_us, delay_us)
+        due = self._next_step_us
+        if due is not None:
+            delay_us = int(self._step_delay * 1000000)
+            # The next step is never due more than step_delay from now. Any
+            # other difference means the motor has been idle (perhaps long
+            # enough for ticks_us() to wrap round) or is well behind, e.g.
+            # because step_delay is shorter than the code takes to step. Then
+            # step now, and time the steps after this one from now.
+            if -delay_us <= ticks_diff(due, now) <= delay_us:
+                self._sleep_until(due)
+                return due
+        return now
 
-        remaining = ticks_diff(self._next_step_us, ticks_us())
+    def _sleep_until(self, time_us):
+        remaining = ticks_diff(time_us, ticks_us())
         if remaining > 1000:
             # sleep_ms() lets callbacks (e.g. from buttons) run while waiting
             sleep_ms(remaining // 1000)
-            remaining = ticks_diff(self._next_step_us, ticks_us())
+            remaining = ticks_diff(time_us, ticks_us())
         if remaining > 0:
             sleep_us(remaining)
+
+    def _wait_for_last_step(self):
+        # give the last step step_delay to happen before stopping or returning
+        if self._next_step_us is not None:
+            delay_us = int(self._step_delay * 1000000)
+            if 0 < ticks_diff(self._next_step_us, ticks_us()) <= delay_us:
+                self._sleep_until(self._next_step_us)
 
     def _move(self, steps, direction):
         # move a whole number of steps in a direction (1 or -1)
         for _ in range(steps):
             self._single_step(direction)
+        self._wait_for_last_step()
 
     def _move_to_step(self, target):
         # move until the step count is target
@@ -2000,6 +2016,7 @@ class Stepper(PinsMixin):
                 end_time = ticks_add(ticks_ms(), int(abs(float(seconds)) * 1000))
                 while ticks_diff(end_time, ticks_ms()) > 0:
                     self._single_step(direction)
+                self._wait_for_last_step()
         finally:
             # turn the coils off, then let an interrupt carry on stopping the
             # program

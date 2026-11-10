@@ -1045,14 +1045,16 @@ class Testpicozero(unittest.TestCase):
         stepper.close()
 
     def test_stepper_step_delay_accuracy(self):
-        # time.sleep() only has millisecond resolution, so a 0.5ms delay
-        # must not be rounded down to no delay at all
-        stepper = Stepper((1, 2, 3, 4), step_delay=0.0005)
+        # time.sleep() only has millisecond resolution, so a 2.5ms delay must
+        # not be rounded down to 2ms, and the time the code takes between
+        # steps must not be added to it (a step takes about 0.9ms of code on
+        # an RP2040)
+        stepper = Stepper((1, 2, 3, 4), step_delay=0.0025)
 
         start = ticks_ms()
         stepper.step(200)
         elapsed = ticks_diff(ticks_ms(), start)
-        self.assertInRange(elapsed, 90, 150)
+        self.assertTrue(495 <= elapsed <= 520, "200 steps took {}ms".format(elapsed))
 
         stepper.close()
 
