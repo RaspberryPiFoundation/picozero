@@ -1,6 +1,6 @@
 import unittest
 from picozero import *
-from time import ticks_ms
+from time import ticks_ms, ticks_us, ticks_diff, sleep
 
 
 def log_device_values(d, timeout):
@@ -138,6 +138,81 @@ class Testpicozero(unittest.TestCase):
         self.assertEqual(values, [1, 0, 1, 0])
         self.assertFalse(d.value)
 
+        d.close()
+
+    def test_output_device_timed_on_stops_blink(self):
+        d = DigitalOutputDevice(1)
+
+        d.blink(on_time=0.1, off_time=0.1)
+        d.on(t=0.2)
+        sleep(0.3)
+
+        # the timed on has finished, and the blink must not carry on
+        self.assertIsNone(d._value_changer)
+        values = log_device_values(d, 0.3)
+        self.assertEqual(values, [0])
+
+        d.close()
+
+    def test_output_device_timed_on_replaces_timed_on(self):
+        d = Motor(8, 9)
+
+        d.forward(t=0.2)
+        d.forward(t=0.5)
+        sleep(0.3)
+        # the first timer must not stop the motor early
+        self.assertEqual(d.value, 1)
+        sleep(0.3)
+        self.assertEqual(d.value, 0)
+
+        d.close()
+
+    def test_output_device_blink_n_zero(self):
+        d = DigitalOutputDevice(1)
+
+        d.blink(on_time=0.1, n=0)
+        self.assertIsNone(d._value_changer)
+        values = log_device_values(d, 0.3)
+        self.assertEqual(values, [0])
+
+        d.close()
+
+    def test_output_device_empty_sequence(self):
+        d = RGBLED(1, 2, 3)
+
+        # there is nothing to show or fade, so this does nothing
+        d.cycle(fade_times=0)
+        self.assertEqual(d.value, (0, 0, 0))
+
+        d.close()
+
+    def test_output_device_late_callback_after_stop(self):
+        d = DigitalOutputDevice(1)
+
+        d.blink(on_time=0.1)
+        value_changer = d._value_changer
+        d.off()
+        # a timer callback that was already queued when off() was called
+        value_changer._set_value()
+        values = log_device_values(d, 0.3)
+        self.assertEqual(values, [0])
+
+        d.close()
+
+    def test_output_device_stop_blocking_blink(self):
+        from machine import Timer
+
+        d = DigitalOutputDevice(1)
+
+        # stop a blocking blink part way through, as a callback might
+        timer = Timer()
+        timer.init(period=250, mode=Timer.ONE_SHOT, callback=lambda t: d.off())
+        start = ticks_ms()
+        d.blink(on_time=0.1, n=10, wait=True)
+        self.assertTrue(ticks_diff(ticks_ms(), start) < 1000)
+        self.assertEqual(d.value, 0)
+
+        timer.deinit()
         d.close()
 
     def test_digital_LED(self):
