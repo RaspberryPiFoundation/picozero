@@ -1,0 +1,2 @@
+# setup.py uses this to build the package without docstrings
+include tools/strip_docstrings.py

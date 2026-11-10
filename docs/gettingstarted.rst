@@ -55,10 +55,14 @@ Manual install
 
 picozero can be installed by copying the ``picozero.py`` code to your Raspberry Pi Pico.
 
+.. note::
+
+    Use the copy of ``picozero.py`` from the ``device/picozero`` folder (which the links below go to). It doesn't include the documentation that is in the ``picozero/picozero.py`` source file, so it needs much less memory on a Raspberry Pi Pico.
+
 Either clone the picozero `GitHub repository`_ or copy the code from the `picozero.py`_ file and save it on your main computer.
 
 .. _GitHub repository: https://github.com/RaspberryPiFoundation/picozero
-.. _picozero.py: https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/picozero/picozero.py
+.. _picozero.py: https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/device/picozero/picozero.py
 
 Create a new file called picozero.py, copy code into the file and save it on your Raspberry Pi Pico.
 
@@ -79,7 +83,7 @@ Either clone the picozero `GitHub repository`_ or download the `picozero.py`_ fi
    .. raw:: html
 
       <p>
-        <a href="https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/picozero/picozero.py" download>
+        <a href="https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/device/picozero/picozero.py" download>
           ⬇️ Download picozero.py
         </a>
       </p>
@@ -87,9 +91,9 @@ Either clone the picozero `GitHub repository`_ or download the `picozero.py`_ fi
 .. only:: not html
 
    Download ``picozero.py``:
-   https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/picozero/picozero.py
+   https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/device/picozero/picozero.py
 
-In Thonny, navigate to the cloned directory or location you saved the file in and find the ``picozero.py`` file.
+In Thonny, navigate to the location you saved the file in (or, in a clone of the repository, the ``device/picozero`` folder) and find the ``picozero.py`` file.
 
 .. image:: images/thonny-navigate-downloads.jpg
 
