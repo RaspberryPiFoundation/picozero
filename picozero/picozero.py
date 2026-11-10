@@ -895,12 +895,19 @@ class Speaker(OutputDevice, PinMixin):
         """
         Sets or returns the value of the speaker. The value is a tuple of (freq, volume).
         """
-        return tuple(self.freq, self.volume)
+        return (self.freq, self.volume)
 
     @value.setter
     def value(self, value):
         self._stop_change()
         self._write(value)
+
+    @property
+    def is_active(self):
+        """
+        Returns :data:`True` if the speaker is making a sound.
+        """
+        return self._pwm_buzzer.is_active
 
     @property
     def volume(self):
@@ -932,15 +939,16 @@ class Speaker(OutputDevice, PinMixin):
 
         # write the volume value
         if value[1] is not None:
+            self._volume = value[1]
             self._pwm_buzzer.volume = value[1]
 
     def _to_freq(self, freq):
         if freq is not None and freq != "" and freq != 0:
             if type(freq) is str:
-                return int(self.NOTES[freq])
-            elif freq <= 128 and freq > 0:  # MIDI
+                return int(self.NOTES[freq.lower()])
+            elif freq < 128 and freq > 0:  # MIDI notes are 0 to 127
                 midi_factor = 2 ** (1 / 12)
-                return int(440 * midi_factor ** (freq - 69))
+                return round(440 * midi_factor ** (freq - 69))
             else:
                 return freq
         else:
@@ -986,6 +994,8 @@ class Speaker(OutputDevice, PinMixin):
            The frames per second that will be used to calculate the number of
            steps between off/on states when fading. Defaults to 25.
         """
+        # stop a tune that is playing
+        self._stop_change()
         self._pwm_buzzer.blink(
             on_time, off_time, n, wait, fade_in_time, fade_out_time, fps
         )
@@ -1001,9 +1011,14 @@ class Speaker(OutputDevice, PinMixin):
                 + a single "note", represented as:
                   + a frequency in Hz e.g. `440`
                   + a midi note e.g. `60`
-                  + a note name as a string e.g. `"E4"`
-                + a list of notes and duration e.g. `[440, 1]` or `["E4", 2]`
+                  + a note name as a string e.g. `"E4"` or `"c#5"`
+                + a note and a duration e.g. `[440, 1]` or `["E4", 2]`
+                + a list of notes e.g. `["c4", "e4", "g4"]`, each played for `duration`
                 + a list of two value tuples of (note, duration) e.g. `[(440,1), (60, 2), ("e4", 3)]`
+
+            A list of two values is a note and a duration if the second value
+            is a number, so `[60, 62]` plays note 60 for 62 seconds; use
+            `[(60, 1), (62, 1)]` to play two notes.
 
             Defaults to `440`.
 
@@ -1028,9 +1043,18 @@ class Speaker(OutputDevice, PinMixin):
         # tune isn't a list, so it must be a single frequency or note
         if not isinstance(tune, (list, tuple)):
             tune = [(tune, duration)]
-        # if the first element isn't a list, then it must be list of a single note and duration
-        elif not isinstance(tune[0], (list, tuple)):
+        # a note followed by a duration, e.g. [440, 1] or ["e4", 2]
+        elif (
+            len(tune) == 2
+            and not isinstance(tune[0], (list, tuple))
+            and isinstance(tune[1], (int, float))
+        ):
             tune = [tune]
+        # otherwise it is a list of notes, each of which is either a note or
+        # a (note, duration) pair
+
+        if len(tune) == 0:
+            return
 
         def tune_generator():
             for note in tune:
@@ -1055,7 +1079,16 @@ class Speaker(OutputDevice, PinMixin):
         self._start_change(tune_generator, n, wait)
 
     def close(self):
+        """
+        Closes the device and turns the device off. Once closed, the device
+        can no longer be used.
+        """
+        # stop a tune that is playing in the background
+        self._stop_change()
         self._pwm_buzzer.close()
+
+
+Speaker.blink = Speaker.beep
 
 
 class RGBLED(OutputDevice, PinsMixin):

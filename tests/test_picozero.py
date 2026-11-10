@@ -1,6 +1,6 @@
 import unittest
 from picozero import *
-from time import ticks_ms
+from time import ticks_ms, ticks_us, ticks_diff, sleep
 
 
 def log_device_values(d, timeout):
@@ -577,6 +577,82 @@ class Testpicozero(unittest.TestCase):
         self.assertEqual(s.volume, 0)
 
         s.close()
+
+    def test_speaker_value_and_is_active(self):
+        s = Speaker(15)
+
+        freq, volume = s.value
+        self.assertAlmostEqual(freq, 440, delta=10)
+        self.assertEqual(volume, 0)
+        self.assertFalse(s.is_active)
+
+        s.on()
+        self.assertEqual(s.value[1], 1)
+        self.assertTrue(s.is_active)
+
+        s.toggle()
+        self.assertFalse(s.is_active)
+        s.toggle()
+        self.assertTrue(s.is_active)
+
+        s.close()
+
+    def test_speaker_note_names(self):
+        s = Speaker(15)
+
+        # note names are not case sensitive
+        self.assertEqual(s._to_freq("E4"), 330)
+        self.assertEqual(s._to_freq("C#4"), 277)
+        s.play("E4", duration=0.05)
+
+        # MIDI notes are rounded to the nearest frequency, as in NOTES
+        self.assertEqual(s._to_freq(60), 262)
+
+        s.close()
+
+    def test_speaker_play_list_of_notes(self):
+        s = Speaker(15)
+
+        played = []
+        write = s._write
+
+        def record(value):
+            if value[1]:
+                played.append(value[0])
+            write(value)
+
+        s._write = record
+
+        s.play(["c4", "e4", "g4"], duration=0.05)
+        self.assertEqual(played, [262, 330, 392])
+
+        del played[:]
+        s.play([60, 62, 64], duration=0.05)
+        self.assertEqual(played, [262, 294, 330])
+
+        # a note followed by a duration is a single note
+        del played[:]
+        s.play([440, 0.05])
+        self.assertEqual(played, [440])
+
+        s.close()
+
+    def test_speaker_blink(self):
+        s = Speaker(15)
+
+        s.blink(on_time=0.05, n=1, wait=True)
+        self.assertFalse(s.is_active)
+
+        s.close()
+
+    def test_speaker_close_while_playing(self):
+        s = Speaker(15)
+
+        s.play([("c4", 0.1), ("d4", 0.1), ("e4", 0.1)], wait=False)
+        s.close()
+        # the tune's timer must not carry on after close
+        sleep(0.4)
+        self.assertIsNone(s._value_changer)
 
     ###########################################################################
     # INPUT DEVICES
