@@ -667,6 +667,7 @@ class PWMLED(PWMOutputDevice):
 
 
 PWMLED.brightness = PWMLED.value
+PWMLED.is_lit = PWMLED.is_active
 
 
 def LED(pin, pwm=True, active_high=True, initial_value=False):
@@ -1500,7 +1501,7 @@ class Robot:
     """
     Represents a generic dual-motor robot / rover / buggy.
 
-    Alias for :class:`Rover`.
+    ``Rover`` is an alias for :class:`Robot`.
 
     This class is constructed with two tuples representing the forward and
     backward pins of the left and right controllers. For example,
@@ -2460,7 +2461,7 @@ class Potentiometer(AnalogInputDevice):
     Represents a potentiometer, which outputs a variable voltage
     between 0 and 3.3V.
 
-    Alias for :class:`Pot`.
+    ``Pot`` is an alias for :class:`Potentiometer`.
 
     :param int pin:
         The pin that the device is connected to.
@@ -2495,7 +2496,7 @@ class TemperatureSensor(AnalogInputDevice):
     can be converted to a temperature using a `conversion` function passed as a
     parameter.
 
-    Alias for :class:`Thermistor` and :class:`TempSensor`.
+    ``TempSensor`` and ``Thermistor`` are aliases for :class:`TemperatureSensor`.
 
     :param int pin:
         The pin that the device is connected to.

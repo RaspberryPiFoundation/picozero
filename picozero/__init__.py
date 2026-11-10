@@ -19,6 +19,7 @@ from .picozero import (
     RGBLED,
     Motor,
     Robot,
+    Rover,
     Stepper,
     Servo,
     DigitalInputDevice,
