@@ -145,6 +145,16 @@ Turn the :obj:`pico_led` on when a :class:`Button` is pressed and off when it is
 
 .. literalinclude:: examples/button_led.py
 
+Wait for a :class:`Button` to be pressed. :meth:`~picozero.Button.wait_for_press` returns :data:`False` if the button isn't pressed before the ``timeout``:
+
+.. literalinclude:: examples/button_wait_for_press.py
+
+Turn the :obj:`pico_led` on when a :class:`Button` has been held down for 2 seconds. :func:`pause` keeps the script running, so that it can react to the button:
+
+.. literalinclude:: examples/button_held.py
+
+Use ``hold_repeat=True`` to run the ``when_held`` function again every ``hold_time`` seconds for as long as the button is held down. :attr:`~picozero.Button.held_time` tells you how long the button has been held for, counted from when ``when_held`` first runs.
+
 Touch sensor
 ------------
 
@@ -166,6 +176,10 @@ Detect motion using a PIR (Passive Infrared) sensor:
 Use callbacks to respond to motion events:
 
 .. literalinclude:: examples/motion_sensor_callbacks.py
+
+Wait for motion to start and stop:
+
+.. literalinclude:: examples/motion_sensor_wait.py
 
 RGB LEDs
 --------
@@ -287,6 +301,10 @@ Move the rover (roughly) in a square:
 
 .. literalinclude:: examples/robot_rover_square.py
 
+Drive the rover in an arc with ``curve_left``, then go back along the same arc with :meth:`~picozero.Robot.reverse`:
+
+.. literalinclude:: examples/robot_rover_curve.py
+
 
 Stepper motor
 -------------
@@ -335,3 +353,9 @@ Get the distance in metres from an ultrasonic distance sensor (HC-SR04):
     :alt: A diagram of the Raspberry Pi Pico connected to an HC-SR04 distance sensor.
 
 .. literalinclude:: examples/ultrasonic_distance_sensor.py
+
+Turn the :obj:`pico_led` on when something comes within 20cm of the sensor, and off again when it moves away:
+
+.. literalinclude:: examples/ultrasonic_distance_sensor_in_range.py
+
+While a ``when_in_range`` or ``when_out_of_range`` function is set, the sensor is checked every 0.1 seconds. The functions run when something moves into or out of range, so not for something that is already in range when they are set.
