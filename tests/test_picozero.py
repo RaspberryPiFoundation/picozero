@@ -69,7 +69,7 @@ class MockEvent:
 class Testpicozero(unittest.TestCase):
 
     def assertInRange(self, value, lower, upper):
-        msg = "Expected %r to be in range {} to {}".format(lower, upper)
+        msg = "Expected {!r} to be in range {} to {}".format(value, lower, upper)
         self.assertTrue(value <= upper, msg)
         self.assertTrue(value >= lower, msg)
 
