@@ -186,18 +186,71 @@ class Testpicozero(unittest.TestCase):
         self.assertEqual(d.freq, 200)
 
         d.off()
-        # prior to micropython v1.20 PWM returned 1 less than the duty_factor
-        # unless the duty was set to the maximum 65535
-        # Accept either 9999 (older MicroPython) or 10000 (v1.20+)
-        self.assertIn(d._pwm.duty_u16(), [9999, 10000])
+        # active low: off is a constant high signal
+        self.assertEqual(d._pwm.duty_u16(), 65535)
         self.assertAlmostEqual(d.value, 0, places=2)
 
         d.on()
-        self.assertEqual(d._pwm.duty_u16(), 0)
-        self.assertEqual(d.value, 1)
+        # active low: on is low for duty_factor / 65535 of the time
+        self.assertInRange(d._pwm.duty_u16(), 65535 - 10000 - 1, 65535 - 10000 + 1)
+        self.assertAlmostEqual(d.value, 1, places=2)
 
         d.off()
 
+        d.close()
+
+    def test_pwm_output_device_active_low_buzzer(self):
+        d = PWMBuzzer(5, active_high=False)
+
+        # off is a constant high signal, so an active low buzzer is silent
+        d.off()
+        self.assertEqual(d._pwm.duty_u16(), 65535)
+        self.assertFalse(d.is_active)
+
+        d.on()
+        self.assertInRange(d._pwm.duty_u16(), 65535 - 1023 - 1, 65535 - 1023 + 1)
+        self.assertTrue(d.is_active)
+
+        d.close()
+
+    def test_pwm_output_device_shares_servo_frequency(self):
+        servo = Servo(0)
+        servo.mid()
+
+        # GP1 shares a PWM frequency with GP0, so the LED uses the servo's
+        led = PWMLED(1)
+        self.assertEqual(led.freq, servo.freq)
+        self.assertAlmostEqual(servo.freq, 50, delta=1)
+        self.assertAlmostEqual(servo.value, 0.5, places=2)
+        with self.assertRaises(PWMChannelAlreadyInUse):
+            led.freq = 100
+        self.assertAlmostEqual(servo.freq, 50, delta=1)
+        led.close()
+
+        # a buzzer changes its frequency, so it can't share with a servo
+        with self.assertRaises(PWMChannelAlreadyInUse):
+            PWMBuzzer(1)
+
+        # servos with the same frame width can share
+        servo2 = Servo(1)
+        servo2.close()
+        with self.assertRaises(PWMChannelAlreadyInUse):
+            Servo(1, frame_width=10 / 1000)
+
+        servo.close()
+
+    def test_pwm_output_device_invalid_pin(self):
+        with self.assertRaises(ValueError):
+            PWMOutputDevice("LED")
+        with self.assertRaises(ValueError):
+            PWMOutputDevice(30)
+
+    def test_pwm_output_device_failed_init_releases_channel(self):
+        with self.assertRaises(TypeError):
+            PWMOutputDevice(14, initial_value=object())
+
+        # the channel must have been released
+        d = PWMOutputDevice(14)
         d.close()
 
     def test_pwm_output_device_blink(self):
