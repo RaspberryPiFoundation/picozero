@@ -1,6 +1,6 @@
 from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
-from time import ticks_ms, ticks_us, sleep
+from time import ticks_ms, ticks_us, ticks_add, ticks_diff, sleep, sleep_ms, sleep_us
 
 ###############################################################################
 # EXCEPTIONS
@@ -2562,6 +2562,10 @@ class DistanceSensor(PinsMixin):
     """
     Represents a HC-SR04 ultrasonic distance sensor.
 
+    Use the 3.3V version of the sensor (HC-SR04P), or a voltage divider on
+    the ECHO pin: the 5V signal from a 5V HC-SR04 can damage a Raspberry Pi
+    Pico.
+
     :param int echo:
         The pin that the ECHO pin is connected to.
 
@@ -2579,35 +2583,48 @@ class DistanceSensor(PinsMixin):
         self._max_distance = max_distance
         self._echo = Pin(echo, mode=Pin.IN, pull=Pin.PULL_DOWN)
         self._trigger = Pin(trigger, mode=Pin.OUT, value=0)
+        self._last_trigger_ms = None
 
     def _read(self):
         echo_on = None
         echo_off = None
         timed_out = False
 
+        # leave at least 60ms between measurements (as the HC-SR04
+        # datasheet suggests), so that the last echo has died away
+        if self._last_trigger_ms is not None:
+            wait_ms = 60 - ticks_diff(ticks_ms(), self._last_trigger_ms)
+            if wait_ms > 0:
+                sleep_ms(wait_ms)
+
+        # a 10 microsecond trigger pulse (time.sleep() can't wait for less
+        # than a millisecond on the Pico)
         self._trigger.off()
-        sleep(0.000005)
+        sleep_us(5)
         self._trigger.on()
-        sleep(0.00001)
+        sleep_us(10)
         self._trigger.off()
+        self._last_trigger_ms = ticks_ms()
 
         # If an echo isn't measured in 100 milliseconds, it should
         # be considered out of range. The maximum length of the
         # echo is 38 milliseconds but it's not known how long the
         # transmission takes after the trigger
-        stop = ticks_ms() + 100
+        start = ticks_us()
         while echo_off is None and not timed_out:
             if self._echo.value() == 1 and echo_on is None:
                 echo_on = ticks_us()
             if echo_on is not None and self._echo.value() == 0:
                 echo_off = ticks_us()
-            if ticks_ms() > stop:
+            # ticks_diff() copes with ticks_us() wrapping around, which it
+            # does about every 18 minutes
+            if ticks_diff(ticks_us(), start) > 100000:
                 timed_out = True
 
         if echo_off is None or timed_out:
             return None
         else:
-            distance = ((echo_off - echo_on) * 0.000343) / 2
+            distance = (ticks_diff(echo_off, echo_on) * 0.000343) / 2
             distance = min(distance, self._max_distance)
             return distance
 

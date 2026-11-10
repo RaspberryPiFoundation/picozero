@@ -1,6 +1,6 @@
 import unittest
 from picozero import *
-from time import ticks_ms
+from time import ticks_ms, ticks_us, ticks_diff, sleep
 
 
 def log_device_values(d, timeout):
@@ -1014,9 +1014,10 @@ class Testpicozero(unittest.TestCase):
         
     def test_distance_sensor_basic(self):
         # Create a mock distance sensor
-        d = DistanceSensor(echo=22, trigger=23)
+        # (not on GP23 to GP25, which a Pico W uses for its wireless chip)
+        d = DistanceSensor(echo=2, trigger=3)
 
-        self.assertEqual(d.pins, (22, 23))
+        self.assertEqual(d.pins, (2, 3))
         self.assertEqual(d.max_distance, 1.0)
 
         # Note: Without actual hardware, we can't test the distance reading
@@ -1026,9 +1027,51 @@ class Testpicozero(unittest.TestCase):
         # so we just let it go out of scope
 
     def test_distance_sensor_custom_max_distance(self):
-        d = DistanceSensor(echo=24, trigger=25, max_distance=2.5)
+        d = DistanceSensor(echo=4, trigger=5, max_distance=2.5)
 
         self.assertEqual(d.max_distance, 2.5)
+
+    def test_distance_sensor_read(self):
+        d = DistanceSensor(echo=2, trigger=3)
+
+        class MockEcho:
+            # an echo pulse of pulse_us, starting 100us after the first read
+            def __init__(self, pulse_us):
+                self._pulse_us = pulse_us
+                self._start = None
+
+            def value(self):
+                now = ticks_us()
+                if self._start is None:
+                    self._start = now
+                elapsed = ticks_diff(now, self._start)
+                return 1 if 100 <= elapsed < 100 + self._pulse_us else 0
+
+        class MockTrigger:
+            # records how long the trigger pulse is
+            def __init__(self):
+                self.on_us = None
+                self.pulse_us = None
+
+            def on(self):
+                self.on_us = ticks_us()
+
+            def off(self):
+                if self.on_us is not None:
+                    self.pulse_us = ticks_diff(ticks_us(), self.on_us)
+
+        d._trigger = MockTrigger()
+
+        # sound travels 0.343mm per microsecond, there and back, so an echo
+        # of 2915us is 0.5m away
+        d._echo = MockEcho(2915)
+        self.assertAlmostEqual(d.distance, 0.5, delta=0.05)
+        # the HC-SR04 needs a trigger pulse of at least 10us
+        self.assertTrue(d._trigger.pulse_us >= 10)
+
+        # no echo
+        d._echo = MockPin()
+        self.assertIsNone(d.distance)
 
 
 unittest.main()
