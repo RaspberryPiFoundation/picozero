@@ -169,3 +169,8 @@ pinout
 ------
 
 .. autofunction:: pinout
+
+pause
+-----
+
+.. autofunction:: pause

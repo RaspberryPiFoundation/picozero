@@ -1,6 +1,6 @@
 from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
-from time import ticks_ms, ticks_us, sleep
+from time import ticks_ms, ticks_us, ticks_add, ticks_diff, sleep, sleep_ms, sleep_us
 
 ###############################################################################
 # EXCEPTIONS
@@ -22,6 +22,23 @@ class EventFailedScheduleQueueFull(Exception):
 
 def clamp(n, low, high):
     return max(low, min(n, high))
+
+
+def _wait_for(check, timeout, wait_ms):
+    # Waits until check() returns True, checking every wait_ms milliseconds.
+    # Returns True, or False if timeout seconds pass first.
+    start = ticks_ms()
+    while not check():
+        if timeout is not None and ticks_diff(ticks_ms(), start) >= timeout * 1000:
+            return False
+        sleep_ms(wait_ms)
+    return True
+
+
+def pause():
+    """Waits forever, so that a script that only uses callbacks keeps running."""
+    while True:
+        sleep(1)
 
 
 def pinout(output=True):
@@ -1483,6 +1500,15 @@ class Motor(PinsMixin):
         """
         self.on(-speed, t, wait)
 
+    @property
+    def is_active(self):
+        """Returns :data:`True` if the motor is turning."""
+        return self.value != 0
+
+    def reverse(self):
+        """Turns the motor the other way at the same speed."""
+        self.value = -self.value
+
     def close(self):
         """
         Closes the device and releases any resources. Once closed, the device
@@ -1559,7 +1585,7 @@ class Robot:
     def value(self, value):
         self._left.value, self._right.value = value
 
-    def forward(self, speed=1, t=None, wait=False):
+    def forward(self, speed=1, t=None, wait=False, curve_left=0, curve_right=0):
         """
         Makes the robot move "forward".
 
@@ -1576,11 +1602,14 @@ class Robot:
            If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
-        """
-        self._left.forward(speed, t, False)
-        self._right.forward(speed, t, wait)
 
-    def backward(self, speed=1, t=None, wait=False):
+        :param float curve_left: Slows the left motor, from 0 (the default) to 1.
+
+        :param float curve_right: Slows the right motor, from 0 (the default) to 1.
+        """
+        self._move(speed, t, wait, curve_left, curve_right)
+
+    def backward(self, speed=1, t=None, wait=False, curve_left=0, curve_right=0):
         """
         Makes the robot move "backward".
 
@@ -1597,9 +1626,28 @@ class Robot:
            If False, the method will return and the motor will turn on in
            the background. Defaults to False. Only effective if `t` is not
            None.
+
+        :param float curve_left: Slows the left motor, from 0 (the default) to 1.
+
+        :param float curve_right: Slows the right motor, from 0 (the default) to 1.
         """
-        self._left.backward(speed, t, False)
-        self._right.backward(speed, t, wait)
+        self._move(-speed, t, wait, curve_left, curve_right)
+
+    def _move(self, speed, t, wait, curve_left, curve_right):
+        if not (0 <= curve_left <= 1 and 0 <= curve_right <= 1) or (
+            curve_left and curve_right
+        ):
+            raise ValueError("use one curve, from 0 to 1")
+        left = speed * (1 - curve_left)
+        right = speed * (1 - curve_right)
+        # a motor with a speed of 0 is just turned off and doesn't wait, so
+        # start it first and let the other motor do any waiting
+        if right:
+            self._left.on(left, t, False)
+            self._right.on(right, t, wait)
+        else:
+            self._right.on(right, t, False)
+            self._left.on(left, t, wait)
 
     def left(self, speed=1, t=None, wait=False):
         """
@@ -1651,6 +1699,16 @@ class Robot:
         """
         self._left.stop()
         self._right.stop()
+
+    def reverse(self):
+        """Turns both motors the other way at the same speed."""
+        self._left.reverse()
+        self._right.reverse()
+
+    @property
+    def is_active(self):
+        """Returns :data:`True` if either motor is turning."""
+        return self._left.is_active or self._right.is_active
 
     def close(self):
         """
@@ -2264,6 +2322,14 @@ class DigitalInputDevice(InputDevice, PinMixin):
     def when_deactivated(self, value):
         self._when_deactivated = value
 
+    def wait_for_active(self, timeout=None):
+        """Waits until active; returns False if `timeout` seconds pass first."""
+        return _wait_for(lambda: self.is_active, timeout, 10)
+
+    def wait_for_inactive(self, timeout=None):
+        """Waits until inactive; returns False if `timeout` seconds pass first."""
+        return _wait_for(lambda: self.is_inactive, timeout, 10)
+
     def close(self):
         """
         Closes the device and releases any resources. Once closed, the device
@@ -2300,11 +2366,15 @@ Switch.is_closed = Switch.is_active
 Switch.is_open = Switch.is_inactive
 Switch.when_closed = Switch.when_activated
 Switch.when_opened = Switch.when_deactivated
+Switch.wait_for_close = Switch.wait_for_active
+Switch.wait_for_open = Switch.wait_for_inactive
 
 
 class Button(Switch):
     """
     Represents a push button, which can be either pressed or released.
+
+    Set ``when_held`` to a function to run when the button is held down.
 
     :param int pin:
         The pin that the device is connected to.
@@ -2312,6 +2382,12 @@ class Button(Switch):
     :param bool pull_up:
         If :data:`True` (the default), the device will be pulled up to
         HIGH. If :data:`False`, the device will be pulled down to LOW.
+
+    :param float hold_time:
+        Seconds to hold the button for before ``when_held`` runs. Defaults to 1.
+
+    :param bool hold_repeat:
+        If :data:`True`, ``when_held`` repeats every ``hold_time`` seconds while held.
 
     :param float bounce_time:
         The bounce time for the device. If set, the device will ignore
@@ -2321,13 +2397,63 @@ class Button(Switch):
         seconds.
     """
 
-    pass
+    def __init__(
+        self, pin, pull_up=True, bounce_time=0.02, hold_time=1, hold_repeat=False
+    ):
+        # set up before the pin, which can report a press straight away
+        self.hold_time = hold_time
+        self.hold_repeat = hold_repeat
+        self.when_held = self._pressed_ms = None
+        self._hold_timer = Timer()
+        super().__init__(pin, pull_up, bounce_time)
+
+    def _pin_change(self, p):
+        super()._pin_change(p)
+        # time how long the button is held down for
+        if self._state_to_value(p.value()):
+            if self._pressed_ms is None:
+                self._pressed_ms = ticks_ms()
+                if self.when_held:
+                    self._hold_timer.init(
+                        period=max(1, round(self.hold_time * 1000)),
+                        mode=Timer.PERIODIC if self.hold_repeat else Timer.ONE_SHOT,
+                        callback=self._held,
+                    )
+        elif self._pressed_ms is not None:
+            self._pressed_ms = None
+            self._hold_timer.deinit()
+
+    def _held(self, timer):
+        # runs hold_time seconds after a press, then every hold_time seconds
+        # if hold_repeat is True
+        if self.is_held and self.when_held:
+            self.when_held()
+
+    @property
+    def is_held(self):
+        """Returns True if the button has been held for ``hold_time`` seconds."""
+        return self.held_time is not None
+
+    @property
+    def held_time(self):
+        """Seconds held for, from when ``when_held`` first runs; None if not held."""
+        if self._pressed_ms is not None:
+            t = ticks_diff(ticks_ms(), self._pressed_ms) - round(self.hold_time * 1000)
+            if t >= 0:
+                return t / 1000
+
+    def close(self):
+        self._pressed_ms = None
+        self._hold_timer.deinit()
+        super().close()
 
 
 Button.is_pressed = Button.is_active
 Button.is_released = Button.is_inactive
 Button.when_pressed = Button.when_activated
 Button.when_released = Button.when_deactivated
+Button.wait_for_press = Button.wait_for_active
+Button.wait_for_release = Button.wait_for_inactive
 
 
 class MotionSensor(DigitalInputDevice):
@@ -2357,6 +2483,8 @@ MotionSensor.motion_detected = MotionSensor.is_active
 MotionSensor.motion_not_detected = MotionSensor.is_inactive
 MotionSensor.when_motion = MotionSensor.when_activated
 MotionSensor.when_no_motion = MotionSensor.when_deactivated
+MotionSensor.wait_for_motion = MotionSensor.wait_for_active
+MotionSensor.wait_for_no_motion = MotionSensor.wait_for_inactive
 
 
 class TouchSensor(Button):
@@ -2387,6 +2515,8 @@ TouchSensor.is_touched = TouchSensor.is_active
 TouchSensor.is_not_touched = TouchSensor.is_inactive
 TouchSensor.when_touch_starts = TouchSensor.when_activated
 TouchSensor.when_touch_ends = TouchSensor.when_deactivated
+TouchSensor.wait_for_touch = TouchSensor.wait_for_active
+TouchSensor.wait_for_no_touch = TouchSensor.wait_for_inactive
 
 
 class AnalogInputDevice(InputDevice, PinMixin):
@@ -2572,11 +2702,18 @@ class DistanceSensor(PinsMixin):
         The :attr:`value` attribute reports a normalised value between 0 (too
         close to measure) and 1.0 (maximum distance). This parameter specifies
         the maximum distance expected in meters. This defaults to 1.0.
+
+    :param float threshold_distance:
+        Things this close (in meters) or closer are "in range". Defaults to 0.3.
     """
 
-    def __init__(self, echo, trigger, max_distance=1.0):
+    def __init__(self, echo, trigger, max_distance=1.0, threshold_distance=0.3):
         self._pin_nums = (echo, trigger)
         self._max_distance = max_distance
+        self.threshold_distance = threshold_distance
+        self._when_in_range = self._when_out_of_range = None
+        self._poll_timer = self._was_in_range = None
+        self._reading = False
         self._echo = Pin(echo, mode=Pin.IN, pull=Pin.PULL_DOWN)
         self._trigger = Pin(trigger, mode=Pin.OUT, value=0)
 
@@ -2624,12 +2761,78 @@ class DistanceSensor(PinsMixin):
         return distance / self._max_distance if distance is not None else None
 
     @property
+    def in_range(self):
+        """Returns True if something is within ``threshold_distance`` meters."""
+        d = self.distance
+        return d is not None and d <= self.threshold_distance
+
+    @property
+    def when_in_range(self):
+        """A function to run when something comes within ``threshold_distance``."""
+        return self._when_in_range
+
+    @when_in_range.setter
+    def when_in_range(self, value):
+        self._when_in_range = value
+        self._update_poll()
+
+    @property
+    def when_out_of_range(self):
+        """A function to run when something moves out of range."""
+        return self._when_out_of_range
+
+    @when_out_of_range.setter
+    def when_out_of_range(self, value):
+        self._when_out_of_range = value
+        self._update_poll()
+
+    def wait_for_in_range(self, timeout=None):
+        """Waits until in range; returns False if `timeout` seconds pass first."""
+        return _wait_for(lambda: self.in_range, timeout, 60)
+
+    def wait_for_out_of_range(self, timeout=None):
+        """Waits until out of range; returns False if `timeout` seconds pass first."""
+        return _wait_for(lambda: not self.in_range, timeout, 60)
+
+    def _update_poll(self):
+        # check the sensor every 0.1s (Timer is periodic by default) while
+        # there is a callback to run
+        if not (self._when_in_range or self._when_out_of_range):
+            if self._poll_timer:
+                self._poll_timer.deinit()
+                self._poll_timer = self._was_in_range = None
+        elif not self._poll_timer:
+            self._poll_timer = Timer(period=100, callback=self._poll)
+
+    def _poll(self, timer):
+        # skip if polling has stopped, or the sensor is already being read
+        if timer is not self._poll_timer or self._reading:
+            return
+        if self._trigger is None:
+            # the sensor's pins have been released, e.g. by close()
+            timer.deinit()
+            return
+        # the first reading just records whether something is in range
+        was, in_range = self._was_in_range, self.in_range
+        self._was_in_range = in_range
+        if was is not None and in_range != was:
+            callback = self._when_in_range if in_range else self._when_out_of_range
+            if callback:
+                callback()
+
+    @property
     def distance(self):
         """
         Returns the current distance measured by the sensor in meters. Note
         that this property will have a value between 0 and max_distance.
         """
-        return self._read()
+        # stops the check for when_in_range triggering the sensor part way
+        # through this reading
+        self._reading = True
+        try:
+            return self._read()
+        finally:
+            self._reading = False
 
     @property
     def max_distance(self):

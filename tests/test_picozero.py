@@ -1,6 +1,6 @@
 import unittest
 from picozero import *
-from time import ticks_ms
+from time import ticks_ms, ticks_us, ticks_diff, sleep
 
 
 def log_device_values(d, timeout):
@@ -80,6 +80,10 @@ class Testpicozero(unittest.TestCase):
     def test_pinout(self):
         pins = pinout(output=False)
         self.assertIsNotNone(pins)
+
+    def test_pause(self):
+        # pause() waits forever, so just check that it is there
+        self.assertTrue(callable(pause))
 
     ###########################################################################
     # OUTPUT DEVICES
@@ -343,6 +347,72 @@ class Testpicozero(unittest.TestCase):
 
         d.value = 0
         self.assertEqual(d.value, 0)
+
+        d.close()
+
+    def test_motor_reverse(self):
+        d = Motor(8, 9)
+
+        self.assertFalse(d.is_active)
+        d.reverse()
+        self.assertEqual(d.value, 0)
+        self.assertFalse(d.is_active)
+
+        d.forward(0.5)
+        self.assertTrue(d.is_active)
+        d.reverse()
+        self.assertAlmostEqual(d.value, -0.5, places=2)
+        d.reverse()
+        self.assertAlmostEqual(d.value, 0.5, places=2)
+
+        d.stop()
+        self.assertFalse(d.is_active)
+
+        d.close()
+
+    def test_robot_curve_and_reverse(self):
+        d = Robot(left=(10, 11), right=(12, 13))
+
+        self.assertFalse(d.is_active)
+
+        d.forward(curve_left=0.5)
+        self.assertAlmostEqual(d.left_motor.value, 0.5, places=2)
+        self.assertEqual(d.right_motor.value, 1)
+        self.assertTrue(d.is_active)
+
+        d.backward(0.5, curve_right=1)
+        self.assertAlmostEqual(d.left_motor.value, -0.5, places=2)
+        self.assertEqual(d.right_motor.value, 0)
+        self.assertTrue(d.is_active)
+
+        d.reverse()
+        self.assertAlmostEqual(d.left_motor.value, 0.5, places=2)
+        self.assertEqual(d.right_motor.value, 0)
+
+        d.left()
+        d.reverse()
+        self.assertEqual(d.value, (1, -1))
+
+        with self.assertRaises(ValueError):
+            d.forward(curve_left=0.5, curve_right=0.5)
+        with self.assertRaises(ValueError):
+            d.backward(curve_left=2)
+
+        d.stop()
+        self.assertFalse(d.is_active)
+        d.reverse()
+        self.assertEqual(d.value, (0, 0))
+
+        d.close()
+
+    def test_robot_curve_wait(self):
+        d = Robot(left=(10, 11), right=(12, 13))
+
+        # curve_right=1 stops the right motor, so the left motor must wait
+        start = ticks_ms()
+        d.forward(t=0.2, wait=True, curve_right=1)
+        self.assertTrue(ticks_diff(ticks_ms(), start) >= 150)
+        self.assertEqual(d.value, (0, 0))
 
         d.close()
 
@@ -669,6 +739,149 @@ class Testpicozero(unittest.TestCase):
         self.assertTrue(event_activated.is_set())
         self.assertTrue(d.is_active)
         
+        d.close()
+
+    def test_digital_input_device_wait_for_active(self):
+        from machine import Timer
+
+        d = DigitalInputDevice(1)
+
+        pin = MockPin(irq_handler=d._pin_change)
+        d._pin = pin
+
+        start = ticks_ms()
+        self.assertFalse(d.wait_for_active(timeout=0.1))
+        self.assertTrue(ticks_diff(ticks_ms(), start) >= 100)
+        self.assertTrue(d.wait_for_inactive(timeout=0))
+
+        # activated while waiting
+        timer = Timer()
+        timer.init(period=100, mode=Timer.ONE_SHOT, callback=lambda t: pin.write(1))
+        self.assertTrue(d.wait_for_active(timeout=1))
+        self.assertTrue(d.is_active)
+        self.assertTrue(d.wait_for_active(timeout=0))
+        self.assertFalse(d.wait_for_inactive(timeout=0.05))
+
+        # deactivated while waiting, with no timeout
+        timer.init(period=100, mode=Timer.ONE_SHOT, callback=lambda t: pin.write(0))
+        self.assertTrue(d.wait_for_inactive())
+        self.assertFalse(d.is_active)
+
+        timer.deinit()
+        d.close()
+
+    def test_switch_motion_touch_wait_for(self):
+        s = Switch(1, bounce_time=None)
+        pin = MockPin(initial_state=1, irq_handler=s._pin_change)
+        s._pin = pin
+        self.assertTrue(s.wait_for_open(timeout=0))
+        self.assertFalse(s.wait_for_close(timeout=0))
+        pin.write(0)
+        self.assertTrue(s.wait_for_close(timeout=0))
+        self.assertFalse(s.wait_for_open(timeout=0))
+        s.close()
+
+        m = MotionSensor(2, bounce_time=None)
+        pin = MockPin(irq_handler=m._pin_change)
+        m._pin = pin
+        self.assertTrue(m.wait_for_no_motion(timeout=0))
+        self.assertFalse(m.wait_for_motion(timeout=0))
+        pin.write(1)
+        self.assertTrue(m.wait_for_motion(timeout=0))
+        self.assertFalse(m.wait_for_no_motion(timeout=0))
+        m.close()
+
+        t = TouchSensor(3, bounce_time=None)
+        pin = MockPin(irq_handler=t._pin_change)
+        t._pin = pin
+        self.assertTrue(t.wait_for_no_touch(timeout=0))
+        self.assertFalse(t.wait_for_touch(timeout=0))
+        pin.write(1)
+        self.assertTrue(t.wait_for_touch(timeout=0))
+        self.assertFalse(t.wait_for_no_touch(timeout=0))
+        t.close()
+
+    def test_button_wait_for_press(self):
+        from machine import Timer
+
+        d = Button(1, bounce_time=None)
+
+        # pulled up, so 1 is released and 0 is pressed
+        pin = MockPin(initial_state=1, irq_handler=d._pin_change)
+        d._pin = pin
+
+        self.assertFalse(d.wait_for_press(timeout=0.05))
+        self.assertTrue(d.wait_for_release(timeout=0))
+
+        timer = Timer()
+        timer.init(period=100, mode=Timer.ONE_SHOT, callback=lambda t: pin.write(0))
+        self.assertTrue(d.wait_for_press(timeout=1))
+        self.assertTrue(d.is_pressed)
+
+        timer.init(period=100, mode=Timer.ONE_SHOT, callback=lambda t: pin.write(1))
+        self.assertTrue(d.wait_for_release(timeout=1))
+        self.assertFalse(d.is_pressed)
+
+        timer.deinit()
+        d.close()
+
+    def test_button_held(self):
+        d = Button(1, bounce_time=None, hold_time=0.2)
+
+        pin = MockPin(initial_state=1, irq_handler=d._pin_change)
+        d._pin = pin
+
+        self.assertEqual(d.hold_time, 0.2)
+        self.assertFalse(d.hold_repeat)
+        self.assertFalse(d.is_held)
+        self.assertIsNone(d.held_time)
+
+        held = []
+        d.when_held = lambda: held.append(d.held_time)
+
+        # a short press isn't a hold
+        pin.write(0)
+        sleep(0.1)
+        self.assertFalse(d.is_held)
+        self.assertIsNone(d.held_time)
+        pin.write(1)
+        sleep(0.2)
+        self.assertEqual(held, [])
+
+        # a long press is, and when_held runs once
+        pin.write(0)
+        sleep(0.35)
+        self.assertTrue(d.is_held)
+        self.assertInRange(d.held_time, 0.1, 0.3)
+        self.assertEqual(len(held), 1)
+        self.assertTrue(held[0] >= 0)
+
+        pin.write(1)
+        self.assertFalse(d.is_held)
+        self.assertIsNone(d.held_time)
+
+        d.close()
+
+    def test_button_hold_repeat(self):
+        d = Button(1, bounce_time=None, hold_time=0.1, hold_repeat=True)
+
+        pin = MockPin(initial_state=1, irq_handler=d._pin_change)
+        d._pin = pin
+
+        held = []
+        d.when_held = lambda: held.append(1)
+
+        # when_held runs about every 0.1 seconds while the button is held
+        pin.write(0)
+        sleep(0.45)
+        pin.write(1)
+        self.assertInRange(len(held), 2, 5)
+
+        # and stops when the button is released
+        count = len(held)
+        sleep(0.3)
+        self.assertEqual(len(held), count)
+
         d.close()
 
     def test_adc_input_device_default_values(self):
@@ -1024,6 +1237,75 @@ class Testpicozero(unittest.TestCase):
 
         # Clean up - Note: DistanceSensor doesn't have a close() method
         # so we just let it go out of scope
+
+    def test_distance_sensor_in_range(self):
+        d = DistanceSensor(echo=2, trigger=3)
+        self.assertEqual(d.threshold_distance, 0.3)
+
+        d = DistanceSensor(echo=2, trigger=3, threshold_distance=0.4)
+        self.assertEqual(d.threshold_distance, 0.4)
+
+        # replace the sensor with readings set by the test
+        reading = [0.5]
+        d._read = lambda: reading[0]
+
+        self.assertFalse(d.in_range)
+        reading[0] = 0.4
+        self.assertTrue(d.in_range)
+        # no echo
+        reading[0] = None
+        self.assertFalse(d.in_range)
+
+        d.threshold_distance = 0.2
+        reading[0] = 0.3
+        self.assertFalse(d.in_range)
+        self.assertFalse(d.wait_for_in_range(timeout=0.1))
+        self.assertTrue(d.wait_for_out_of_range(timeout=0))
+
+        reading[0] = 0.1
+        self.assertTrue(d.wait_for_in_range(timeout=0))
+        self.assertFalse(d.wait_for_out_of_range(timeout=0.1))
+
+    def test_distance_sensor_when_in_range(self):
+        d = DistanceSensor(echo=2, trigger=3, threshold_distance=0.3)
+
+        # replace the sensor with readings set by the test, and count them
+        reading = [0.5]
+        reads = [0]
+
+        def read():
+            reads[0] += 1
+            return reading[0]
+
+        d._read = read
+
+        event_in_range = MockEvent()
+        event_out_of_range = MockEvent()
+        d.when_in_range = event_in_range.set
+        d.when_out_of_range = event_out_of_range.set
+
+        # nothing has come into range yet
+        sleep(0.3)
+        self.assertTrue(reads[0] > 0)
+        self.assertFalse(event_in_range.is_set())
+        self.assertFalse(event_out_of_range.is_set())
+
+        reading[0] = 0.2
+        sleep(0.3)
+        self.assertTrue(event_in_range.is_set())
+        self.assertFalse(event_out_of_range.is_set())
+
+        reading[0] = 0.5
+        sleep(0.3)
+        self.assertTrue(event_out_of_range.is_set())
+
+        # the sensor isn't checked when there are no callbacks
+        d.when_in_range = None
+        d.when_out_of_range = None
+        sleep(0.05)
+        count = reads[0]
+        sleep(0.3)
+        self.assertEqual(reads[0], count)
 
     def test_distance_sensor_custom_max_distance(self):
         d = DistanceSensor(echo=24, trigger=25, max_distance=2.5)
