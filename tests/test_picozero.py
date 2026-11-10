@@ -665,6 +665,12 @@ class Testpicozero(unittest.TestCase):
         d.close()
 
     def test_digital_input_device_bounce_time_ticks_wrap(self):
+        # the module picozero's code runs in (picozero/picozero.py when
+        # installed as a package, or a single picozero.py)
+        import picozero as module
+
+        module = getattr(module, "picozero", module)
+
         d = DigitalInputDevice(1, bounce_time=0.01)
 
         pin = MockPin(irq_handler=d._pin_change)
@@ -673,11 +679,16 @@ class Testpicozero(unittest.TestCase):
         event_activated = MockEvent()
         d.when_activated = event_activated.set
 
-        # the last change was 50ms ago, just before ticks_ms() wrapped round
-        # to 0 (it wraps at 2**30)
-        d._last_callback_ms = ticks_ms() - 50 + (1 << 30)
-
-        pin.write(1)
+        # ticks_ms() wraps round to 0 at 2**30. Pretend it has just wrapped
+        # and the last change was 50ms ago, just before the wrap. (Values
+        # passed to ticks_diff() must be below 2**30.)
+        ticks_ms_function = module.ticks_ms
+        module.ticks_ms = lambda: 5
+        try:
+            d._last_callback_ms = 1073741779  # 2**30 - 45
+            pin.write(1)
+        finally:
+            module.ticks_ms = ticks_ms_function
         self.assertTrue(event_activated.is_set())
 
         d.close()
