@@ -1110,9 +1110,18 @@ class RGBLED(OutputDevice, PinsMixin):
         self._leds = ()
         self._last = initial_value
         LEDClass = PWMLED if pwm else DigitalLED
-        self._leds = tuple(
-            LEDClass(pin, active_high=active_high) for pin in (red, green, blue)
-        )
+        leds = []
+        try:
+            for pin in (red, green, blue):
+                leds.append(LEDClass(pin, active_high=active_high))
+        except Exception:
+            # release the pins that were set up before the error
+            for led in leds:
+                led.close()
+            raise
+        self._leds = tuple(leds)
+        if initial_value is not None:
+            initial_value = self._to_rgb(initial_value)
         super().__init__(active_high, initial_value)
 
     def _write(self, value):
@@ -1134,8 +1143,12 @@ class RGBLED(OutputDevice, PinsMixin):
 
     @value.setter
     def value(self, value):
+        value = self._to_rgb(value)
         self._stop_change()
         self._write(value)
+        if any(value):
+            # remember the colour, so that toggle() can turn it back on
+            self._last = value
 
     @property
     def is_active(self):
@@ -1146,6 +1159,12 @@ class RGBLED(OutputDevice, PinsMixin):
         return self.value != (0, 0, 0)
 
     is_lit = is_active
+
+    def _to_rgb(self, value):
+        # a colour can be a tuple or a list, or one value for all three LEDs
+        if isinstance(value, (list, tuple)):
+            return tuple(value)
+        return (value,) * 3
 
     def _to_255(self, value):
         return round(value * 255)
@@ -1230,7 +1249,9 @@ class RGBLED(OutputDevice, PinsMixin):
         If the device is off, it will be changed to the last colour it had when it was on or, if none, to fully on (:attr:`value` is ``(1, 1, 1)``).
         """
         if self.value == (0, 0, 0):
-            self.value = self._last or (1, 1, 1)
+            last = (0, 0, 0) if self._last is None else self._to_rgb(self._last)
+            # a non-empty tuple is always truthy, so check the colour itself
+            self.value = last if any(last) else (1, 1, 1)
         else:
             self._last = self.value
             self.value = (0, 0, 0)
@@ -1253,25 +1274,29 @@ class RGBLED(OutputDevice, PinsMixin):
             Single value or tuple of times to fade between each colour. Must be 0 if
             *pwm* was :data:`False` when the class was constructed.
         :type colors: tuple
-            Tuple of colours to blink between, use ``(0, 0, 0)`` for off.
         :param colors:
-            The colours to blink between. Defaults to red, green, blue.
+            The colours to blink between, use ``(0, 0, 0)`` for off. Defaults
+            to red, green, blue.
         :type n: int or None
         :param n:
             Number of times to blink; :data:`None` (the default) means forever.
         :param bool wait:
             If :data:`False` (the default), use a Timer to manage blinking,
-            continue blinking, and return immediately. If :data:`False`, only
+            continue blinking, and return immediately. If :data:`True`, only
             return when the blinking is finished (warning: the default value of
             *n* will result in this method never returning).
+        :param int fps:
+            The frames per second that will be used to calculate the number of
+            steps when fading. Defaults to 25.
         """
         self.off()
 
-        if type(on_times) is not tuple:
+        colors = tuple(self._to_rgb(c) for c in colors)
+        if not isinstance(on_times, (list, tuple)):
             on_times = (on_times,) * len(colors)
-        if type(fade_times) is not tuple:
+        if not isinstance(fade_times, (list, tuple)):
             fade_times = (fade_times,) * len(colors)
-        # If any value is above zero then treat all as 0-255 values
+        # If any value is above one then treat all as 0-255 values
         if any(v > 1 for v in sum(colors, ())):
             colors = tuple(tuple(self._from_255(v) for v in t) for t in colors)
 
@@ -1315,15 +1340,20 @@ class RGBLED(OutputDevice, PinsMixin):
 
         :param float fade_times:
             Single value or tuple of numbers of seconds to spend fading. Defaults to 1.
-        :param float fade_out_time:
-            Number of seconds to spend fading out. Defaults to 1.
         :type colors: tuple
         :param colors:
-            Tuple of colours to pulse between in order. Defaults to red, off, green, off, blue, off.
-        :type off_color: ~colorzero.Color or tuple
+            Tuple of colours to pulse between in order. Defaults to off, red,
+            off, green, off, blue.
         :type n: int or None
         :param n:
             Number of times to pulse; :data:`None` (the default) means forever.
+        :param bool wait:
+            If :data:`False` (the default), return immediately and pulse in
+            the background. If :data:`True`, only return when the pulsing has
+            finished.
+        :param int fps:
+            The frames per second that will be used to calculate the number of
+            steps when fading. Defaults to 25.
         """
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)
@@ -1337,18 +1367,23 @@ class RGBLED(OutputDevice, PinsMixin):
         fps=25,
     ):
         """
-        Makes the device fade in and out repeatedly.
+        Makes the device fade from one colour to the next repeatedly.
 
         :param float fade_times:
             Single value or tuple of numbers of seconds to spend fading between colours. Defaults to 1.
-        :param float fade_times:
-            Number of seconds to spend fading out. Defaults to 1.
         :type colors: tuple
         :param colors:
             Tuple of colours to cycle between. Defaults to red, green, blue.
         :type n: int or None
         :param n:
             Number of times to cycle; :data:`None` (the default) means forever.
+        :param bool wait:
+            If :data:`False` (the default), return immediately and cycle in
+            the background. If :data:`True`, only return when the cycling has
+            finished.
+        :param int fps:
+            The frames per second that will be used to calculate the number of
+            steps when fading. Defaults to 25.
         """
         on_times = 0
         self.blink(on_times, fade_times, colors, n, wait, fps)

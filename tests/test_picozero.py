@@ -415,6 +415,45 @@ class Testpicozero(unittest.TestCase):
 
         d.close()
 
+    def test_rgb_led_toggle(self):
+        d = RGBLED(1, 2, 3)
+
+        # a new RGBLED toggles on to white
+        d.toggle()
+        self.assertEqual(d.value, (1, 1, 1))
+        d.toggle()
+        self.assertEqual(d.value, (0, 0, 0))
+
+        # toggle turns the LED back on to the last colour it was set to
+        d.color = (0, 255, 0)
+        d.off()
+        d.toggle()
+        self.assertEqual(d.value, (0, 1, 0))
+
+        d.close()
+
+    def test_rgb_led_lists(self):
+        d = RGBLED(1, 2, 3)
+
+        d.value = [1, 0, 0]
+        self.assertEqual(d.value, (1, 0, 0))
+
+        d.blink(
+            on_times=[0.1, 0.1], colors=[[255, 0, 0], [0, 0, 255]], n=1, wait=True
+        )
+        self.assertEqual(d.value, (0, 0, 0))
+
+        d.close()
+
+    def test_rgb_led_failed_init_releases_pins(self):
+        # GP17 uses the same PWM channel as GP1, so the third LED fails
+        with self.assertRaises(PWMChannelAlreadyInUse):
+            RGBLED(1, 2, 17)
+
+        # the red and green pins must have been released
+        d = RGBLED(1, 2, 3)
+        d.close()
+
     def test_rgb_led_alt_values(self):
         d = RGBLED(1, 2, 3, initial_value=(1, 1, 1), pwm=False)
 
