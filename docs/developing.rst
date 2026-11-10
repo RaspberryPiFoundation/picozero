@@ -13,7 +13,7 @@ To build and deploy picozero, you need to install the dependencies ::
 Build
 -----
 
-1. Update version numbers in the ``setup.py``, ``picozero/__init__.py``, and ``docs/conf.py`` files
+1. Update version numbers in the ``setup.py``, ``package.json``, ``picozero/__init__.py``, and ``docs/conf.py`` files
 
 2. Add release to ``docs/changelog.rst``
 
@@ -25,7 +25,7 @@ Build
 
     twine upload dist/*
 
-5. Push all changes to ``master`` branch
+5. Push all changes to the ``main`` branch
 
 6. Create a `release <https://github.com/RaspberryPiFoundation/picozero/releases>`_ in github and upload ``picozero-#-#-#.tar.gz`` source file to the release
 
@@ -40,7 +40,7 @@ Install sphinx using ::
 
 To test the documentation build, run the following command from the docs directory ::
 
-    $ ./make html
+    make html
 
 The website will be built in the directory docs/_build/html.
 

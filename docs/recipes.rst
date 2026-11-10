@@ -42,9 +42,11 @@ To turn on the LED on your Raspberry Pi Pico:
 
 Run your script to see the LED turn on.
 
-Using the :obj:`pico_led` is equivalent to::
+Using :obj:`pico_led` is equivalent to::
 
-    pico_led = LED(25) 
+    pico_led = LED("LED", pwm=False)
+
+On a Raspberry Pi Pico or Pico 2 the LED is connected to GP25. On a Pico W or Pico 2 W it is connected to the wireless chip, so it can't be controlled with PWM.
 
 You can use :obj:`pico_led` in the same way as external LEDs created using :class:`LED`.
 
@@ -58,26 +60,26 @@ You can output a *diagram* of the Raspberry Pi Pico which displays its pins and 
 ::
 
             ---usb---
-    GP0  1  |o     o| -1  VBUS
-    GP1  2  |o     o| -2  VSYS
-    GND  3  |o     o| -3  GND
-    GP2  4  |o     o| -4  3V3_EN
-    GP3  5  |o     o| -5  3V3(OUT)
-    GP4  6  |o     o| -6           ADC_VREF
-    GP5  7  |o     o| -7  GP28     ADC2
-    GND  8  |o     o| -8  GND      AGND
-    GP6  9  |o     o| -9  GP27     ADC1
-    GP7  10 |o     o| -10 GP26     ADC0
-    GP8  11 |o     o| -11 RUN
-    GP9  12 |o     o| -12 GP22
-    GND  13 |o     o| -13 GND
-    GP10 14 |o     o| -14 GP21
-    GP11 15 |o     o| -15 GP20
-    GP12 16 |o     o| -16 GP19
-    GP13 17 |o     o| -17 GP18
-    GND  18 |o     o| -18 GND
-    GP14 19 |o     o| -19 GP17
-    GP15 20 |o     o| -20 GP16
+    GP0  1  |o     o| 40  VBUS
+    GP1  2  |o     o| 39  VSYS
+    GND  3  |o     o| 38  GND
+    GP2  4  |o     o| 37  3V3_EN
+    GP3  5  |o     o| 36  3V3(OUT)
+    GP4  6  |o     o| 35           ADC_VREF
+    GP5  7  |o     o| 34  GP28     ADC2
+    GND  8  |o     o| 33  GND      AGND
+    GP6  9  |o     o| 32  GP27     ADC1
+    GP7  10 |o     o| 31  GP26     ADC0
+    GP8  11 |o     o| 30  RUN
+    GP9  12 |o     o| 29  GP22
+    GND  13 |o     o| 28  GND
+    GP10 14 |o     o| 27  GP21
+    GP11 15 |o     o| 26  GP20
+    GP12 16 |o     o| 25  GP19
+    GP13 17 |o     o| 24  GP18
+    GND  18 |o     o| 23  GND
+    GP14 19 |o     o| 22  GP17
+    GP15 20 |o     o| 21  GP16
             ---------
 
 LEDs
@@ -247,7 +249,7 @@ Play individual notes and control the timing or perform another action:
 Servo
 -----
 
-A servo motor connected to a single pin, 3.3v and ground.
+A servo motor connected to a GP pin, VBUS and ground. Most servos need 5V, and the current they draw can be too much for the Pico's 3.3V supply, so use VBUS (pin 40), which is 5V when the Pico is powered over USB.
 
 .. image:: images/servo.svg
     :alt: A diagram of the Raspberry Pi Pico connected to a servo motor
@@ -256,7 +258,7 @@ Move the servo to its minimum, mid and maximum positions.
 
 .. literalinclude:: examples/servo_move.py
 
-Pulse the servo between its minumum and maximum position.
+Pulse the servo between its minimum and maximum position.
 
 .. literalinclude:: examples/servo_pulse.py
 
@@ -311,25 +313,16 @@ Time-based blind controller:
 Internal temperature sensor
 ---------------------------
 
-Check the internal temperature of the Raspberry Pi Pico in degrees Celcius:
+Check the internal temperature of the Raspberry Pi Pico in degrees Celsius:
 
 .. literalinclude:: examples/pico_temperature.py
-
-Motion sensor
--------------
-
-Detect motion using a PIR (Passive Infrared) sensor:
-
-.. literalinclude:: examples/motion_sensor.py
-
-Use callbacks to respond to motion events:
-
-.. literalinclude:: examples/motion_sensor_callbacks.py
 
 Ultrasonic distance sensor
 --------------------------
 
 Get the distance in metres from an ultrasonic distance sensor (HC-SR04):
+
+Use the 3.3V version of the sensor (HC-SR04P), as in the diagram, or a voltage divider on the ECHO pin: the 5V signal from a 5V HC-SR04 can damage the Pico.
 
 .. image:: images/distance_sensor_bb.svg
     :alt: A diagram of the Raspberry Pi Pico connected to an HC-SR04 distance sensor.

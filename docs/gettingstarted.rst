@@ -18,11 +18,11 @@ A Windows, macOS, or Linux computer with the `Thonny Python IDE`_ installed.
 
 You can find information on how to install Thonny in the `Introduction to Raspberry Pi Pico guide`_.
 
-.. _Introduction to Raspberry Pi Pico guide: https://learning-admin.raspberrypi.org/en/projects/introduction-to-the-pico/2
+.. _Introduction to Raspberry Pi Pico guide: https://projects.raspberrypi.org/en/projects/introduction-to-the-pico/2
 
 Once Thonny is installed, you will need to ensure that you are using the latest MicroPython firmware. Details on how to install or update the Raspberry Pi Pico MicroPython firmware can be found in the `Pico guide`_.
 
-.. _Pico guide: https://learning-admin.raspberrypi.org/en/projects/introduction-to-the-pico/3
+.. _Pico guide: https://projects.raspberrypi.org/en/projects/introduction-to-the-pico/3
 
 Select the MicroPython interpreter
 ----------------------------------
@@ -58,7 +58,7 @@ picozero can be installed by copying the ``picozero.py`` code to your Raspberry 
 Either clone the picozero `GitHub repository`_ or copy the code from the `picozero.py`_ file and save it on your main computer.
 
 .. _GitHub repository: https://github.com/RaspberryPiFoundation/picozero
-.. _picozero.py: https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/master/picozero/picozero.py
+.. _picozero.py: https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/picozero/picozero.py
 
 Create a new file called picozero.py, copy code into the file and save it on your Raspberry Pi Pico.
 
@@ -79,7 +79,7 @@ Either clone the picozero `GitHub repository`_ or download the `picozero.py`_ fi
    .. raw:: html
 
       <p>
-        <a href="https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/master/picozero/picozero.py" download>
+        <a href="https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/picozero/picozero.py" download>
           ⬇️ Download picozero.py
         </a>
       </p>
@@ -87,10 +87,7 @@ Either clone the picozero `GitHub repository`_ or download the `picozero.py`_ fi
 .. only:: not html
 
    Download ``picozero.py``:
-   https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/master/picozero/picozero.py
-
-.. _GitHub repository: https://github.com/RaspberryPiFoundation/picozero
-.. _picozero.py: https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/master/picozero/picozero.py
+   https://raw.githubusercontent.com/RaspberryPiFoundation/picozero/main/picozero/picozero.py
 
 In Thonny, navigate to the cloned directory or location you saved the file in and find the ``picozero.py`` file.
 
