@@ -1,6 +1,6 @@
 import unittest
 from picozero import *
-from time import ticks_ms
+from time import ticks_ms, ticks_us, ticks_diff, sleep
 
 
 def log_device_values(d, timeout):
@@ -928,14 +928,26 @@ class Testpicozero(unittest.TestCase):
         stepper.step_to(50, "cw")
         self.assertEqual(stepper.step_count, 50)
 
-        # Test step_to counter-clockwise (should go backwards)
+        # Test step_to counter-clockwise (moves back to the position)
         stepper.step_to(30, "ccw")
-        self.assertEqual(stepper.step_count, 20)  # 50 - 30 = 20
+        self.assertEqual(stepper.step_count, 30)
 
         # Test step_to when already at target (should do nothing)
         initial_count = stepper.step_count
-        stepper.step_to(20, "cw")
+        stepper.step_to(30, "cw")
         self.assertEqual(stepper.step_count, initial_count)
+
+        # Test step_to clockwise to a lower position (goes round through 0)
+        stepper.step_to(20, "cw")
+        self.assertEqual(stepper.step_count, 120)
+
+        # Test step_to when more than a rotation away
+        stepper.reset_position()
+        stepper.step(250)
+        stepper.step_to(0, "cw")
+        self.assertEqual(stepper.step_count, 300)
+        stepper.step_to(0, -1)
+        self.assertEqual(stepper.step_count, 300)
 
         stepper.close()
 
@@ -986,6 +998,85 @@ class Testpicozero(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             stepper.set_speed(-10)
+
+        stepper.close()
+
+    def test_stepper_turn_accuracy(self):
+        stepper = Stepper((1, 2, 3, 4), step_delay=0)
+
+        # rounding must not add up over many small turns
+        for _ in range(360):
+            stepper.turn(1, "cw")
+        self.assertEqual(stepper.step_count, 2048)
+        for _ in range(360):
+            stepper.turn(1, "ccw")
+        self.assertEqual(stepper.step_count, 0)
+
+        stepper.close()
+
+    def test_stepper_turn_to_angles_and_directions(self):
+        stepper = Stepper((1, 2, 3, 4), steps_per_rotation=200, step_delay=0)
+
+        # negative angles are normalised, e.g. -90 is 270
+        stepper.turn_to(-90, "cw")
+        self.assertAlmostEqual(stepper.angle, 270.0, places=1)
+
+        # numeric directions work as they do for step()
+        stepper.turn_to(90, 1)
+        self.assertAlmostEqual(stepper.angle, 90.0, places=1)
+        self.assertEqual(stepper.step_count, 250)
+        stepper.turn_to(0, -1)
+        self.assertEqual(stepper.step_count, 200)
+
+        stepper.close()
+
+    def test_stepper_steps_per_rotation_default(self):
+        stepper = Stepper((1, 2, 3, 4))
+        self.assertEqual(stepper.steps_per_rotation, 2048)
+        stepper.close()
+
+        # half stepping takes twice as many steps
+        stepper = Stepper((1, 2, 3, 4), step_sequence="half")
+        self.assertEqual(stepper.steps_per_rotation, 4096)
+        stepper.close()
+
+        stepper = Stepper((1, 2, 3, 4), step_sequence="half", steps_per_rotation=400)
+        self.assertEqual(stepper.steps_per_rotation, 400)
+        stepper.close()
+
+    def test_stepper_step_delay_accuracy(self):
+        # time.sleep() only has millisecond resolution, so a 2.5ms delay must
+        # not be rounded down to 2ms, and the time the code takes between
+        # steps must not be added to it (a step takes about 0.9ms of code on
+        # an RP2040)
+        stepper = Stepper((1, 2, 3, 4), step_delay=0.0025)
+
+        start = ticks_ms()
+        stepper.step(200)
+        elapsed = ticks_diff(ticks_ms(), start)
+        self.assertTrue(495 <= elapsed <= 520, "200 steps took {}ms".format(elapsed))
+
+        stepper.close()
+
+    def test_stepper_run_continuous_interrupted(self):
+        stepper = Stepper((1, 2, 3, 4), step_delay=0)
+
+        calls = [0]
+        single_step = stepper._single_step
+
+        def interrupt_after_10_steps(direction=1):
+            calls[0] += 1
+            if calls[0] > 10:
+                raise KeyboardInterrupt
+            single_step(direction)
+
+        stepper._single_step = interrupt_after_10_steps
+
+        # Ctrl-C stops the motor and then stops the program
+        with self.assertRaises(KeyboardInterrupt):
+            stepper.run_continuous()
+        self.assertEqual(stepper.step_count, 10)
+        self.assertEqual([pin.value for pin in stepper._pins], [0, 0, 0, 0])
 
         stepper.close()
 

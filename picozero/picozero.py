@@ -1,6 +1,6 @@
 from machine import Pin, PWM, Timer, ADC
 from micropython import schedule
-from time import ticks_ms, ticks_us, sleep
+from time import ticks_ms, ticks_us, ticks_add, ticks_diff, sleep, sleep_ms, sleep_us
 
 ###############################################################################
 # EXCEPTIONS
@@ -1688,7 +1688,12 @@ class Stepper(PinsMixin):
     :param int steps_per_rotation:
         Number of steps for a complete 360-degree rotation.
         Common values: 2048 (28BYJ-48 with ULN2003), 200 (NEMA steppers).
-        Defaults to 2048.
+        Half stepping takes twice as many steps. If :data:`None` (the
+        default), 2048 is used for 'wave' and 'full', and 4096 for 'half'
+        (as for a 28BYJ-48).
+
+    The coils stay powered after a move, so that the motor holds its
+    position. Call :meth:`off` to turn them off and save power.
     """
 
     # Step sequences for different drive modes
@@ -1708,10 +1713,19 @@ class Stepper(PinsMixin):
     }
 
     def __init__(
-        self, pins, step_sequence="full", step_delay=0.002, steps_per_rotation=2048
+        self, pins, step_sequence="full", step_delay=0.002, steps_per_rotation=None
     ):
         if len(pins) != 4:
             raise ValueError("Stepper requires exactly 4 pins")
+
+        if step_sequence not in self.STEP_SEQUENCES:
+            raise ValueError(
+                f"Invalid step_sequence. Must be one of: {list(self.STEP_SEQUENCES.keys())}"
+            )
+
+        if steps_per_rotation is None:
+            # a 28BYJ-48 takes 2048 full steps, or 4096 half steps, per rotation
+            steps_per_rotation = 4096 if step_sequence == "half" else 2048
 
         self._pin_nums = tuple(pins)
         self._pins = tuple(DigitalOutputDevice(pin) for pin in pins)
@@ -1719,11 +1733,11 @@ class Stepper(PinsMixin):
         self._steps_per_rotation = steps_per_rotation
         self._current_step = 0
         self._step_count = 0
+        # the part of a step left over from turn() and rotate()
+        self._step_fraction = 0
+        # when the next step is due, see _wait_for_next_step()
+        self._next_step_us = None
 
-        if step_sequence not in self.STEP_SEQUENCES:
-            raise ValueError(
-                f"Invalid step_sequence. Must be one of: {list(self.STEP_SEQUENCES.keys())}"
-            )
         self._step_sequence = step_sequence
         self._sequence = self.STEP_SEQUENCES[step_sequence]
 
@@ -1770,8 +1784,87 @@ class Stepper(PinsMixin):
             self._current_step = (self._current_step - 1) % len(self._sequence)
             self._step_count -= 1
 
+        # wait until step_delay has passed since the previous step
+        step_time = self._wait_for_next_step()
         self._set_step(self._sequence[self._current_step])
-        sleep(self._step_delay)
+        self._next_step_us = ticks_add(step_time, int(self._step_delay * 1000000))
+
+    def _wait_for_next_step(self):
+        # Wait until the next step is due, and return the time it was due.
+        # time.sleep() only has millisecond resolution on the Pico, so this
+        # uses ticks_us(). The steps keep to a schedule, so the time the code
+        # takes between steps doesn't add up over a long run, and a step that
+        # is a little late doesn't hold up the ones after it.
+        now = ticks_us()
+        due = self._next_step_us
+        if due is not None:
+            delay_us = int(self._step_delay * 1000000)
+            # The next step is never due more than step_delay from now. Any
+            # other difference means the motor has been idle (perhaps long
+            # enough for ticks_us() to wrap round) or is well behind, e.g.
+            # because step_delay is shorter than the code takes to step. Then
+            # step now, and time the steps after this one from now.
+            if -delay_us <= ticks_diff(due, now) <= delay_us:
+                self._sleep_until(due)
+                return due
+        return now
+
+    def _sleep_until(self, time_us):
+        remaining = ticks_diff(time_us, ticks_us())
+        if remaining > 1000:
+            # sleep_ms() lets callbacks (e.g. from buttons) run while waiting
+            sleep_ms(remaining // 1000)
+            remaining = ticks_diff(time_us, ticks_us())
+        if remaining > 0:
+            sleep_us(remaining)
+
+    def _wait_for_last_step(self):
+        # give the last step step_delay to happen before stopping or returning
+        if self._next_step_us is not None:
+            delay_us = int(self._step_delay * 1000000)
+            if 0 < ticks_diff(self._next_step_us, ticks_us()) <= delay_us:
+                self._sleep_until(self._next_step_us)
+
+    def _move(self, steps, direction):
+        # move a whole number of steps in a direction (1 or -1)
+        for _ in range(steps):
+            self._single_step(direction)
+        self._wait_for_last_step()
+
+    def _move_to_step(self, target):
+        # move until the step count is target
+        distance = target - self._step_count
+        if distance > 0:
+            self._move(distance, 1)
+        elif distance < 0:
+            self._move(-distance, -1)
+
+    def _turn_by(self, steps):
+        # Turn by a number of steps that may not be whole. The part of a step
+        # that is left over is carried on to the next turn, so that rounding
+        # doesn't add up: 360 turns of 1 degree make exactly one rotation.
+        # (relative to the current position, as floats on the Pico are only
+        # single precision)
+        exact = self._step_fraction + steps
+        move = round(exact)
+        if (steps > 0 and move < 0) or (steps < 0 and move > 0):
+            # never turn the opposite way
+            move = 0
+        self._step_fraction = exact - move
+        self._move_to_step(self._step_count + move)
+
+    def _turn_to_step(self, target, direction):
+        # Move to a step within a rotation, counting from the reset position,
+        # turning in the given direction (by less than one rotation).
+        sign = self._normalise_direction(direction)
+        steps_per_rotation = self._steps_per_rotation
+        current = self._step_count % steps_per_rotation
+        if sign > 0:
+            distance = (target - current) % steps_per_rotation
+        else:
+            distance = -((current - target) % steps_per_rotation)
+        self._step_fraction = 0
+        self._move_to_step(self._step_count + distance)
 
     def step(self, steps, direction=1):
         """
@@ -1787,43 +1880,27 @@ class Stepper(PinsMixin):
             Defaults to 1 (clockwise).
         :type direction: int or str
         """
-        steps = abs(int(steps))
-
-        for _ in range(steps):
-            self._single_step(direction)
+        direction = self._normalise_direction(direction)
+        self._step_fraction = 0
+        self._move(abs(int(steps)), direction)
 
     def step_to(self, steps, direction):
         """
-        Move to a specific step position from the current position.
-
-        For clockwise direction: moves TO the target position (absolute).
-        For counter-clockwise direction: moves BY the number of steps (relative).
+        Move to a step position within a rotation, counting from the reset
+        position (see :meth:`reset_position`), turning in the given direction.
 
         :param int steps:
-            Target step position (absolute) for clockwise,
-            or number of steps to move for counter-clockwise.
+            The step position to move to, from 0 to ``steps_per_rotation - 1``.
+            Other values are normalised into this range, e.g. -1 is the last
+            step of a rotation.
 
         :param direction:
             Direction to move. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
             - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
-        :type direction: str
+        :type direction: int or str
         """
-        target_steps = int(steps)
-        current_steps = self._step_count
-
-        normalised_dir = self._normalise_direction(direction)
-
-        if normalised_dir > 0:  # Clockwise - move TO absolute position
-            distance = target_steps - current_steps
-            if distance > 0:
-                self.step(distance, direction)
-            elif distance < 0:
-                # Wrap around clockwise
-                self.step(self._steps_per_rotation + distance, direction)
-            # if distance == 0, don't move
-        else:  # Counter-clockwise - move BY relative steps
-            if target_steps > 0:
-                self.step(target_steps, direction)
+        self._turn_to_step(int(steps), direction)
 
     def turn(self, angle, direction):
         """
@@ -1834,12 +1911,13 @@ class Stepper(PinsMixin):
 
         :param direction:
             Direction to turn. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
             - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
-        :type direction: str
+        :type direction: int or str
         """
         angle = abs(float(angle))
-        steps = int((angle / 360.0) * self._steps_per_rotation)
-        self.step(steps, direction)
+        sign = self._normalise_direction(direction)
+        self._turn_by(sign * (angle / 360.0) * self._steps_per_rotation)
 
     def rotate(self, rotations, direction):
         """
@@ -1850,52 +1928,39 @@ class Stepper(PinsMixin):
 
         :param direction:
             Direction to rotate. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
             - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
-        :type direction: str
+        :type direction: int or str
         """
         rotations = abs(float(rotations))
-        steps = int(rotations * self._steps_per_rotation)
-        self.step(steps, direction)
+        sign = self._normalise_direction(direction)
+        self._turn_by(sign * rotations * self._steps_per_rotation)
 
     def turn_to(self, angle, direction):
         """
-        Turn to a specific angle position (0-359 degrees).
+        Turn to a specific angle position (0-359 degrees), turning in the
+        given direction.
 
         :param float angle:
             Target angle in degrees (0-359). If angle is outside this range,
-            it will be normalised to 0-359.
+            it will be normalised to 0-359, e.g. -90 is 270.
 
         :param direction:
             Direction to turn. Accepts:
+            - Numeric: 1 or positive for clockwise, -1 or negative for counter-clockwise
             - String: 'cw'/'clockwise' for clockwise, 'ccw'/'counter-clockwise' for counter-clockwise
-        :type direction: str
+        :type direction: int or str
         """
         # normalise target angle to 0-359 range
-        target_angle = abs(float(angle)) % 360.0
-        current_angle = self.angle
-
-        # Calculate the shortest path to target angle
-        if direction.lower() in ("cw", "clockwise"):
-            # Clockwise: calculate distance going clockwise
-            if target_angle >= current_angle:
-                rotation_angle = target_angle - current_angle
-            else:
-                rotation_angle = 360.0 - current_angle + target_angle
-        else:  # counter-clockwise
-            # Counter-clockwise: calculate distance going counter-clockwise
-            if target_angle <= current_angle:
-                rotation_angle = current_angle - target_angle
-            else:
-                rotation_angle = current_angle + (360.0 - target_angle)
-
-        # Convert angle to steps and rotate
-        steps = int((rotation_angle / 360.0) * self._steps_per_rotation)
-        if steps > 0:
-            self.step(steps, direction)
+        target_angle = float(angle) % 360.0
+        self._turn_to_step(
+            round((target_angle / 360.0) * self._steps_per_rotation), direction
+        )
 
     def reset_position(self):
         """Reset the step counter to zero (home position)."""
         self._step_count = 0
+        self._step_fraction = 0
 
     def off(self):
         """Turn off all coils to reduce power consumption."""
@@ -1924,11 +1989,13 @@ class Stepper(PinsMixin):
 
     def run_continuous(self, seconds=None, direction=1):
         """
-        Run the stepper motor continuously for a specified duration or until stopped.
+        Run the stepper motor continuously for a specified duration or until
+        the program is interrupted. The coils are turned off when it stops.
 
         :param float seconds:
-            Duration to run in seconds. If None (the default), the motor will run
-            until stopped by calling off() or close().
+            Duration to run in seconds. If None (the default), the motor will
+            run until the program is interrupted (e.g. with Ctrl-C, or the Stop
+            button in Thonny).
 
         :param direction:
             Direction to run. Accepts:
@@ -1937,22 +2004,22 @@ class Stepper(PinsMixin):
             Defaults to 1 (clockwise).
         :type direction: int or str
         """
-        if seconds is None:
-            # Run until manually stopped
-            try:
+        direction = self._normalise_direction(direction)
+        self._step_fraction = 0
+        try:
+            if seconds is None:
+                # Run until interrupted
                 while True:
                     self._single_step(direction)
-            except KeyboardInterrupt:
-                self.off()
-        else:
-            # Run for specified duration
-            seconds = abs(float(seconds))
-            start_time = ticks_ms()
-            end_time = start_time + int(seconds * 1000)
-
-            while ticks_ms() < end_time:
-                self._single_step(direction)
-
+            else:
+                # Run for specified duration
+                end_time = ticks_add(ticks_ms(), int(abs(float(seconds)) * 1000))
+                while ticks_diff(end_time, ticks_ms()) > 0:
+                    self._single_step(direction)
+                self._wait_for_last_step()
+        finally:
+            # turn the coils off, then let an interrupt carry on stopping the
+            # program
             self.off()
 
     @property

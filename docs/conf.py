@@ -51,11 +51,11 @@ class Mock:
 sys.modules["machine"] = Mock()
 sys.modules["micropython"] = Mock()
 
-# add the ticks_ms function to time (as it is in micropython)
+# add the functions that are only in micropython's time module
 import time
 
-setattr(time, "ticks_ms", lambda x: None)
-setattr(time, "ticks_us", lambda x: None)
+for name in ("ticks_ms", "ticks_us", "ticks_add", "ticks_diff", "sleep_ms", "sleep_us"):
+    setattr(time, name, lambda *args: None)
 
 # -- Project information -----------------------------------------------------
 
