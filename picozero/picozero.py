@@ -111,8 +111,8 @@ class ValueChange:
         sequence will repeat forever.
 
     :param bool wait:
-        If True the ValueChange object will block (wait) until
-        the sequence has completed.
+        If True, :meth:`start` will block (wait) until the sequence has
+        completed or has been stopped.
     """
 
     def __init__(self, output_device, generator, n, wait):
@@ -126,9 +126,18 @@ class ValueChange:
         self._running = True
         self._wait = wait
 
+    def start(self):
+        """
+        Starts the sequence. If ``wait`` is True, this blocks until the
+        sequence has finished or has been stopped.
+        """
         self._set_value()
 
     def _set_value(self, timer_obj=None):
+        # a timer callback can still arrive after stop() has been called
+        if not self._running:
+            return
+
         if self._wait:
             # wait for the exection to end
             next_seq = self._get_value()
@@ -137,6 +146,10 @@ class ValueChange:
 
                 self._output_device._write(value)
                 sleep(seconds)
+
+                if not self._running:
+                    # stopped while waiting (e.g. by a callback)
+                    return
 
                 next_seq = self._get_value()
 
@@ -165,13 +178,17 @@ class ValueChange:
         except StopIteration:
 
             self._n = self._n - 1 if self._n is not None else None
-            if self._n == 0:
+            if self._n is not None and self._n <= 0:
                 # it's the end, return None
                 return None
             else:
                 # recreate the generator and start again
                 self._gen = self._generator()
-                return next(self._gen)
+                try:
+                    return next(self._gen)
+                except StopIteration:
+                    # the sequence is empty, so there is nothing to do
+                    return None
 
     def stop(self):
         """
@@ -306,7 +323,17 @@ class OutputDevice:
             self._start_change(lambda: iter([(1, on_time), (0, off_time)]), n, wait)
 
     def _start_change(self, generator, n, wait):
+        # stop anything that is already running, e.g. a blink
+        self._stop_change()
+
+        if n is not None and n <= 0:
+            # nothing to do
+            return
+
+        # store the ValueChange before starting it, so that it can be
+        # stopped while it runs, even when wait is True
         self._value_changer = ValueChange(self, generator, n, wait)
+        self._value_changer.start()
 
     def _stop_change(self):
         if self._value_changer is not None:
