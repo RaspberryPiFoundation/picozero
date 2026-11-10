@@ -431,6 +431,14 @@ class PWMOutputDevice(OutputDevice, PinMixin):
     :param bool initial_value:
         If :data:`False` (the default), the LED will be off initially. If
         :data:`True`, the LED will be switched on initially.
+
+    .. note::
+
+        Each pair of pins (GP0 and GP1, GP2 and GP3, and so on) shares one PWM
+        frequency, and GP16 to GP29 use the same PWM channels as GP0 to GP13.
+        A device on the same pair as a :class:`Servo` uses the servo's
+        frequency, and a :class:`PWMBuzzer` or :class:`Speaker` can't share a
+        pair with a servo because it changes the frequency.
     """
 
     PIN_TO_PWM_CHANNEL = [
@@ -467,17 +475,43 @@ class PWMOutputDevice(OutputDevice, PinMixin):
     ]
     _channels_used = {}
 
+    # True for devices that need their PWM frequency to stay the same (servos)
+    _fixed_freq = False
+    # True for devices that change their PWM frequency as they run (buzzers)
+    _variable_freq = False
+
     def __init__(
         self, pin, freq=100, duty_factor=65535, active_high=True, initial_value=False
     ):
-        self._check_pwm_channel(pin)
-        self._pin_num = pin
-        self._duty_factor = duty_factor
-        self._pwm = PWM(Pin(pin))
-        self._pwm.freq(freq)
-        super().__init__(active_high, initial_value)
+        self._check_pwm_channel(pin, freq)
+        try:
+            self._pin_num = pin
+            self._duty_factor = duty_factor
+            self._pwm = PWM(Pin(pin))
+            sibling = self._sibling_device(PWMOutputDevice.PIN_TO_PWM_CHANNEL[pin])
+            if sibling is not None and sibling._fixed_freq and not self._fixed_freq:
+                # keep the frequency the device on the paired pin needs
+                freq = sibling._freq
+            self._freq = freq
+            self._pwm.freq(freq)
+            super().__init__(active_high, initial_value)
+        except Exception:
+            # release the PWM channel, so the pin can be used again
+            del PWMOutputDevice._channels_used[PWMOutputDevice.PIN_TO_PWM_CHANNEL[pin]]
+            pwm = getattr(self, "_pwm", None)
+            if pwm is not None:
+                pwm.deinit()
+            raise
 
-    def _check_pwm_channel(self, pin_num):
+    def _check_pwm_channel(self, pin_num, freq):
+        if type(pin_num) is not int or not (
+            0 <= pin_num < len(PWMOutputDevice.PIN_TO_PWM_CHANNEL)
+        ):
+            raise ValueError(
+                "PWM is not available on pin {!r}. Use a GP pin number from 0 to {} (or pwm=False for an LED)".format(
+                    pin_num, len(PWMOutputDevice.PIN_TO_PWM_CHANNEL) - 1
+                )
+            )
         channel = PWMOutputDevice.PIN_TO_PWM_CHANNEL[pin_num]
         if channel in PWMOutputDevice._channels_used.keys():
             raise PWMChannelAlreadyInUse(
@@ -485,16 +519,39 @@ class PWMOutputDevice(OutputDevice, PinMixin):
                     channel, str(PWMOutputDevice._channels_used[channel])
                 )
             )
-        else:
-            PWMOutputDevice._channels_used[channel] = self
+        sibling = self._sibling_device(channel)
+        if sibling is not None and self._freq_conflict(sibling, freq):
+            raise PWMChannelAlreadyInUse(
+                "GP{} shares a PWM frequency with {}, which needs a different frequency. Use a different pin".format(
+                    pin_num, str(sibling)
+                )
+            )
+        PWMOutputDevice._channels_used[channel] = self
+
+    @staticmethod
+    def _sibling_device(channel):
+        # the device using the other channel of the same PWM slice, e.g. 0B for 0A
+        other = channel[0] + ("B" if channel[1] == "A" else "A")
+        return PWMOutputDevice._channels_used.get(other)
+
+    def _freq_conflict(self, other, freq):
+        # the two channels of a PWM slice always have the same frequency
+        if not (self._fixed_freq or other._fixed_freq):
+            return False
+        if self._variable_freq or other._variable_freq:
+            # e.g. a buzzer would keep changing a servo's frequency
+            return True
+        # two servos must use the same frequency; any other device next to a
+        # servo uses the servo's frequency
+        return self._fixed_freq and other._fixed_freq and freq != other._freq
 
     def _state_to_value(self, state):
-        return (
-            state if self.active_high else self._duty_factor - state
-        ) / self._duty_factor
+        return (state if self.active_high else 65535 - state) / self._duty_factor
 
     def _value_to_state(self, value):
-        return int(self._duty_factor * (value if self.active_high else 1 - value))
+        # an active low signal is inverted, so it is low for value * duty_factor
+        state = int(self._duty_factor * value)
+        return state if self.active_high else 65535 - state
 
     def _read(self):
         return self._state_to_value(self._pwm.duty_u16())
@@ -521,7 +578,17 @@ class PWMOutputDevice(OutputDevice, PinMixin):
         """
         Sets the frequency of the device.
         """
+        sibling = self._sibling_device(
+            PWMOutputDevice.PIN_TO_PWM_CHANNEL[self._pin_num]
+        )
+        if sibling is not None and sibling._fixed_freq and freq != sibling._freq:
+            raise PWMChannelAlreadyInUse(
+                "GP{} shares a PWM frequency with {}, so its frequency can't be changed. Use a different pin".format(
+                    self._pin_num, str(sibling)
+                )
+            )
         self._pwm.freq(freq)
+        self._freq = freq
 
     def blink(
         self,
@@ -736,6 +803,9 @@ class PWMBuzzer(PWMOutputDevice):
         If :data:`False` (the default), the buzzer will be off initially.  If
         :data:`True`, the buzzer will be switched on initially.
     """
+
+    # a buzzer's frequency changes as it plays notes
+    _variable_freq = True
 
     def __init__(
         self, pin, freq=440, duty_factor=1023, active_high=True, initial_value=False
@@ -2020,6 +2090,9 @@ class Servo(PWMOutputDevice):
         The duty factor of the PWM signal. This is a value between 0 and 65535.
         Defaults to 65535.
     """
+
+    # a servo's pulse widths depend on its PWM frequency staying the same
+    _fixed_freq = True
 
     def __init__(
         self,
