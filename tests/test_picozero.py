@@ -73,6 +73,12 @@ class Testpicozero(unittest.TestCase):
         self.assertTrue(value <= upper, msg)
         self.assertTrue(value >= lower, msg)
 
+    def tearDown(self):
+        # close anything a failed test left open, so that the PWM channels it
+        # used don't make the tests after it fail too
+        for device in list(PWMOutputDevice._channels_used.values()):
+            device.close()
+
     ###########################################################################
     # SUPPORTING
     ###########################################################################
@@ -374,6 +380,65 @@ class Testpicozero(unittest.TestCase):
 
         d = LED(21, pwm=False)
         self.assertIsInstance(d, DigitalLED)
+        d.close()
+
+    def test_close_twice(self):
+        devices = [
+            DigitalOutputDevice(1),
+            PWMOutputDevice(2),
+            RGBLED(3, 4, 5),
+            Motor(6, 7),
+            Robot(left=(8, 9), right=(10, 11)),
+            Servo(12),
+            Speaker(14),
+            Stepper((16, 17, 18, 19)),
+            Potentiometer(26),
+            DistanceSensor(echo=20, trigger=21),
+        ]
+        for device in devices:
+            device.close()
+            device.close()
+
+    def test_context_manager(self):
+        with LED(1) as led:
+            led.on()
+            self.assertEqual(led.value, 1)
+        # the LED is closed at the end of the with block
+        self.assertIsNone(led._pwm)
+
+        with Robot(left=(8, 9), right=(10, 11)) as robot:
+            robot.forward()
+        # the robot's pins can be used again
+        d = Motor(8, 9)
+        d.close()
+
+    def test_servo_close_releases_servo(self):
+        d = Servo(1)
+        d.mid()
+
+        values = []
+        write = d._write
+
+        def record(value):
+            values.append(value)
+            write(value)
+
+        d._write = record
+        d.close()
+        # the servo is released (None), not moved to its minimum position
+        self.assertEqual(values, [None])
+
+    def test_motor_and_robot_failed_init_release_pins(self):
+        # GP17 uses the same PWM channel as GP1, so the second pin fails
+        with self.assertRaises(PWMChannelAlreadyInUse):
+            Motor(1, 17)
+        # GP1 must have been released
+        d = Motor(1, 2)
+        d.close()
+
+        with self.assertRaises(PWMChannelAlreadyInUse):
+            Robot(left=(1, 2), right=(3, 17))
+        d = Robot(left=(1, 2), right=(3, 4))
         d.close()
 
     def test_pico_led(self):
